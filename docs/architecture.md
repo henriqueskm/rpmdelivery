@@ -96,23 +96,17 @@ Campos iniciais:
 
 ## User
 
-Representa usuários administrativos ou operadores do restaurante.
+Representa a identidade autenticada do usuário.
 
-Campos iniciais:
+Os dados básicos do usuário ficam em Profile.
 
-* id
-* restaurant_id
-* name
-* email
-* role
-* active
-* created_at
+A relação com estabelecimentos é feita por restaurant_members.
 
-Papéis iniciais:
+Papéis administrativos do restaurante:
 
-* OWNER
-* MANAGER
-* OPERATOR
+- OWNER
+- MANAGER
+- OPERATOR
 
 ---
 
@@ -438,16 +432,16 @@ Uma rota pode conter uma ou várias entregas.
 
 Campos iniciais:
 
-* id
-* restaurant_id
-* courier_id
-* status
-* started_at
-* completed_at
-* returning_at
-* arrived_at
-* created_at
+- id
+- restaurant_id
+- courier_id
 - courier_shift_id
+- status
+- started_at
+- completed_at
+- returning_at
+- arrived_at
+- created_at
 
 Status:
 

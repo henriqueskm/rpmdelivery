@@ -182,7 +182,6 @@ Campos:
 - motorcycle_model text
 - motorcycle_plate text
 - motorcycle_color text
-
 - last_latitude numeric
 - last_longitude numeric
 - location_updated_at timestamptz
