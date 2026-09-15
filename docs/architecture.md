@@ -144,23 +144,6 @@ O estado operacional não pertence ao Courier.
 
 Disponibilidade, rota e retorno pertencem ao CourierShift atual.
 
-### Status do motoboy
-
-* OFFLINE
-* AVAILABLE
-* ON_ROUTE
-* RETURNING
-
-Fluxo principal:
-
-OFFLINE
-→ AVAILABLE
-→ ON_ROUTE
-→ RETURNING
-→ AVAILABLE
-
-O motoboy só volta para AVAILABLE depois de chegar novamente ao estabelecimento.
-
 O motoboy não pertence diretamente a um único restaurante.
 
 O vínculo entre motoboy e estabelecimento é representado por `restaurant_couriers`.
@@ -425,12 +408,14 @@ Campos iniciais:
 
 Status:
 
-* WAITING
-* ASSIGNED
-* ON_ROUTE
-* NEXT
-* DELIVERED
-* CANCELLED
+- WAITING
+- ASSIGNED
+- ON_ROUTE
+- NEXT
+- ATTEMPT_FAILED
+- RETURN_TO_STORE
+- DELIVERED
+- CANCELLED
 
 ### Significado de NEXT
 
@@ -462,6 +447,7 @@ Campos iniciais:
 * returning_at
 * arrived_at
 * created_at
+- courier_shift_id
 
 Status:
 
@@ -490,7 +476,6 @@ Campos:
 * route_id
 * delivery_id
 * sequence
-* status
 * created_at
 
 O campo `sequence` define a ordem planejada das entregas.
