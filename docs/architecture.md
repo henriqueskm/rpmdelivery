@@ -1,0 +1,956 @@
+# RpmDelivery — Arquitetura Inicial
+
+## 1. Visão do Produto
+
+O RpmDelivery é um sistema de gerenciamento de entregas para restaurantes, lanchonetes, pizzarias e operações similares que trabalham com motoboys próprios.
+
+A primeira versão do produto deve controlar:
+
+* pedidos;
+* motoboys;
+* fila de disponibilidade;
+* rotas;
+* múltiplas entregas por rota;
+* retorno do motoboy ao estabelecimento;
+* localização do motoboy em tempo real;
+* acompanhamento da entrega pelo cliente;
+* notificações;
+* envio automático do link de rastreamento por WhatsApp e/ou SMS;
+* histórico operacional.
+
+O sistema deve ser mobile-first e simples de operar durante períodos de alto movimento.
+
+---
+
+# 2. Interfaces Principais
+
+O sistema terá três experiências principais.
+
+## Restaurante
+
+Responsável por:
+
+* cadastrar pedidos;
+* visualizar motoboys;
+* visualizar disponibilidade;
+* atribuir entregas;
+* montar rotas;
+* acompanhar motoboys em rota;
+* acompanhar motoboys retornando;
+* visualizar pedidos aguardando;
+* acompanhar entregas concluídas;
+* consultar histórico.
+
+## Motoboy
+
+Responsável por:
+
+* informar disponibilidade;
+* receber rota;
+* visualizar entregas da rota;
+* iniciar rota;
+* visualizar próxima parada;
+* marcar entrega como concluída;
+* compartilhar localização enquanto estiver em rota ou retornando;
+* finalizar retorno ao estabelecimento quando necessário.
+
+## Cliente
+
+Não precisa criar conta.
+
+Recebe um link seguro de acompanhamento da entrega.
+
+Nesse link poderá:
+
+* acompanhar o status;
+* visualizar um mini mapa;
+* acompanhar a posição do motoboy;
+* saber quantas entregas existem antes da sua;
+* saber quando o motoboy está realizando outra entrega;
+* receber aviso quando sua entrega for a próxima;
+* visualizar previsão aproximada de chegada;
+* ativar notificações da entrega.
+
+---
+
+# 3. Entidades Principais
+
+## Restaurant
+
+Representa o estabelecimento.
+
+Campos iniciais:
+
+* id
+* name
+* phone
+* address
+* latitude
+* longitude
+* minimum_delivery_fee
+* price_per_km
+* created_at
+* updated_at
+
+---
+
+## User
+
+Representa usuários administrativos ou operadores do restaurante.
+
+Campos iniciais:
+
+* id
+* restaurant_id
+* name
+* email
+* role
+* active
+* created_at
+
+Papéis iniciais:
+
+* OWNER
+* MANAGER
+* OPERATOR
+
+---
+
+## Courier
+
+Representa o motoboy.
+
+Campos iniciais:
+
+* id
+* restaurant_id
+* name
+* phone
+* photo_url
+* motorcycle
+* status
+* available_since
+* last_latitude
+* last_longitude
+* location_updated_at
+* created_at
+* updated_at
+
+### Status do motoboy
+
+* OFFLINE
+* AVAILABLE
+* ON_ROUTE
+* RETURNING
+
+Fluxo principal:
+
+OFFLINE
+→ AVAILABLE
+→ ON_ROUTE
+→ RETURNING
+→ AVAILABLE
+
+O motoboy só volta para AVAILABLE depois de chegar novamente ao estabelecimento.
+
+---
+
+# 4. Fila de Motoboys
+
+O restaurante trabalha com uma fila de disponibilidade.
+
+Cada motoboy disponível possui:
+
+`available_since`
+
+Exemplo:
+
+João — disponível desde 19:10
+Carlos — disponível desde 19:17
+Pedro — disponível desde 19:22
+
+O próximo sugerido pelo sistema é João.
+
+Quando João recebe uma rota:
+
+AVAILABLE → ON_ROUTE
+
+Quando conclui a última entrega:
+
+ON_ROUTE → RETURNING
+
+Quando chega ao estabelecimento:
+
+RETURNING → AVAILABLE
+
+Nesse momento:
+
+`available_since = horário atual`
+
+O motoboy entra no final da fila.
+
+A sugestão automática não deve impedir que o restaurante escolha outro motoboy manualmente.
+
+---
+
+# 5. Order
+
+Representa o pedido comercial.
+
+Campos iniciais:
+
+* id
+* restaurant_id
+* customer_name
+* customer_phone
+* delivery_address
+* neighborhood
+* reference
+* notes
+* status
+* created_at
+* updated_at
+
+Status:
+
+* OPEN
+* DELIVERING
+* DELIVERED
+* CANCELLED
+
+O pedido não deve concentrar toda a lógica logística.
+
+A logística pertence principalmente a Delivery e Route.
+
+---
+
+# 6. Delivery
+
+Representa a operação logística associada ao pedido.
+
+Campos iniciais:
+
+* id
+* restaurant_id
+* order_id
+* status
+* distance_km
+* delivery_fee
+* tracking_token
+* assigned_at
+* started_at
+* delivered_at
+* cancelled_at
+* created_at
+* updated_at
+
+Status:
+
+* WAITING
+* ASSIGNED
+* ON_ROUTE
+* NEXT
+* DELIVERED
+* CANCELLED
+
+### Significado de NEXT
+
+NEXT significa que aquela entrega será a próxima parada do motoboy.
+
+Quando uma entrega muda para NEXT:
+
+* a tela pública do cliente deve atualizar;
+* deve ser criada uma notificação;
+* push notification deve ser disparada se autorizada;
+* opcionalmente WhatsApp ou SMS podem ser enviados de acordo com a configuração do restaurante.
+
+---
+
+# 7. Route
+
+Representa uma saída física do motoboy do estabelecimento.
+
+Uma rota pode conter uma ou várias entregas.
+
+Campos iniciais:
+
+* id
+* restaurant_id
+* courier_id
+* status
+* started_at
+* completed_at
+* returning_at
+* arrived_at
+* created_at
+
+Status:
+
+* PREPARING
+* ON_ROUTE
+* RETURNING
+* COMPLETED
+* CANCELLED
+
+Fluxo:
+
+PREPARING
+→ ON_ROUTE
+→ RETURNING
+→ COMPLETED
+
+---
+
+# 8. RouteDelivery
+
+Relaciona uma entrega com uma rota.
+
+Campos:
+
+* id
+* route_id
+* delivery_id
+* sequence
+* status
+* created_at
+
+O campo `sequence` define a ordem planejada das entregas.
+
+Exemplo:
+
+Rota #42
+
+1. Pedido 101
+2. Pedido 103
+3. Pedido 107
+4. Pedido 109
+
+A ordem poderá ser ajustada pelo restaurante antes ou durante a rota, desde que isso não cause inconsistência com entregas já concluídas.
+
+---
+
+# 9. Fluxo da Rota
+
+Exemplo:
+
+Pedido 101
+Pedido 103
+Pedido 107
+
+Todos atribuídos ao mesmo motoboy.
+
+Fluxo:
+
+Motoboy inicia rota
+
+→ Courier = ON_ROUTE
+→ Route = ON_ROUTE
+→ entregas = ON_ROUTE
+
+Pedido 101 é a próxima parada:
+
+→ Delivery 101 = NEXT
+
+Quando Pedido 101 é concluído:
+
+→ Delivery 101 = DELIVERED
+→ Delivery 103 = NEXT
+
+Quando Pedido 103 é concluído:
+
+→ Delivery 103 = DELIVERED
+→ Delivery 107 = NEXT
+
+Quando Pedido 107 é concluído:
+
+→ Delivery 107 = DELIVERED
+
+Não existem mais entregas pendentes.
+
+Então:
+
+→ Route = RETURNING
+→ Courier = RETURNING
+
+Quando o motoboy chega ao estabelecimento:
+
+→ Route = COMPLETED
+→ Courier = AVAILABLE
+→ Courier.available_since = horário atual
+
+---
+
+# 10. Localização do Motoboy
+
+A localização é enviada enquanto o motoboy estiver:
+
+* ON_ROUTE
+* RETURNING
+
+Não é necessário rastreamento contínuo enquanto estiver:
+
+* AVAILABLE
+* OFFLINE
+
+O telefone do motoboy enviará:
+
+* latitude
+* longitude
+* accuracy
+* recorded_at
+
+O sistema deve evitar atualizações excessivas.
+
+A frequência inicial pode ficar aproximadamente entre 10 e 15 segundos enquanto houver movimento.
+
+Essa configuração poderá ser otimizada posteriormente.
+
+---
+
+# 11. CourierLocation
+
+Histórico temporário de localização.
+
+Campos:
+
+* id
+* courier_id
+* route_id
+* latitude
+* longitude
+* accuracy
+* recorded_at
+
+Além disso, Courier poderá manter:
+
+* last_latitude
+* last_longitude
+* location_updated_at
+
+para consultas rápidas.
+
+O histórico completo não deve ser armazenado indefinidamente.
+
+Deve existir posteriormente uma política de retenção.
+
+---
+
+# 12. Retorno ao Estabelecimento
+
+Depois da última entrega, o motoboy não fica disponível imediatamente.
+
+Fluxo:
+
+última entrega concluída
+→ Courier = RETURNING
+→ Route = RETURNING
+
+A localização continua sendo transmitida.
+
+Quando o motoboy chega ao estabelecimento:
+
+→ Courier = AVAILABLE
+→ Route = COMPLETED
+
+## Geofence
+
+O sistema poderá detectar automaticamente a chegada usando um raio em torno do estabelecimento.
+
+Exemplo inicial:
+
+50 a 100 metros
+
+Se o motoboy entrar nesse raio:
+
+RETURNING → AVAILABLE
+
+Deve existir também um botão manual de fallback:
+
+"Já cheguei ao estabelecimento"
+
+para casos de falha de GPS.
+
+---
+
+# 13. Rastreamento Público do Cliente
+
+Cada Delivery deve possuir um token público seguro.
+
+Exemplo:
+
+`/acompanhar/<tracking_token>`
+
+Esse token não deve ser previsível.
+
+O cliente não precisa de login.
+
+A página deve mostrar somente informações daquela entrega.
+
+---
+
+# 14. Privacidade do Rastreamento
+
+O cliente pode visualizar:
+
+* posição do motoboy;
+* status da própria entrega;
+* quantidade de entregas anteriores;
+* previsão aproximada;
+* indicação de que o motoboy está realizando outra entrega.
+
+O cliente NÃO pode visualizar:
+
+* nome de outros clientes;
+* telefone de outros clientes;
+* endereço de outros clientes;
+* destino exato das outras paradas;
+* conteúdo de outros pedidos.
+
+Exemplo permitido:
+
+"O entregador está realizando outra entrega."
+
+"2 entregas antes da sua."
+
+Exemplo proibido:
+
+"Entregando para Maria na Rua X, número 123."
+
+---
+
+# 15. Tela Pública do Cliente
+
+Estado inicial da rota:
+
+RpmDelivery
+
+Seu pedido está a caminho.
+
+[ MINI MAPA ]
+
+O entregador está realizando outra entrega.
+
+2 entregas antes da sua.
+
+Status:
+
+* Saiu do estabelecimento
+* Em rota
+* Você é o próximo
+* Entregue
+
+Botão:
+
+"Ativar notificações"
+
+---
+
+# 16. Cliente Como Próxima Entrega
+
+Quando a entrega passa para NEXT:
+
+A interface deve mudar imediatamente.
+
+Exemplo:
+
+"Você é o próximo!"
+
+"O entregador está indo agora para o seu endereço."
+
+O mapa poderá destacar:
+
+motoboy → cliente
+
+Também poderá ser exibida previsão aproximada de chegada.
+
+Nesse momento deve ser criado o evento:
+
+NEXT_DELIVERY_CHANGED
+
+---
+
+# 17. Notificações Push
+
+Ao abrir o link de rastreamento, o cliente poderá tocar:
+
+"Ativar notificações"
+
+Somente depois dessa interação deverá ser solicitada autorização do navegador.
+
+Se autorizado, uma push subscription será associada à entrega.
+
+Possíveis notificações:
+
+* pedido saiu para entrega;
+* você é o próximo;
+* entregador está próximo;
+* entrega concluída.
+
+A primeira versão pode começar apenas com:
+
+* NEXT_DELIVERY
+* DELIVERED
+
+---
+
+# 18. Envio Automático do Link
+
+Quando o motoboy inicia a rota:
+
+ROUTE_STARTED
+
+O sistema deve gerar ou recuperar o tracking link de cada entrega.
+
+Exemplo:
+
+`https://dominio.com/acompanhar/<token>`
+
+O sistema deverá disparar automaticamente a comunicação ao cliente.
+
+Canais possíveis:
+
+* WhatsApp
+* SMS
+
+---
+
+# 19. Estratégia de Comunicação
+
+Configuração por restaurante:
+
+* WhatsApp
+* SMS
+* WhatsApp com fallback para SMS
+* ambos
+
+Estratégia recomendada:
+
+WhatsApp primeiro.
+
+Se houver falha ou indisponibilidade configurada:
+
+SMS como fallback.
+
+O sistema deve evitar enviar mensagens duplicadas desnecessariamente.
+
+---
+
+# 20. DeliveryNotification
+
+Registrar cada comunicação enviada.
+
+Campos:
+
+* id
+* restaurant_id
+* delivery_id
+* channel
+* type
+* destination
+* provider
+* provider_message_id
+* status
+* error_message
+* sent_at
+* delivered_at
+* read_at
+* created_at
+
+Canais:
+
+* WHATSAPP
+* SMS
+* PUSH
+
+Tipos:
+
+* TRACKING_LINK
+* NEXT_DELIVERY
+* DELIVERY_COMPLETED
+* DELIVERY_CANCELLED
+
+Status possíveis:
+
+* PENDING
+* SENT
+* DELIVERED
+* READ
+* FAILED
+
+---
+
+# 21. Eventos de Domínio
+
+A lógica de negócio deve gerar eventos claros.
+
+Eventos iniciais:
+
+* ORDER_CREATED
+* DELIVERY_CREATED
+* DELIVERY_ASSIGNED
+* ROUTE_STARTED
+* NEXT_DELIVERY_CHANGED
+* DELIVERY_COMPLETED
+* ROUTE_DELIVERIES_COMPLETED
+* COURIER_RETURNING
+* COURIER_ARRIVED
+* ROUTE_COMPLETED
+
+Esses eventos não devem ficar espalhados diretamente pelos componentes React.
+
+---
+
+# 22. Serviços
+
+A lógica de negócio deve ser separada da interface.
+
+Estrutura conceitual:
+
+Route Service
+→ cria e controla rotas
+
+Delivery Service
+→ controla entregas
+
+Courier Service
+→ controla estado e disponibilidade dos motoboys
+
+Tracking Service
+→ controla página pública e rastreamento
+
+Location Service
+→ recebe e processa localização
+
+Notification Service
+→ decide quais notificações devem ser enviadas
+
+Messaging Provider
+→ integração com WhatsApp/SMS
+
+Push Provider
+→ envio de push notifications
+
+---
+
+# 23. Integrações Externas
+
+O núcleo do RpmDelivery não deve depender diretamente de um fornecedor específico.
+
+Exemplo:
+
+Notification Service
+
+→ Messaging Provider Interface
+
+→ Twilio / outro provedor
+
+Isso deve permitir trocar o fornecedor sem alterar regras centrais do sistema.
+
+---
+
+# 24. Cálculo da Taxa de Entrega
+
+Regra inicial:
+
+taxa calculada = distância da loja até o cliente × preço por km
+
+O retorno ao estabelecimento não entra no cálculo.
+
+Se:
+
+taxa calculada < taxa mínima
+
+usar:
+
+taxa mínima
+
+A distância deve representar o trajeto da loja até cada cliente individualmente.
+
+Cada pedido é calculado separadamente, mesmo quando vários pedidos estiverem na mesma rota.
+
+---
+
+# 25. Arquitetura Inicial de Dados
+
+Entidades principais:
+
+restaurants
+
+users
+
+couriers
+
+orders
+
+deliveries
+
+routes
+
+route_deliveries
+
+courier_locations
+
+delivery_notifications
+
+push_subscriptions
+
+Relacionamento conceitual:
+
+Restaurant
+
+→ Users
+
+→ Couriers
+
+→ Orders
+→ Delivery
+
+→ Routes
+→ RouteDeliveries
+→ Deliveries
+
+Courier
+→ CourierLocations
+
+Delivery
+→ DeliveryNotifications
+
+Delivery
+→ PushSubscriptions
+
+---
+
+# 26. Realtime
+
+Atualizações importantes devem poder aparecer em tempo real para:
+
+## Restaurante
+
+* posição do motoboy;
+* mudança de status;
+* entrega concluída;
+* retorno à loja.
+
+## Cliente
+
+* posição do motoboy;
+* quantidade de entregas anteriores;
+* mudança para NEXT;
+* entrega concluída.
+
+---
+
+# 27. MVP Inicial
+
+O MVP deve incluir:
+
+* autenticação do restaurante;
+* cadastro de motoboys;
+* disponibilidade de motoboys;
+* fila por ordem de disponibilidade;
+* cadastro de pedidos;
+* criação de entregas;
+* criação de rotas;
+* múltiplos pedidos por rota;
+* ordem das entregas;
+* saída do motoboy;
+* localização em tempo real;
+* conclusão individual das entregas;
+* status RETURNING;
+* retorno à loja;
+* página pública de rastreamento;
+* mini mapa do cliente;
+* contador de entregas anteriores;
+* status "Você é o próximo";
+* push notification;
+* envio automático do tracking link;
+* WhatsApp e/ou SMS;
+* histórico básico.
+
+---
+
+# 28. Fora do MVP Inicial
+
+Não implementar agora:
+
+* marketplace de motoboys;
+* motoboys avulsos externos;
+* disputa de entrega por proximidade;
+* pagamento online;
+* carteira digital;
+* otimização avançada automática de rotas;
+* inteligência artificial para despacho;
+* integração direta com pedidos de WhatsApp;
+* aplicativo nativo;
+* sistema completo de avaliação de motoboys.
+
+A arquitetura não deve impedir a implementação futura desses recursos.
+
+---
+
+# 29. Princípios Técnicos
+
+O RpmDelivery deve seguir:
+
+* mobile-first;
+* TypeScript estrito;
+* código simples e legível;
+* componentes pequenos;
+* regras de negócio fora da camada visual;
+* arquivos pequenos e organizados por responsabilidade;
+* segurança por padrão;
+* separação entre domínio e integrações;
+* operações críticas transacionais;
+* validação de estados no backend;
+* nenhuma chave de API no frontend;
+* nenhuma regra crítica confiada apenas ao cliente.
+
+---
+
+# 30. Stack Inicial
+
+Frontend e aplicação web:
+
+* Next.js
+* TypeScript
+* App Router
+* Tailwind CSS
+
+Backend e banco:
+
+* Supabase
+* PostgreSQL
+
+Recursos esperados:
+
+* Supabase Auth
+* PostgreSQL
+* Row Level Security
+* Supabase Realtime
+
+Serviços externos serão escolhidos posteriormente para:
+
+* mapas;
+* cálculo de rotas;
+* WhatsApp;
+* SMS;
+* push notifications.
+
+Nenhuma integração externa deve ser acoplada diretamente ao domínio principal.
+
+---
+
+# 31. Regra Principal de Arquitetura
+
+Antes de implementar uma nova funcionalidade, verificar:
+
+1. qual entidade é responsável;
+2. qual estado muda;
+3. qual evento é gerado;
+4. quais usuários precisam ser atualizados;
+5. quais notificações são necessárias;
+6. se existe impacto de privacidade;
+7. se existe risco de concorrência;
+8. se a mudança afeta o tracking público.
+
+A implementação deve respeitar este documento enquanto ele representar as decisões atuais do produto.
