@@ -554,6 +554,95 @@ Quando o motoboy chega ao estabelecimento:
 
 ---
 
+# Fluxo de Turno do Motoboy
+
+O motoboy pode possuir vínculo ACTIVE com mais de um estabelecimento, mas só pode trabalhar em um estabelecimento por vez.
+
+## Início do turno
+
+Fluxo:
+
+Motoboy chega ao estabelecimento
+
+→ seleciona o estabelecimento
+
+→ toca em "Iniciar turno"
+
+→ CourierShift = PENDING
+
+→ restaurante recebe solicitação
+
+→ restaurante aprova
+
+→ CourierShift = AVAILABLE
+
+→ started_at = horário atual
+
+→ available_since = horário atual
+
+→ motoboy entra na fila de disponíveis daquele estabelecimento
+
+Se a loja recusar:
+
+→ CourierShift = REJECTED
+
+O motoboy não entra na operação.
+
+## Durante o turno
+
+Estados:
+
+AVAILABLE
+
+→ ON_ROUTE
+
+→ RETURNING
+
+→ AVAILABLE
+
+O motoboy só pode receber rotas do estabelecimento associado ao turno atual.
+
+## Encerramento do turno
+
+O motoboy pode solicitar encerramento do turno quando estiver AVAILABLE.
+
+Antes de encerrar, o sistema deve verificar:
+
+- não existe rota ativa
+- o motoboy não está ON_ROUTE
+- o motoboy não está RETURNING
+
+Se todas as condições forem satisfeitas:
+
+→ CourierShift = ENDED
+
+→ ended_at = horário atual
+
+O restaurante também pode encerrar administrativamente um turno sem rota ativa.
+
+## Troca de estabelecimento
+
+Não é permitido trocar de estabelecimento com turno ativo.
+
+Não é permitido iniciar turno em outro estabelecimento enquanto existir CourierShift não encerrado.
+
+Para trabalhar em outro estabelecimento:
+
+1. concluir todas as entregas;
+2. retornar ao estabelecimento atual;
+3. ficar AVAILABLE;
+4. encerrar o turno atual;
+5. solicitar um novo turno no outro estabelecimento;
+6. aguardar aprovação da nova loja.
+
+Nunca permitir:
+
+ON_ROUTE → troca de loja
+
+RETURNING → troca de loja
+
+PENDING em duas lojas simultaneamente
+
 # 10. Localização do Motoboy
 
 A localização é enviada enquanto o motoboy estiver:

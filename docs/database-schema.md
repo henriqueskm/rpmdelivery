@@ -34,10 +34,12 @@ Princípios:
 
 ## courier_shift_status
 
+- PENDING
 - AVAILABLE
 - ON_ROUTE
 - RETURNING
 - ENDED
+- REJECTED
 
 ## order_status
 
@@ -226,11 +228,11 @@ Regras:
 
 ---
 
-# 7. courier_shifts
+# courier_shifts
 
 Representa o turno operacional do motoboy em um estabelecimento.
 
-O motoboy pode possuir vínculo com vários restaurantes, mas só pode trabalhar em um estabelecimento por vez.
+O motoboy pode possuir vínculo ACTIVE com vários restaurantes ao longo do tempo, mas só pode possuir um turno não encerrado por vez.
 
 Campos:
 
@@ -238,24 +240,38 @@ Campos:
 - courier_id uuid not null references couriers(id)
 - restaurant_id uuid not null references restaurants(id)
 - restaurant_courier_id uuid not null references restaurant_couriers(id)
-- status courier_shift_status not null default 'AVAILABLE'
+- status courier_shift_status not null default 'PENDING'
+- requested_at timestamptz not null default now()
+- approved_at timestamptz
+- approved_by uuid references profiles(id)
+- started_at timestamptz
 - available_since timestamptz
-- started_at timestamptz not null default now()
 - ended_at timestamptz
+- ended_by uuid references profiles(id)
 - created_at timestamptz not null default now()
 - updated_at timestamptz not null default now()
 
 Regras:
 
-- o motoboy só pode iniciar turno em restaurante onde possui vínculo ACTIVE
+- o motoboy só pode solicitar turno em restaurante onde possui vínculo ACTIVE
 - um motoboy só pode possuir um turno não encerrado por vez
-- ao iniciar turno, status inicial = AVAILABLE
+- ao solicitar início do turno, status = PENDING
+- a loja deve aprovar o início do turno
+- após aprovação, status = AVAILABLE
+- approved_at deve ser preenchido na aprovação
+- started_at deve ser preenchido quando o turno for aprovado
+- available_since deve ser preenchido quando o turno entrar em AVAILABLE
 - ao receber uma rota, AVAILABLE → ON_ROUTE
 - após concluir a última entrega, ON_ROUTE → RETURNING
 - ao retornar ao estabelecimento, RETURNING → AVAILABLE
-- ao finalizar o expediente, AVAILABLE → ENDED
-- um turno ENDED não pode ser reutilizado
-- o restaurante do turno não pode ser alterado depois que o turno for iniciado
+- ao encerrar o expediente, AVAILABLE → ENDED
+- se a loja recusar a solicitação, PENDING → REJECTED
+- não é permitido encerrar o turno enquanto houver rota ativa
+- não é permitido encerrar o turno em ON_ROUTE
+- não é permitido encerrar o turno em RETURNING
+- não é permitido iniciar turno em outro restaurante enquanto existir turno não encerrado
+- não é permitido trocar o restaurante de um turno já criado
+- um turno ENDED ou REJECTED não pode ser reutilizado
 
 Índices:
 
@@ -616,7 +632,10 @@ Planejados:
 - request_restaurant_link
 - approve_restaurant_courier
 - reject_restaurant_courier
-- set_courier_available
+- request_courier_shift
+- approve_courier_shift
+- reject_courier_shift
+- end_courier_shift
 - create_route
 - assign_delivery_to_route
 - start_route
