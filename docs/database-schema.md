@@ -192,9 +192,11 @@ Campos:
 Regras:
 
 - motoboy pode existir sem vínculo ativo com restaurante
-- status AVAILABLE exige vínculo ACTIVE para operar naquele restaurante
-- status não deve ser alterado livremente pelo frontend
-
+- motoboy pode possuir vínculo ACTIVE com mais de um restaurante
+- o Courier representa a identidade do motoboy
+- status operacional pertence ao CourierShift atual
+- o motoboy só pode possuir um CourierShift não encerrado por vez
+ 
 Índices:
 
 - user_id
@@ -466,7 +468,7 @@ Campos:
 
 - id uuid primary key default gen_random_uuid()
 - route_id uuid not null references routes(id)
-- delivery_id uuid not null unique references deliveries(id)
+- delivery_id uuid not null references deliveries(id)
 - sequence integer not null
 - created_at timestamptz not null default now()
 
@@ -477,7 +479,10 @@ Constraints:
 
 Regras:
 
-- entrega não pode pertencer a duas rotas ativas ao mesmo tempo
+- uma Delivery pode aparecer em mais de uma Route ao longo de sua vida
+- uma Delivery não pode pertencer a duas Routes ativas simultaneamente
+- uma nova associação é permitida após a rota anterior estar COMPLETED ou CANCELLED
+- o histórico das associações anteriores deve ser preservado
 - sequência de entregas já concluídas não pode ser alterada
 
 Índices:

@@ -124,20 +124,25 @@ O motoboy pode possuir conta mesmo sem estar vinculado a nenhum estabelecimento.
 
 Campos iniciais:
 
-* id
-* user_id
-* name
-* phone
-* photo_url
-* motorcycle_model
-* motorcycle_plate
-* motorcycle_color
-* status
-* last_latitude
-* last_longitude
-* location_updated_at
-* created_at
-* updated_at
+- id
+- user_id
+- name
+- phone
+- photo_url
+- motorcycle_model
+- motorcycle_plate
+- motorcycle_color
+- last_latitude
+- last_longitude
+- location_updated_at
+- created_at
+- updated_at
+
+O Courier representa a identidade do motoboy.
+
+O estado operacional não pertence ao Courier.
+
+Disponibilidade, rota e retorno pertencem ao CourierShift atual.
 
 ### Status do motoboy
 
@@ -499,7 +504,13 @@ Rota #42
 3. Pedido 107
 4. Pedido 109
 
-A ordem poderá ser ajustada pelo restaurante antes ou durante a rota, desde que isso não cause inconsistência com entregas já concluídas.
+A ordem pode ser ajustada pelo restaurante somente enquanto a Route estiver PREPARING.
+
+Após Route = ON_ROUTE:
+
+- não é permitido adicionar novas entregas;
+- não é permitido reordenar manualmente as entregas;
+- uma entrega com falha pode ser pulada temporariamente sem alterar sua sequence original.
 
 ---
 
@@ -517,7 +528,7 @@ Fluxo:
 
 Motoboy inicia rota
 
-→ Courier = ON_ROUTE
+→ CourierShift = ON_ROUTE
 → Route = ON_ROUTE
 → entregas = ON_ROUTE
 
@@ -544,13 +555,13 @@ Não existem mais entregas pendentes.
 Então:
 
 → Route = RETURNING
-→ Courier = RETURNING
+→ CourierShift = RETURNING
 
 Quando o motoboy chega ao estabelecimento:
 
 → Route = COMPLETED
-→ Courier = AVAILABLE
-→CurierShift.available_since = horário atual
+→ CourierShift = AVAILABLE
+→ CourierShift.available_since = horário atual
 
 ---
 
