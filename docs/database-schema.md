@@ -32,12 +32,12 @@ Princípios:
 - SUSPENDED
 - REJECTED
 
-## courier_status
+## courier_shift_status
 
-- OFFLINE
 - AVAILABLE
 - ON_ROUTE
 - RETURNING
+- ENDED
 
 ## order_status
 
@@ -169,8 +169,7 @@ Campos:
 - motorcycle_model text
 - motorcycle_plate text
 - motorcycle_color text
-- status courier_status not null default 'OFFLINE'
-- available_since timestamptz
+
 - last_latitude numeric
 - last_longitude numeric
 - location_updated_at timestamptz
@@ -186,8 +185,7 @@ Regras:
 Índices:
 
 - user_id
-- status
-- available_since
+
 
 ---
 
@@ -227,6 +225,51 @@ Regras:
 - courier_id + status
 
 ---
+
+# 7. courier_shifts
+
+Representa o turno operacional do motoboy em um estabelecimento.
+
+O motoboy pode possuir vínculo com vários restaurantes, mas só pode trabalhar em um estabelecimento por vez.
+
+Campos:
+
+- id uuid primary key default gen_random_uuid()
+- courier_id uuid not null references couriers(id)
+- restaurant_id uuid not null references restaurants(id)
+- restaurant_courier_id uuid not null references restaurant_couriers(id)
+- status courier_shift_status not null default 'AVAILABLE'
+- available_since timestamptz
+- started_at timestamptz not null default now()
+- ended_at timestamptz
+- created_at timestamptz not null default now()
+- updated_at timestamptz not null default now()
+
+Regras:
+
+- o motoboy só pode iniciar turno em restaurante onde possui vínculo ACTIVE
+- um motoboy só pode possuir um turno não encerrado por vez
+- ao iniciar turno, status inicial = AVAILABLE
+- ao receber uma rota, AVAILABLE → ON_ROUTE
+- após concluir a última entrega, ON_ROUTE → RETURNING
+- ao retornar ao estabelecimento, RETURNING → AVAILABLE
+- ao finalizar o expediente, AVAILABLE → ENDED
+- um turno ENDED não pode ser reutilizado
+- o restaurante do turno não pode ser alterado depois que o turno for iniciado
+
+Índices:
+
+- courier_id
+- restaurant_id
+- status
+- restaurant_id + status
+- courier_id + started_at desc
+
+Constraint crítica:
+
+Deve existir no máximo um turno não encerrado por courier.
+
+Essa regra deverá ser garantida posteriormente por índice parcial ou mecanismo equivalente no PostgreSQL.
 
 # 7. courier_invites
 
@@ -329,13 +372,14 @@ Constraints:
 
 # 10. routes
 
-Representa uma saída física do motoboy.
+Representa uma saída física do motoboy durante um turno.
 
 Campos:
 
 - id uuid primary key default gen_random_uuid()
 - restaurant_id uuid not null references restaurants(id)
 - courier_id uuid not null references couriers(id)
+- courier_shift_id uuid not null references courier_shifts(id)
 - status route_status not null default 'PREPARING'
 - started_at timestamptz
 - completed_at timestamptz
@@ -346,14 +390,17 @@ Campos:
 
 Regras:
 
-- motoboy deve possuir vínculo ACTIVE com o restaurante
-- um motoboy não deve possuir duas rotas ON_ROUTE simultaneamente
+- courier_shift deve estar ativo
+- courier_shift deve pertencer ao mesmo courier
+- courier_shift deve pertencer ao mesmo restaurant
+- motoboy não pode possuir duas rotas ON_ROUTE simultaneamente
 - alterações críticas devem passar por RPC/backend
 
 Índices:
 
 - restaurant_id
 - courier_id
+- courier_shift_id
 - status
 - restaurant_id + status
 - courier_id + status
@@ -476,7 +523,24 @@ Regras:
 
 ---
 
-# 15. Relações principais
+# 15. Entidades principais
+
+- profiles
+- restaurants
+- restaurant_members
+- couriers
+- restaurant_couriers
+- courier_shifts
+- courier_invites
+- orders
+- deliveries
+- routes
+- route_deliveries
+- courier_locations
+- delivery_notifications
+- push_subscriptions
+
+# 15-1. Relações principais
 
 profiles
 → restaurant_members
@@ -510,6 +574,17 @@ deliveries
 
 deliveries
 → push_subscriptions
+
+couriers
+→ restaurant_couriers
+→ restaurants
+
+couriers
+→ courier_shifts
+→ restaurants
+
+courier_shifts
+→ routes
 
 ---
 

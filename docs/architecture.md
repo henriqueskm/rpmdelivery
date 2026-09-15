@@ -133,7 +133,6 @@ Campos iniciais:
 * motorcycle_plate
 * motorcycle_color
 * status
-* available_since
 * last_latitude
 * last_longitude
 * location_updated_at
@@ -551,7 +550,7 @@ Quando o motoboy chega ao estabelecimento:
 
 → Route = COMPLETED
 → Courier = AVAILABLE
-→ Courier.available_since = horário atual
+→CurierShift.available_since = horário atual
 
 ---
 
@@ -977,20 +976,21 @@ push_subscriptions
 
 Relacionamento conceitual:
 
-Restaurant
-
 User
  └── Profile
       ├── RestaurantMember → Restaurant
       └── Courier
             └── RestaurantCourier → Restaurant
 
-→ Orders
-→ Delivery
-
-→ Routes
-→ RouteDeliveries
-→ Deliveries
+Restaurant
+ ├── Orders
+ │    └── Delivery
+ │
+ ├── Routes
+ │    └── RouteDeliveries
+ │         └── Delivery
+ │
+ └── CourierInvites
 
 Courier
 → CourierLocations
