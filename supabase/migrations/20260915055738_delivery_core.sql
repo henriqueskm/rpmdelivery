@@ -58,6 +58,9 @@ create table public.deliveries (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
 
+  constraint deliveries_identity_unique
+  unique (id, restaurant_id),
+
  constraint deliveries_order_restaurant_match
   foreign key (
     order_id,
@@ -124,6 +127,12 @@ create table public.routes (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
 
+    constraint routes_restaurant_identity_unique
+    unique (id, restaurant_id),
+
+  constraint routes_courier_identity_unique
+    unique (id, courier_id),
+
   constraint routes_courier_shift_match
     foreign key (
       courier_shift_id,
@@ -166,10 +175,31 @@ create unique index routes_one_active_route_per_courier_idx
 
 create table public.route_deliveries (
   id uuid primary key default gen_random_uuid(),
-  route_id uuid not null references public.routes(id),
-  delivery_id uuid not null references public.deliveries(id),
+  restaurant_id uuid not null,
+  route_id uuid not null,
+  delivery_id uuid not null,
   sequence integer not null,
   created_at timestamptz not null default now(),
+
+  constraint route_deliveries_route_restaurant_match
+    foreign key (
+      route_id,
+      restaurant_id
+    )
+    references public.routes (
+      id,
+      restaurant_id
+    ),
+
+  constraint route_deliveries_delivery_restaurant_match
+    foreign key (
+      delivery_id,
+      restaurant_id
+    )
+    references public.deliveries (
+      id,
+      restaurant_id
+    ),
 
   constraint route_deliveries_sequence_check
     check (sequence > 0),

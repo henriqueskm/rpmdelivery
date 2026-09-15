@@ -3,21 +3,6 @@
 -- Courier locations, delivery notifications and push subscriptions
 
 -- =========================================================
--- RELATIONSHIP INTEGRITY
--- =========================================================
---
--- These composite unique constraints allow child tables to guarantee
--- that related records belong to the same courier or restaurant.
-
-alter table public.routes
-  add constraint routes_identity_unique
-  unique (id, courier_id);
-
-alter table public.deliveries
-  add constraint deliveries_identity_unique
-  unique (id, restaurant_id);
-
--- =========================================================
 -- COURIER LOCATIONS
 -- =========================================================
 
