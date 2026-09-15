@@ -220,6 +220,88 @@ on function private.can_view_route_location(uuid, uuid)
 to authenticated;
 
 -- =========================================================
+-- DATA API PRIVILEGES
+-- =========================================================
+--
+-- RLS controls which rows are accessible.
+-- PostgreSQL grants control which operations may reach the tables.
+--
+-- Keep future objects private by default.
+
+alter default privileges for role postgres in schema public
+  revoke select, insert, update, delete
+  on tables
+  from anon, authenticated;
+
+alter default privileges for role postgres in schema public
+  revoke execute
+  on functions
+  from anon, authenticated;
+
+alter default privileges for role postgres in schema public
+  revoke usage, select
+  on sequences
+  from anon, authenticated;
+
+alter default privileges for role postgres in schema public
+  revoke execute
+  on functions
+  from public;
+
+-- Remove any automatic Data API privileges from existing tables.
+
+revoke all privileges
+on table
+  public.profiles,
+  public.restaurants,
+  public.restaurant_members,
+  public.couriers,
+  public.restaurant_couriers,
+  public.courier_shifts,
+  public.courier_invites,
+  public.orders,
+  public.deliveries,
+  public.routes,
+  public.route_deliveries,
+  public.courier_locations,
+  public.delivery_notifications,
+  public.push_subscriptions
+from anon, authenticated;
+
+-- Signed-in users may reach only tables that have SELECT policies.
+-- RLS still decides which rows they actually see.
+
+grant select
+on table
+  public.profiles,
+  public.restaurants,
+  public.restaurant_members,
+  public.couriers,
+  public.restaurant_couriers,
+  public.courier_shifts,
+  public.courier_invites,
+  public.orders,
+  public.deliveries,
+  public.routes,
+  public.route_deliveries,
+  public.courier_locations,
+  public.delivery_notifications
+to authenticated;
+
+-- The only direct write currently allowed is editing
+-- the user's own basic profile fields.
+
+grant update (
+  name,
+  phone,
+  photo_url
+)
+on table public.profiles
+to authenticated;
+
+-- push_subscriptions intentionally receives no Data API privileges.
+
+-- =========================================================
 -- PROFILES
 -- =========================================================
 
