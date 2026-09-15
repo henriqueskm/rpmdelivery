@@ -118,16 +118,20 @@ Papéis iniciais:
 
 ## Courier
 
-Representa o motoboy.
+Representa o motoboy como uma identidade própria dentro do RpmDelivery.
+
+O motoboy pode possuir conta mesmo sem estar vinculado a nenhum estabelecimento.
 
 Campos iniciais:
 
 * id
-* restaurant_id
+* user_id
 * name
 * phone
 * photo_url
-* motorcycle
+* motorcycle_model
+* motorcycle_plate
+* motorcycle_color
 * status
 * available_since
 * last_latitude
@@ -153,7 +157,178 @@ OFFLINE
 
 O motoboy só volta para AVAILABLE depois de chegar novamente ao estabelecimento.
 
+O motoboy não pertence diretamente a um único restaurante.
+
+O vínculo entre motoboy e estabelecimento é representado por `restaurant_couriers`.
+
+## RestaurantCourier
+
+Representa o vínculo entre um motoboy e um estabelecimento.
+
+Isso permite que o motoboy tenha uma identidade própria no RpmDelivery e, futuramente, possa trabalhar com mais de um estabelecimento.
+
+Campos iniciais:
+
+* id
+* restaurant_id
+* courier_id
+* status
+* is_primary
+* external_sharing_enabled
+* requested_at
+* approved_at
+* approved_by
+* suspended_at
+* created_at
+* updated_at
+
+Status:
+
+* PENDING
+* ACTIVE
+* SUSPENDED
+* REJECTED
+
+## CourierInvite
+
+Permite que um estabelecimento convide motoboys para sua operação.
+
+Campos iniciais:
+
+* id
+* restaurant_id
+* token
+* code
+* active
+* expires_at
+* max_uses
+* used_count
+* created_by
+* created_at
+
+O token deve ser imprevisível.
+
+O mesmo convite pode gerar:
+
+* link;
+* QR Code;
+* código digitável.
+
 ---
+
+# Visão Futura — Shared Courier Network
+
+Futuramente, estabelecimentos poderão disponibilizar motoboys ociosos para realizar entregas de outros estabelecimentos participantes do RpmDelivery.
+
+Essa funcionalidade não faz parte do MVP inicial, mas a arquitetura deve permitir sua implementação futura.
+
+## Princípios
+
+Um motoboy só poderá receber uma entrega externa quando:
+
+* possuir vínculo ACTIVE com sua loja principal;
+* a loja de origem permitir compartilhamento;
+* o próprio motoboy tiver optado por participar;
+* estiver AVAILABLE;
+* não existir restrição operacional da loja de origem.
+
+A loja não poderá obrigar o motoboy a aceitar uma entrega externa.
+
+Cada entrega externa deverá ser apresentada como uma oferta.
+
+O motoboy poderá:
+
+* aceitar;
+* recusar;
+* deixar a oferta expirar.
+
+## Oferta de entrega externa
+
+Entidade futura:
+
+`external_delivery_offers`
+
+Campos conceituais:
+
+* id
+* requesting_restaurant_id
+* source_restaurant_id
+* courier_id
+* delivery_id
+* offered_fee
+* courier_payout
+* source_restaurant_payout
+* platform_fee
+* status
+* offered_at
+* accepted_at
+* rejected_at
+* expires_at
+
+Status:
+
+* PENDING
+* ACCEPTED
+* REJECTED
+* EXPIRED
+* CANCELLED
+
+## Prioridade
+
+Pedidos do próprio estabelecimento poderão ter prioridade sobre ofertas externas ainda não aceitas.
+
+Depois que o motoboy aceitar uma entrega externa, essa entrega deve ser respeitada como compromisso ativo.
+
+## Benefício financeiro
+
+A arquitetura deve permitir separar futuramente:
+
+* valor pago pelo cliente;
+* valor recebido pelo motoboy;
+* valor recebido pela loja que disponibilizou o motoboy;
+* taxa da plataforma RpmDelivery.
+
+As regras financeiras serão definidas posteriormente.
+
+
+### Fluxo de vínculo
+
+O restaurante gera um convite.
+
+O convite pode ser apresentado como:
+
+* link;
+* QR Code;
+* código curto.
+
+Exemplo:
+
+`RPM-7K29`
+
+O motoboy:
+
+1. cria sua conta;
+2. completa seu perfil;
+3. adiciona foto;
+4. informa dados da moto;
+5. utiliza o convite;
+6. solicita vínculo com a loja.
+
+O vínculo começa como:
+
+`PENDING`
+
+O restaurante precisa aprovar.
+
+Após aprovação:
+
+`PENDING → ACTIVE`
+
+Somente motoboys com vínculo ACTIVE podem ficar disponíveis para aquele restaurante e receber suas rotas.
+
+O motoboy pode ter conta no RpmDelivery sem vínculo ativo com nenhuma loja.
+
+
 
 # 4. Fila de Motoboys
 
@@ -774,11 +949,17 @@ Cada pedido é calculado separadamente, mesmo quando vários pedidos estiverem n
 
 Entidades principais:
 
+profiles
+
 restaurants
 
-users
+restaurant_members
 
 couriers
+
+restaurant_couriers
+
+courier_invites
 
 orders
 
@@ -798,9 +979,11 @@ Relacionamento conceitual:
 
 Restaurant
 
-→ Users
-
-→ Couriers
+User
+ └── Profile
+      ├── RestaurantMember → Restaurant
+      └── Courier
+            └── RestaurantCourier → Restaurant
 
 → Orders
 → Delivery
