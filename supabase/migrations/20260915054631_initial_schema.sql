@@ -250,9 +250,6 @@ create table public.courier_shifts (
   ended_by uuid references public.profiles(id),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-    ended_by uuid references public.profiles(id),
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
 
   constraint courier_shifts_restaurant_courier_match
     foreign key (
@@ -264,7 +261,10 @@ create table public.courier_shifts (
       id,
       restaurant_id,
       courier_id
-    )
+    ),
+
+  constraint courier_shifts_identity_unique
+    unique (id, restaurant_id, courier_id)
 );
 
 create index courier_shifts_courier_id_idx

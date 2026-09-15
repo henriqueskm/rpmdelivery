@@ -39,7 +39,7 @@ create index orders_customer_phone_idx
 create table public.deliveries (
   id uuid primary key default gen_random_uuid(),
   restaurant_id uuid not null references public.restaurants(id),
-  order_id uuid not null unique references public.orders(id),
+  order_id uuid not null unique,
   status public.delivery_status not null default 'WAITING',
   distance_km numeric(8,2),
   delivery_fee numeric(10,2),
@@ -55,6 +55,15 @@ create table public.deliveries (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
 
+ constraint deliveries_order_restaurant_match
+  foreign key (
+    order_id,
+    restaurant_id
+  )
+  references public.orders (
+    id,
+    restaurant_id
+  ),
   constraint deliveries_distance_km_check
     check (
       distance_km is null
@@ -103,14 +112,29 @@ create table public.routes (
   id uuid primary key default gen_random_uuid(),
   restaurant_id uuid not null references public.restaurants(id),
   courier_id uuid not null references public.couriers(id),
-  courier_shift_id uuid not null references public.courier_shifts(id),
+  courier_shift_id uuid not null,
   status public.route_status not null default 'PREPARING',
   started_at timestamptz,
   returning_at timestamptz,
   arrived_at timestamptz,
   completed_at timestamptz,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+
+constraint orders_identity_unique
+  unique (id, restaurant_id)
+
+constraint routes_courier_shift_match
+  foreign key (
+    courier_shift_id,
+    restaurant_id,
+    courier_id
+  )
+  references public.courier_shifts (
+    id,
+    restaurant_id,
+    courier_id
+  )
 );
 
 create index routes_restaurant_id_idx
