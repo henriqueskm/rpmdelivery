@@ -54,8 +54,17 @@ Princípios:
 - ASSIGNED
 - ON_ROUTE
 - NEXT
+- ATTEMPT_FAILED
+- RETURN_TO_STORE
 - DELIVERED
 - CANCELLED
+
+## delivery_issue_reason
+
+- CUSTOMER_NOT_FOUND
+- CUSTOMER_NOT_RESPONDING
+- ADDRESS_PROBLEM
+- OTHER
 
 ## route_status
 
@@ -126,11 +135,13 @@ Campos:
 - is_active boolean not null default true
 - created_at timestamptz not null default now()
 - updated_at timestamptz not null default now()
+- delivery_issue_timeout_minutes integer not null default 10
 
 Constraints:
 
 - minimum_delivery_fee >= 0
 - price_per_km >= 0
+- delivery_issue_timeout_minutes > 0
 
 ---
 
@@ -351,7 +362,7 @@ Campos:
 
 ---
 
-# 9. deliveries
+# 9 deliveries
 
 Representa a operação logística de um pedido.
 
@@ -364,6 +375,10 @@ Campos:
 - distance_km numeric(8,2)
 - delivery_fee numeric(10,2)
 - tracking_token uuid not null unique default gen_random_uuid()
+- issue_reason delivery_issue_reason
+- issue_notes text
+- issue_reported_at timestamptz
+- issue_decision_deadline timestamptz
 - assigned_at timestamptz
 - started_at timestamptz
 - delivered_at timestamptz
@@ -376,6 +391,18 @@ Constraints:
 - distance_km is null or distance_km >= 0
 - delivery_fee is null or delivery_fee >= 0
 
+Regras:
+
+- ATTEMPT_FAILED deve possuir issue_reason
+- ao entrar em ATTEMPT_FAILED, issue_reported_at deve ser preenchido
+- issue_decision_deadline deve ser calculado com base na configuração do restaurante
+- uma entrega ATTEMPT_FAILED não bloqueia o avanço da rota
+- a loja pode transformar ATTEMPT_FAILED em nova tentativa
+- a loja pode transformar ATTEMPT_FAILED em RETURN_TO_STORE
+- após o prazo de decisão, ATTEMPT_FAILED pode ser convertido automaticamente em RETURN_TO_STORE
+- ao final das demais entregas da rota, qualquer ATTEMPT_FAILED ainda sem decisão deve ser convertido automaticamente em RETURN_TO_STORE
+- CANCELLED e RETURN_TO_STORE não devem voltar automaticamente para NEXT
+
 Índices:
 
 - restaurant_id
@@ -383,6 +410,7 @@ Constraints:
 - status
 - tracking_token
 - restaurant_id + status
+- issue_decision_deadline
 
 ---
 
@@ -411,6 +439,13 @@ Regras:
 - courier_shift deve pertencer ao mesmo restaurant
 - motoboy não pode possuir duas rotas ON_ROUTE simultaneamente
 - alterações críticas devem passar por RPC/backend
+- uma Route representa uma única saída física do estabelecimento
+- um mesmo CourierShift pode possuir várias Routes
+- novas entregas só podem ser adicionadas enquanto a Route estiver PREPARING
+- após Route = ON_ROUTE, não é permitido adicionar novas entregas
+- após Route = ON_ROUTE, a sequência planejada não deve ser reordenada manualmente
+- uma entrega ATTEMPT_FAILED pode ser temporariamente pulada sem alterar sua sequence original
+- Route entra automaticamente em RETURNING quando todas as entregas estiverem DELIVERED, CANCELLED ou RETURN_TO_STORE
 
 Índices:
 
@@ -644,6 +679,9 @@ Planejados:
 - confirm_arrival
 - cancel_delivery
 - cancel_route
+- report_delivery_attempt_failure
+- retry_delivery
+- return_delivery_to_store
 
 Cada comando deve:
 

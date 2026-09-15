@@ -554,6 +554,155 @@ Quando o motoboy chega ao estabelecimento:
 
 ---
 
+# Regras de rota e falha de entrega
+
+Uma Route representa uma saída física do motoboy do estabelecimento.
+
+O mesmo CourierShift pode possuir várias Routes ao longo do turno.
+
+Exemplo:
+
+CourierShift do João
+
+- Route 1
+- Route 2
+- Route 3
+
+Cada nova saída do estabelecimento cria uma nova Route.
+
+## Criação da rota
+
+A rota é criada enquanto o motoboy ainda está no estabelecimento.
+
+Estado inicial:
+
+PREPARING
+
+Enquanto estiver PREPARING:
+
+- a loja pode adicionar entregas;
+- a loja pode remover entregas;
+- a loja pode alterar a ordem das entregas.
+
+Quando o motoboy inicia a saída:
+
+Route = ON_ROUTE
+
+A partir desse momento:
+
+- não é permitido adicionar novas entregas à rota;
+- não é permitido reordenar manualmente a rota;
+- as entregas existentes permanecem associadas àquela rota.
+
+## Ordem das entregas
+
+Cada entrega possui uma posição na rota por meio de:
+
+route_deliveries.sequence
+
+A ordem planejada não deve ser alterada depois que a rota estiver ON_ROUTE.
+
+Entretanto, uma entrega com problema pode ser temporariamente pulada sem alterar a sequência original.
+
+## Falha de tentativa de entrega
+
+Além da ação:
+
+"Entregue"
+
+o motoboy deve possuir a opção:
+
+"Não consegui entregar"
+
+Ao selecionar essa opção:
+
+- a entrega passa para ATTEMPT_FAILED;
+- o motivo da falha deve ser informado;
+- a loja é notificada imediatamente;
+- a entrega deixa de bloquear a próxima parada;
+- o motoboy segue automaticamente para a próxima entrega da rota.
+
+Motivos iniciais:
+
+- CUSTOMER_NOT_FOUND
+- CUSTOMER_NOT_RESPONDING
+- ADDRESS_PROBLEM
+- OTHER
+
+## Decisão da loja
+
+Quando uma entrega entra em ATTEMPT_FAILED, a loja pode decidir:
+
+- tentar novamente;
+- retornar o pedido ao estabelecimento.
+
+Se escolher "Tentar novamente":
+
+- a entrega volta para ON_ROUTE;
+- poderá se tornar NEXT novamente depois das demais entregas.
+
+Se escolher "Retornar ao estabelecimento":
+
+- a entrega passa para RETURN_TO_STORE.
+
+## Tempo de resposta da loja
+
+Uma falha de entrega nunca deve deixar o motoboy parado esperando a decisão da loja.
+
+O restaurante poderá configurar um tempo máximo de resposta para falhas de entrega.
+
+Exemplo:
+
+delivery_issue_timeout_minutes = 10
+
+Se a loja não responder dentro desse período:
+
+ATTEMPT_FAILED → RETURN_TO_STORE
+
+Além disso, independentemente do timeout, quando o motoboy concluir todas as demais entregas da rota e não houver resposta da loja, qualquer ATTEMPT_FAILED restante deve ser automaticamente convertido em:
+
+RETURN_TO_STORE
+
+Assim, o motoboy nunca fica bloqueado no final da rota aguardando uma decisão.
+
+## Retorno automático
+
+A rota deve entrar automaticamente em RETURNING quando não existir nenhuma entrega que ainda precise ser realizada.
+
+São considerados estados finalizados para a rota:
+
+- DELIVERED
+- CANCELLED
+- RETURN_TO_STORE
+
+Quando todas as entregas estiverem em um desses estados:
+
+Route = RETURNING
+
+CourierShift = RETURNING
+
+O motoboy então retorna ao estabelecimento.
+
+## Cancelamento durante a rota
+
+A loja pode cancelar uma entrega enquanto a Route estiver ON_ROUTE.
+
+Nesse caso:
+
+Delivery = CANCELLED
+
+O aplicativo do motoboy deve ser atualizado imediatamente.
+
+A entrega cancelada deve continuar visível na lista, porém com apresentação semelhante a:
+
+~~Pedido 123~~
+
+Pedido cancelado
+
+A rota deve pular essa entrega automaticamente.
+
+Se a entrega cancelada era NEXT, a próxima entrega válida da rota deve assumir NEXT.
+
 # Fluxo de Turno do Motoboy
 
 O motoboy pode possuir vínculo ACTIVE com mais de um estabelecimento, mas só pode trabalhar em um estabelecimento por vez.
