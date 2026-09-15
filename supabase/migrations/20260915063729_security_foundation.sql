@@ -160,7 +160,7 @@ set search_path = ''
 as $$
   select exists (
     select 1
-    from private.restaurant_members as rm
+    from public.restaurant_members as rm
     where rm.restaurant_id = target_restaurant_id
       and rm.user_id = auth.uid()
       and rm.active = true
@@ -178,7 +178,7 @@ set search_path = ''
 as $$
   select exists (
     select 1
-    from private.restaurant_members as rm
+    from public.restaurant_members as rm
     where rm.restaurant_id = target_restaurant_id
       and rm.user_id = auth.uid()
       and rm.active = true
