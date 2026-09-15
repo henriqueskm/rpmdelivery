@@ -17,7 +17,10 @@ create table public.orders (
   notes text,
   status public.order_status not null default 'OPEN',
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+
+  constraint orders_identity_unique
+    unique (id, restaurant_id)
 );
 
 create index orders_restaurant_id_idx
@@ -121,20 +124,17 @@ create table public.routes (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
 
-constraint orders_identity_unique
-  unique (id, restaurant_id)
-
-constraint routes_courier_shift_match
-  foreign key (
-    courier_shift_id,
-    restaurant_id,
-    courier_id
-  )
-  references public.courier_shifts (
-    id,
-    restaurant_id,
-    courier_id
-  )
+  constraint routes_courier_shift_match
+    foreign key (
+      courier_shift_id,
+      restaurant_id,
+      courier_id
+    )
+    references public.courier_shifts (
+      id,
+      restaurant_id,
+      courier_id
+    )
 );
 
 create index routes_restaurant_id_idx
