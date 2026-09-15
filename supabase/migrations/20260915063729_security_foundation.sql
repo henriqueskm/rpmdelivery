@@ -127,6 +127,19 @@ on function public.set_updated_at()
 from public;
 
 -- =========================================================
+-- PRIVATE SECURITY SCHEMA
+-- =========================================================
+
+create schema if not exists private;
+
+revoke all
+on schema private
+from public;
+
+grant usage
+on schema private
+to authenticated;
+-- =========================================================
 -- SECURITY HELPER FUNCTIONS
 -- =========================================================
 --
@@ -136,7 +149,7 @@ from public;
 -- RLS enabled. Using small controlled helper functions avoids recursive
 -- policies while exposing only boolean membership information.
 
-create or replace function public.is_restaurant_member(
+create or replace function private.is_restaurant_member(
   target_restaurant_id uuid
 )
 returns boolean
@@ -147,14 +160,14 @@ set search_path = ''
 as $$
   select exists (
     select 1
-    from public.restaurant_members as rm
+    from private.restaurant_members as rm
     where rm.restaurant_id = target_restaurant_id
       and rm.user_id = auth.uid()
       and rm.active = true
   );
 $$;
 
-create or replace function public.is_restaurant_manager(
+create or replace function private.is_restaurant_manager(
   target_restaurant_id uuid
 )
 returns boolean
@@ -165,7 +178,7 @@ set search_path = ''
 as $$
   select exists (
     select 1
-    from public.restaurant_members as rm
+    from private.restaurant_members as rm
     where rm.restaurant_id = target_restaurant_id
       and rm.user_id = auth.uid()
       and rm.active = true
@@ -173,7 +186,7 @@ as $$
   );
 $$;
 
-create or replace function public.is_restaurant_owner(
+create or replace function private.is_restaurant_owner(
   target_restaurant_id uuid
 )
 returns boolean
@@ -192,7 +205,7 @@ as $$
   );
 $$;
 
-create or replace function public.current_courier_id()
+create or replace function private.current_courier_id()
 returns uuid
 language sql
 stable
@@ -205,7 +218,7 @@ as $$
   limit 1;
 $$;
 
-create or replace function public.is_active_restaurant_courier(
+create or replace function private.is_active_restaurant_courier(
   target_restaurant_id uuid
 )
 returns boolean
@@ -228,43 +241,43 @@ $$;
 -- Do not expose helper functions to anonymous users.
 
 revoke all
-on function public.is_restaurant_member(uuid)
+on function private.is_restaurant_member(uuid)
 from public;
 
 revoke all
-on function public.is_restaurant_manager(uuid)
+on function private.is_restaurant_manager(uuid)
 from public;
 
 revoke all
-on function public.is_restaurant_owner(uuid)
+on function private.is_restaurant_owner(uuid)
 from public;
 
 revoke all
-on function public.current_courier_id()
+on function private.current_courier_id()
 from public;
 
 revoke all
-on function public.is_active_restaurant_courier(uuid)
+on function private.is_active_restaurant_courier(uuid)
 from public;
 
 grant execute
-on function public.is_restaurant_member(uuid)
+on function private.is_restaurant_member(uuid)
 to authenticated;
 
 grant execute
-on function public.is_restaurant_manager(uuid)
+on function private.is_restaurant_manager(uuid)
 to authenticated;
 
 grant execute
-on function public.is_restaurant_owner(uuid)
+on function private.is_restaurant_owner(uuid)
 to authenticated;
 
 grant execute
-on function public.current_courier_id()
+on function private.current_courier_id()
 to authenticated;
 
 grant execute
-on function public.is_active_restaurant_courier(uuid)
+on function private.is_active_restaurant_courier(uuid)
 to authenticated;
 
 -- =========================================================
