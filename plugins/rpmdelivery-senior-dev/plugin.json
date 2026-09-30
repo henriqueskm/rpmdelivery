@@ -1,0 +1,15 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "rpmdelivery-senior-dev",
+  "version": "0.1.0",
+  "description": "Workflow enxuto de desenvolvimento, revisão e diagnóstico do RpmDelivery com GitHub, Supabase e Vercel.",
+  "repository": "https://github.com/henriqueskm/rpmdelivery",
+  "keywords": [
+    "rpmdelivery",
+    "nextjs",
+    "supabase",
+    "vercel",
+    "github",
+    "development"
+  ]
+}
