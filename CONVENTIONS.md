@@ -69,6 +69,40 @@ Preferir uma estrutura semelhante a:
 
 Evitar criar pastas ou arquivos genéricos sem necessidade.
 
+## Economia de contexto e tokens
+
+* Pesquisar por símbolo, arquivo ou erro antes de abrir diretórios inteiros.
+* Ler somente os trechos necessários para decidir ou implementar a mudança.
+* Reutilizar contexto já confirmado em vez de reabrir os mesmos arquivos sem necessidade.
+* Durante iteração, usar verificações focadas quando possível; executar o `npm run verify` completo antes de concluir.
+* Não carregar logs extensos. Filtrar por rota, erro, período ou request relevante.
+* Resumir descobertas antes de avançar para outra camada do sistema.
+
+## Uso das integrações
+
+### GitHub
+
+* Trabalhar em branch específica para cada tarefa.
+* Antes de mudar código, localizar os arquivos realmente envolvidos.
+* Revisar o diff final e evitar arquivos não relacionados.
+* Não fazer force push nem reescrever histórico da `main`.
+
+### Supabase
+
+* Consultar documentação atual quando a tarefa tocar banco, Auth, RLS, RPCs, Storage ou permissões.
+* Inspecionar apenas tabelas, funções, policies e migrations relacionadas à tarefa.
+* Toda mudança permanente de schema deve possuir migration versionada.
+* RLS deve permanecer habilitada em tabelas expostas e policies devem aplicar autorização por tenant/usuário, não apenas autenticação.
+* Tratar `SECURITY DEFINER` como operação privilegiada: usar somente quando necessário, validar `auth.uid()`, permissões de execução e `search_path`.
+* Nunca expor `service_role` ou secrets ao cliente.
+* Depois de mudanças de banco, executar validações relevantes e advisors de segurança/performance quando disponíveis.
+
+### Vercel
+
+* Usar dados de deploy/logs quando a tarefa envolver erro de produção, build, runtime ou performance.
+* Começar por erros agregados ou pelo deployment relevante antes de abrir logs detalhados.
+* Não alterar variáveis de ambiente, domínio ou configuração de produção sem solicitação explícita.
+
 ## Validação
 
 Após qualquer alteração de código, executar:

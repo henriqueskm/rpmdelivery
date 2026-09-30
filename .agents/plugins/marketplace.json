@@ -1,0 +1,20 @@
+{
+  "name": "rpmdelivery-local",
+  "interface": {
+    "displayName": "RpmDelivery Plugins"
+  },
+  "plugins": [
+    {
+      "name": "rpmdelivery-senior-dev",
+      "source": {
+        "source": "local",
+        "path": "./plugins/rpmdelivery-senior-dev"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}
