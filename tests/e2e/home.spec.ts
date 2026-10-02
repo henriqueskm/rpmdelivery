@@ -30,7 +30,7 @@ test("smoke: a página inicial carrega sem erros críticos básicos", async ({
   await expect(page).toHaveTitle("RpmDelivery");
   await expect(page.getByRole("main")).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "RpmDelivery", level: 1, exact: true }),
+    page.getByRole("heading", { name: "Bom ter você aqui.", level: 1, exact: true }),
   ).toBeVisible();
 
   expect(runtimeErrors, "Exceções JavaScript não tratadas").toEqual([]);
