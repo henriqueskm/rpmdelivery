@@ -14,6 +14,8 @@ ChatGPT atua como arquiteto/revisor: ajuda a definir escopo, comportamento, risc
 
 ## Comandos de QA
 
+Para a base visual, configuração local de Auth, limites do guard client e estratégia de testes de login/onboarding, consulte [auth-onboarding.md](auth-onboarding.md).
+
 Instale as dependências com `npm ci` em um checkout com lockfile sincronizado e o Chromium com `npm run test:e2e:install`.
 
 | Comando | Uso |

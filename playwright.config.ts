@@ -26,6 +26,10 @@ export default defineConfig({
     { name: "mobile-chromium", use: { ...devices["Pixel 7"] } },
   ],
   webServer: {
+    env: {
+      NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_e2e_placeholder_not_a_real_key",
+    },
     command: `npm run build && npm run start -- --hostname 127.0.0.1 --port ${port}`,
     url: baseURL,
     reuseExistingServer: false,
