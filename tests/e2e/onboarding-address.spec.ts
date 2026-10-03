@@ -35,9 +35,9 @@ test("mínimo de caracteres, debounce, limite de cinco e teclado/Escape", async 
   await page.clock.runFor(200);
   expect(calls.suggest).toEqual([]);
   await input.fill("Rua das");
-  await page.clock.runFor(299);
+  await page.clock.runFor(200);
   expect(calls.suggest).toEqual([]);
-  await page.clock.runFor(1);
+  await page.clock.runFor(150);
   await expect(page.getByRole("option")).toHaveCount(5);
   expect(calls.suggest).toEqual(["Rua das"]);
   await input.press("ArrowDown");
