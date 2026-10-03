@@ -2,7 +2,7 @@
 
 ## Referência visual local
 
-Nenhum arquivo/frame Figma foi fornecido. Esta proposta local é a alternativa autorizada para a primeira implementação, ainda sujeita à revisão visual. Quando houver frames aprovados, comparar os mesmos estados e viewports antes de evoluir as telas.
+Na implementação inicial não havia frame Figma fornecido. O arquivo oficial agora é [RpmDelivery](https://www.figma.com/design/ACQilVSdQov2BYvWsRTuZR/RpmDelivery), mas a página `00 Brand` estava vazia na consulta desta feature. A base existente continua sujeita à revisão visual quando houver frames aprovados.
 
 - Marca: monograma de movimento, assinatura RpmDelivery, linha pontilhada entre restaurante e destino.
 - Grafite verde `#1d2c24`, fundo marfim `#f8f8f4`, coral decorativo `#fb673b`. Botões usam coral mais escuro `#bd401b` para contraste com texto branco.
@@ -13,11 +13,11 @@ Nenhum arquivo/frame Figma foi fornecido. Esta proposta local é a alternativa a
 
 ## Integração e limites de segurança
 
-A única dependência nova é `@supabase/supabase-js`, fixada para integrar Auth, consultas e RPC sem implementar tokens ou HTTP manualmente. Next/React/TypeScript permanecem na mesma versão.
+A base usa `@supabase/supabase-js` fixado. A feature de geocoding adiciona somente `server-only` para proteger imports do provider/token do servidor. Next/React/TypeScript permanecem na mesma versão.
 
-Rotas públicas: `/`, `/login`, `/cadastro`. Após login ou cadastro com sessão, `/onboarding` verifica o usuário com `auth.getUser()` e busca seu primeiro vínculo ativo (ordem de criação). Se já existir restaurante, segue para `/dashboard`; sem vínculo, permite chamar `create_restaurant(p_name, p_address, p_phone?)`. Telefone é opcional. O RPC existente cria restaurante e membro OWNER. Cadastro sem sessão exige confirmação de e-mail e não libera acesso.
+Rotas públicas: `/`, `/login`, `/cadastro`. Após login ou cadastro com sessão, `/onboarding` verifica o usuário com `auth.getUser()` e busca seu primeiro vínculo ativo (ordem de criação). Se já existir restaurante, segue para `/dashboard`; sem vínculo, permite configurar restaurante com endereço confirmado e celular opcional. O RPC cria restaurante e membro OWNER. Cadastro sem sessão exige confirmação de e-mail e não libera acesso. Consulte [restaurant-address-geocoding.md](restaurant-address-geocoding.md) para o novo contrato de sete parâmetros, migration pendente de revisão e limites de idempotência.
 
-O SDK mantém sessão no navegador e renova tokens. O guard client é UX; **a autorização é feita pelas RLS e pelo RPC existentes**, usando o token do usuário. As páginas server são apenas shells públicos sem dados privados. Não há service role, endpoints server novos nem cookies de autenticação SSR. Futuras Server Actions/API devem verificar tokens independentemente; não confiar em localStorage, getSession ou no guard client. Sair encerra a sessão deste navegador.
+O SDK mantém sessão no navegador e renova tokens. O guard client é UX; **a autorização de dados é feita pelas RLS e pelo RPC**, usando o token do usuário. As páginas server são shells públicos sem dados privados. Não há service role nem cookies de autenticação SSR. Os novos endpoints de geocoding recebem o bearer token e o verificam independentemente com `auth.getUser(token)` no servidor; `getSession()` no client serve apenas para obtê-lo. Sair encerra a sessão deste navegador.
 
 Falhas de consulta não viram onboarding vazio. Falhas de criação bloqueiam reenvio nesta sessão e oferecem consulta do vínculo antes de qualquer nova tentativa: o RPC atual não é idempotente. Recarregar remove esse bloqueio de UX; idempotência e garantia contra concorrência exigem uma futura revisão do contrato de banco, fora deste PR. Não há retry automático da criação.
 
