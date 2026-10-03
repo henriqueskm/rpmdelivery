@@ -47,6 +47,18 @@ jobs:
       - name: Verify
         run: npm run verify
 
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Install local SQL test runtime
+        run: npm run test:sql:install
+
+      - name: Local SQL tests (PGlite)
+        run: npm run test:sql
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
+
       - name: Playwright E2E
         id: e2e
         run: npm run test:e2e
