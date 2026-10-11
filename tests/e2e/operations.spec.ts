@@ -8,6 +8,51 @@ async function area(page: Page, name: string) {
 const route = (page: Page, reference: string) =>
   page.getByRole("article", { name: `Rota ${reference}`, exact: true });
 
+test("pico preserva área útil no desktop e atribuição acessível no mobile", async ({ page }) => {
+  for (const [width, height] of [[1280, 800], [1440, 900], [390, 844]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/preview/operacao?scenario=busy");
+    await page.getByRole("checkbox", { name: "Selecionar visíveis", exact: true }).check();
+    const completeRows = async (selector: string) => page.locator(selector).evaluateAll((rows) => {
+      const list = rows[0].closest(".ops-panel-scroll")!.getBoundingClientRect();
+      return rows.filter(row => {
+        const rect = row.getBoundingClientRect();
+        return rect.top >= Math.max(0, list.top) && rect.bottom <= Math.min(innerHeight, list.bottom);
+      }).length;
+    });
+    expect(await completeRows(".ops-order")).toBeGreaterThanOrEqual(width === 390 ? 4 : 6);
+    const builderTab = page.getByRole("tab", { name: /^Montagem/ });
+    if (await builderTab.isVisible()) await builderTab.click();
+    expect(await completeRows(".ops-sequence li")).toBeGreaterThanOrEqual(3);
+    if (width === 390) {
+      const bounds = await page.getByRole("button", { name: "Atribuir rota (demo)" }).boundingBox();
+      expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(height);
+    }
+    await expect(page.getByText("Demonstração com dados fictícios.", { exact: true })).toBeVisible();
+  }
+});
+
+test("montagem com textos extremos mantém controles e fallback de toque em 320/390", async ({ page }) => {
+  for (const width of [320, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/preview/operacao?scenario=worst");
+    await expect(page.locator("#ops-panel-orders .ops-panel-footer")).toHaveCount(0);
+    await page.getByRole("checkbox", { name: "Selecionar visíveis", exact: true }).check();
+    await page.getByRole("tab", { name: /^Montagem/ }).click();
+    const buttons = page.locator(".ops-sequence-controls button");
+    expect(await buttons.evaluateAll(elements => elements.every(el => {
+      const rect = el.getBoundingClientRect();
+      return rect.width >= 44 && rect.height >= 44;
+    }))).toBe(true);
+    await expect(page.locator(".ops-stop-content").first()).toContainText("Maria Aparecida de Albuquerque e Vasconcelos");
+    await page.getByRole("button", { name: "Mover pedido 1048 para baixo" }).press("Enter");
+    await expect(page.locator(".ops-stop-content").nth(1)).toContainText("#1048");
+    await page.getByRole("button", { name: "Remover pedido 1048 da montagem" }).click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await expect(page.getByRole("button", { name: "Atribuir rota (demo)" })).toBeEnabled();
+  }
+});
+
 test("cadastro e despacho locais: reserva, início pelo motoboy, bloqueio e retorno à fila", async ({
   page,
 }) => {

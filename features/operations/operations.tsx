@@ -218,8 +218,8 @@ function OperationsWorkspace({
         </div>
         <div className="ops-demo-banner">
           <span>
-            <strong>Demonstração com dados fictícios.</strong> Cadastros e ações
-            são locais, sem persistência. Recarregar restaura o exemplo.
+            <strong>Demonstração com dados fictícios.</strong> Ações locais, sem
+            persistência. Recarregar restaura o exemplo.
           </span>
           {preview && (
             <label>

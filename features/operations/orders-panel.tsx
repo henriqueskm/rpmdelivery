@@ -42,7 +42,11 @@ export function OrdersPanel({
         <h2 id="ops-orders-title">
           <Icon name="orders" /> Aguardando despacho
         </h2>
-        <Badge>{orders.length}</Badge>
+        <Badge>
+          {filtered.length === orders.length
+            ? orders.length
+            : `${filtered.length}/${orders.length}`}
+        </Badge>
       </div>
       <div className="ops-filters">
         <label className="ops-search">
@@ -57,17 +61,6 @@ export function OrdersPanel({
               setPage(0);
             }}
           />
-        </label>
-        <label className="ops-filter-check">
-          <input
-            type="checkbox"
-            checked={notesOnly}
-            onChange={(e) => {
-              setNotesOnly(e.target.checked);
-              setPage(0);
-            }}
-          />{" "}
-          Com observação
         </label>
       </div>
       <div className="ops-list-toolbar">
@@ -86,8 +79,20 @@ export function OrdersPanel({
           />{" "}
           Selecionar visíveis
         </label>
+        <label className="ops-filter-check">
+          <input
+            type="checkbox"
+            checked={notesOnly}
+            onChange={(e) => {
+              setNotesOnly(e.target.checked);
+              setPage(0);
+            }}
+          />{" "}
+          Com observação
+        </label>
         <span>{selected.length} selecionados</span>
       </div>
+      {editingId && <p className="ops-editing-hint">Inclui a rota em edição</p>}
       <div
         className="ops-panel-scroll"
         tabIndex={0}
@@ -139,12 +144,9 @@ export function OrdersPanel({
           ))
         )}
       </div>
-      <div className="ops-panel-footer">
-        <span>
-          {plural(filtered.length, "pedido", "pedidos")}
-          {editingId && " • Inclui a rota em edição"}
-        </span>
-        {lastPage > 0 && (
+      {lastPage > 0 && (
+        <div className="ops-panel-footer">
+          <span>{plural(filtered.length, "pedido", "pedidos")}</span>
           <div className="ops-pagination">
             <button
               aria-label="Página anterior"
@@ -164,8 +166,8 @@ export function OrdersPanel({
               →
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </>
   );
 }

@@ -117,22 +117,24 @@ export function BuilderPanel({
           ))}
         </select>
         <p>
-          A atribuição reserva o motoboy.{" "}
+          Motoboy reservado após atribuir.{" "}
           <strong>Somente ele inicia a rota.</strong>
         </p>
-        <button
-          className="ops-primary"
-          disabled={!selected.length || !chosen}
-          onClick={onAssign}
-        >
-          {editing ? "Salvar montagem (demo)" : "Atribuir rota (demo)"}
-          <span aria-hidden="true">→</span>
-        </button>
-        {(editing || selected.length > 0) && (
-          <button className="ops-link-button" onClick={onCancel}>
-            {editing ? "Cancelar edição" : "Limpar seleção"}
+        <div className="ops-assign-buttons">
+          <button
+            className="ops-primary"
+            disabled={!selected.length || !chosen}
+            onClick={onAssign}
+          >
+            {editing ? "Salvar montagem (demo)" : "Atribuir rota (demo)"}
+            <span aria-hidden="true">→</span>
           </button>
-        )}
+          {(editing || selected.length > 0) && (
+            <button className="ops-link-button" onClick={onCancel}>
+              {editing ? "Cancelar edição" : "Limpar seleção"}
+            </button>
+          )}
+        </div>
       </div>
     </>
   );
