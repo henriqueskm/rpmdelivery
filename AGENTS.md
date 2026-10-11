@@ -18,6 +18,15 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Figma é a referência visual das telas aprovadas. Não invente uma UI diferente do Figma sem justificar o desvio e encaminhá-lo para revisão.
 - Siga `docs/development-workflow.md` e use `.codex/skills/rpmdelivery-qa/SKILL.md` para validação no localhost e comparação visual.
 
+## Skills de design e movimento
+
+- As skills de terceiros ficam em `.agents/skills/`; consulte `docs/design-agent-skills.md` para fontes e instalação local. Selecione apenas as skills pertinentes à tarefa; não acione todas automaticamente.
+- Use `emil-design-eng` para decisões de UI e qualidade visual, `mobile-native` para telas do motoboy e operação mobile, e `break-ui` para testar layouts com dados extremos.
+- Use `prototype` quando solicitado para explorar alternativas antes de implementar. Use `find-animation-opportunities` para propor onde o movimento agrega valor, sem aplicar mudanças automaticamente.
+- Use `animate` e `transitions-dev` somente quando movimento agregar valor. Use `review-animations`, `improve-animations` e `transitions-polish` para revisar animações existentes.
+- Preserve a identidade aprovada com o raio minimalista. As skills não autorizam mudanças de marca, dependências ou escopo, nem importação automática do CSS de referência.
+- A skill `.codex/skills/rpmdelivery-qa/SKILL.md` e Playwright continuam obrigatórios nas mudanças visuais, junto de `npm run verify`.
+
 ## Validação e revisão
 
 - Execute `npm run verify` após alterações e corrija falhas reais de lint, TypeScript e build.
