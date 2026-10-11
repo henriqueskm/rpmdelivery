@@ -29,6 +29,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Validação e revisão
 
+- Mudanças visuais relevantes devem passar por revisão independente do `rpmdelivery_visual_critic` após a implementação do Builder e antes da aprovação da PR; não o acione em PRs exclusivamente de backend ou documentação. Consulte `docs/visual-critic.md` para invocação, evidências e limites de leitura.
 - Execute `npm run verify` após alterações e corrija falhas reais de lint, TypeScript e build.
 - Execute os testes E2E relevantes às mudanças. Antes de concluir o QA, rode `npm run test:e2e` para os perfis desktop e mobile.
 - Teste no navegador integrado do Codex como usuário real e registre as limitações de acesso/emulação quando houver.
