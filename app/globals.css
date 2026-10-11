@@ -38,6 +38,8 @@ fieldset:disabled { opacity: .72; }
 .brand-story h2 { font-size: clamp(40px, 4.3vw, 65px); line-height: 1.08; font-weight: 550; letter-spacing: -3px; margin: 22px 0; }
 .brand-story em { font-style: normal; color: #fb825e; }
 .brand-story p { font-size: 15px; line-height: 1.8; color: #bbc8bd; }
+.original-brand { width: 100%; max-width: 490px; margin-top: 24px; overflow: hidden; background: #000; border: 1px solid #46574b; border-radius: 12px; }
+.original-brand img { display: block; width: 100%; height: auto; }
 .route-art { position: relative; height: 224px; margin-top: 32px; }
 .route-grid { position: absolute; inset: 0; background-image: radial-gradient(#506151 1px, transparent 1px); background-size: 23px 23px; mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent); opacity: .5; }
 .route-line { width: 100%; height: 190px; position: absolute; top: 0; }
@@ -137,6 +139,8 @@ fieldset:disabled { opacity: .72; }
   .auth-layout { display: block; }
   .brand-panel { display: none; }
   .mobile-brand { display: block; width: 100%; max-width: 420px; margin-bottom: 54px; }
+  .auth-layout-expanded .mobile-brand { margin-bottom: 32px; }
+  .mobile-brand .original-brand { max-width: 320px; margin: 18px auto 0; border-color: var(--line); }
   .auth-content { min-height: 100svh; justify-content: flex-start; padding: 28px 24px 28px; }
   .form-card { max-width: 420px; }
   .form-card h1 { font-size: 34px; letter-spacing: -1.5px; }

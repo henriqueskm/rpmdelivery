@@ -63,7 +63,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   }
 
   return (
-    <AuthShell>
+    <AuthShell expandedBrand>
       <span className="eyebrow">SUA PRÓXIMA ETAPA COMEÇA AQUI</span>
       <h1>
         {confirmation
