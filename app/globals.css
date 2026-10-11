@@ -162,3 +162,15 @@ fieldset:disabled { opacity: .72; }
   .dashboard-footer { flex-direction: column; gap: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition: none !important; } }
+.address-suggestions { position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 10; list-style: none; margin: 0; padding: 4px; max-height: 260px; overflow-y: auto; background: white; border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 24px #202c2518; }
+.address-suggestions li { min-height: 52px; padding: 10px; border-radius: 5px; cursor: pointer; }
+.address-suggestions li:hover, .address-suggestions li[aria-selected=true] { background: #ecf1e7; }
+.address-suggestions strong, .address-suggestions span { display: block; overflow-wrap: anywhere; font-size: 12px; line-height: 1.5; }
+.address-suggestions span { font-size: 11px; color: var(--muted); }
+.address-error { color: #942b1a; }
+.address-confirmation { margin: 12px 0 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #ecf1e7; }
+.address-confirmation img { width: 100%; height: auto; display: block; }
+.address-confirmation figcaption { padding: 12px; display: grid; gap: 5px; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+.address-confirmation strong { font-size: 12px; color: #345735; }
+.map-unavailable { padding: 16px; font-size: 12px; line-height: 1.6; color: var(--muted); }
+.primary:disabled { cursor: not-allowed; }

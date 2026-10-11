@@ -8,6 +8,9 @@ import { WorkspaceStatus } from "@/components/workspace-status";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { createRestaurant } from "@/services/restaurant";
 import { SignOut } from "@/features/auth/sign-out";
+import { AddressAutocomplete } from "@/components/address-autocomplete";
+import type { ResolvedAddress } from "@/services/geocoding/types";
+import { formatBrazilianMobilePhone, isValidBrazilianMobilePhone } from "@/lib/brazilian-mobile-phone";
 
 export function Onboarding() {
   const router = useRouter();
@@ -16,6 +19,11 @@ export function Onboarding() {
   const [pending, setPending] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const [error, setError] = useState("");
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState<ResolvedAddress | null>(null);
+  const [phone, setPhone] = useState("");
+  const phoneValid = isValidBrazilianMobilePhone(phone);
+  const canSubmit = !!name.trim() && !!address && phoneValid && !pending && !uncertain;
   if (state.status !== "ready")
     return (
       <WorkspaceStatus
@@ -26,18 +34,13 @@ export function Onboarding() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submitting.current || uncertain) return;
-    const fields = new FormData(event.currentTarget);
+    if (submitting.current || !canSubmit || !address) return;
     submitting.current = true;
     setPending(true);
     setError("");
     let created = false;
     try {
-      await createRestaurant(
-        String(fields.get("restaurantName")),
-        String(fields.get("address")),
-        String(fields.get("phone") ?? ""),
-      );
+      await createRestaurant(name, address, phone);
       created = true;
       router.replace("/dashboard");
     } catch (cause) {
@@ -84,18 +87,10 @@ export function Onboarding() {
             maxLength={160}
             pattern={".*\\S.*"}
             required
+            value={name}
+            onChange={(event) => setName(event.target.value)}
           />
-          <FormField
-            label="Endereço"
-            id="address"
-            name="address"
-            placeholder="Rua, número, bairro e cidade"
-            autoComplete="street-address"
-            maxLength={500}
-            pattern={".*\\S.*"}
-            required
-            hint="Informe o ponto de partida das suas entregas."
-          />
+          <AddressAutocomplete onChange={setAddress} />
           <FormField
             label="Telefone (opcional)"
             id="phone"
@@ -103,9 +98,14 @@ export function Onboarding() {
             type="tel"
             placeholder="(11) 99999-9999"
             autoComplete="tel"
-            maxLength={30}
+            inputMode="tel"
+            maxLength={19}
+            value={phone}
+            onChange={(event) => setPhone(formatBrazilianMobilePhone(event.target.value))}
+            aria-invalid={!phoneValid}
+            hint={phoneValid ? "Celular com DDD. Ex.: (11) 91234-5678." : "Informe um celular com DDD e 9 dígitos, começando com 9."}
           />
-          <button className="button primary" type="submit">
+          <button className="button primary" type="submit" disabled={!canSubmit}>
             {pending ? (
               <>
                 <span className="spinner" aria-hidden="true" />

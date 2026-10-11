@@ -26,7 +26,15 @@ type Database = {
     Views: Record<string, never>;
     Functions: {
       create_restaurant: {
-        Args: { p_name: string; p_address: string; p_phone?: string };
+        Args: {
+          p_name: string;
+          p_address: string;
+          p_phone: string | null;
+          p_latitude: number;
+          p_longitude: number;
+          p_address_provider: string;
+          p_address_provider_id: string;
+        };
         Returns: string;
       };
     };

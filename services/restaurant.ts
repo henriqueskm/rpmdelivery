@@ -1,4 +1,6 @@
 import { getSupabase } from "@/lib/supabase/client";
+import { parseBrazilianMobilePhone } from "@/lib/brazilian-mobile-phone";
+import { isResolvedAddress, type ResolvedAddress } from "@/services/geocoding/types";
 
 export type Restaurant = {
   id: string;
@@ -38,14 +40,21 @@ export async function findRestaurant(
 
 export async function createRestaurant(
   name: string,
-  address: string,
+  address: ResolvedAddress,
   phone: string,
 ) {
+  if (!name.trim() || name.trim().length > 160 || !isResolvedAddress(address))
+    throw new Error("Confira o nome e selecione um endereço confirmado.");
+  const normalizedPhone = parseBrazilianMobilePhone(phone);
   const { data, error } = await getSupabase()
     .rpc("create_restaurant", {
       p_name: name.trim(),
-      p_address: address.trim(),
-      ...(phone.trim() ? { p_phone: phone.trim() } : {}),
+      p_address: address.address,
+      p_phone: normalizedPhone,
+      p_latitude: address.latitude,
+      p_longitude: address.longitude,
+      p_address_provider: address.provider,
+      p_address_provider_id: address.providerId,
     })
     .retry(false);
   if (error || !data)

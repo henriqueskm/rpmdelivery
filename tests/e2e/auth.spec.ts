@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mockSupabase, testRestaurant } from "./support/supabase";
+import { mockGeocoding, selectAddress, geoPayload } from "./support/geocoding";
 
 async function login(page: Page) {
   await page.goto("/login");
@@ -37,6 +38,7 @@ test("login → onboarding → RPC → dashboard → sair, sem erros inesperados
   });
   page.on("requestfailed", (request) => failedRequests.push(request.url()));
   const calls = await mockSupabase(page, { slow: true });
+  await mockGeocoding(page);
   await page.goto("/");
   await page.getByRole("link", { name: "Criar conta", exact: true }).click();
   await expect(
@@ -50,7 +52,7 @@ test("login → onboarding → RPC → dashboard → sair, sem erros inesperados
     page.getByRole("heading", { name: "Vamos dar nome à sua operação." }),
   ).toBeVisible();
   await page.getByLabel("Nome do restaurante").fill(testRestaurant.name);
-  await page.getByLabel("Endereço").fill(testRestaurant.address);
+  await selectAddress(page);
   await page.getByRole("button", { name: "Preparar meu restaurante" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(
@@ -67,7 +69,7 @@ test("login → onboarding → RPC → dashboard → sair, sem erros inesperados
     page.getByRole("heading", { name: "Um novo ritmo começa aqui." }),
   ).toBeVisible();
   expect(calls.rpc).toEqual([
-    { p_name: testRestaurant.name, p_address: testRestaurant.address },
+    { p_name: testRestaurant.name, ...geoPayload },
   ]);
   expect(calls.unexpected).toEqual([]);
   expect(runtimeErrors).toEqual([]);
@@ -155,9 +157,10 @@ test("resultado incerto do RPC bloqueia reenvio e oferece conferir vínculo", as
   page,
 }) => {
   const calls = await mockSupabase(page, { rpcError: true });
+  await mockGeocoding(page);
   await login(page);
   await page.getByLabel("Nome do restaurante").fill(testRestaurant.name);
-  await page.getByLabel("Endereço").fill(testRestaurant.address);
+  await selectAddress(page);
   await page.getByRole("button", { name: "Preparar meu restaurante" }).click();
   await expect(page.getByRole("main").getByRole("alert")).toContainText(
     "Não foi possível confirmar a criação",

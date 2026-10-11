@@ -7,8 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "verify": "npm run lint && npm run typecheck && npm run build",
+    "test:unit": "node --conditions=react-server --test tests/unit/*.test.ts",
+    "test:sql": "node tests/sql/run-local.mjs",
+    "test:sql:install": "npm install --prefix playwright/.cache/sql --no-save --package-lock=false @electric-sql/pglite@0.5.8",
     "test:e2e": "playwright test",
     "test:e2e:desktop": "playwright test --project=desktop-chromium",
     "test:e2e:mobile": "playwright test --project=mobile-chromium",
@@ -20,7 +23,8 @@
     "@supabase/supabase-js": "2.117.2",
     "next": "16.3.8",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "server-only": "0.0.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
