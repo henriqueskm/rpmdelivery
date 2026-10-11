@@ -10,8 +10,8 @@
       "panelRows": 6
     },
     "stops": {
-      "listHeight": 271,
-      "viewportListHeight": 271,
+      "listHeight": 275,
+      "viewportListHeight": 275,
       "completeRows": 3,
       "panelRows": 3
     },
@@ -28,8 +28,8 @@
       "panelRows": 8
     },
     "stops": {
-      "listHeight": 389,
-      "viewportListHeight": 389,
+      "listHeight": 393,
+      "viewportListHeight": 393,
       "completeRows": 7,
       "panelRows": 7
     },
@@ -64,8 +64,8 @@
       "panelRows": 0
     },
     "stops": {
-      "listHeight": 232,
-      "viewportListHeight": 232,
+      "listHeight": 236,
+      "viewportListHeight": 236,
       "completeRows": 3,
       "panelRows": 3
     },

@@ -6,9 +6,9 @@ Uma linha completa inclui todos os seus textos e controles, dentro da lista **e*
 
 | Viewport | Pedidos antes → depois | Paradas antes → depois | Área visível de pedidos (px) | Área visível de paradas (px) |
 | --- | --- | --- | --- | --- |
-| 1280×800 | 2 → 6 | 0 → 3 | 168 → 350 | 92 → 271 |
-| 1440×900 | 2 → 8 | 1 → 7 | 196 → 450 | 138 → 389 |
-| 390×844, abas separadas | 1 → 4 | 2 → 3 | 130 → 255 | 250 → 232 |
+| 1280×800 | 2 → 6 | 0 → 3 | 168 → 350 | 92 → 275 |
+| 1440×900 | 2 → 8 | 1 → 7 | 196 → 450 | 138 → 393 |
+| 390×844, abas separadas | 1 → 4 | 2 → 3 | 130 → 255 | 250 → 236 |
 
 No mobile, a área de paradas é ligeiramente menor porque agora o seletor e a atribuição permanecem visíveis junto à lista, sem precisar passar pelas 20 paradas. A densidade das linhas ainda permite mais paradas completas. Em telas baixas e com mensagens longas, a página continua rolável; não há elementos sobrepostos.
 
@@ -49,6 +49,7 @@ Medições brutas: `screenshots/density/before-measurements.json` e `after-measu
 
 - Skills: `emil-design-eng`, `mobile-native`, `break-ui`, `rpmdelivery-qa`, com revisão React dos componentes alterados.
 - E2E protege ganho mínimo de densidade, atribuição no viewport mobile, alvos de toque ≥44×44px, ausência de rolagem horizontal em 320/390px, reordenação por teclado, rodapé condicional, nomes e códigos longos.
+- A medição E2E aguarda `document.fonts.ready`. Linhas e rodapé mantêm margem adicional após a primeira execução Linux mostrar a terceira parada cortada, sem reduzir o mínimo exigido de três paradas completas.
 - Cenários existentes preservados: vazio, um pedido, pico de 1.000, nomes extensos, identificador longo, CJK/árabe, notas de alergia e HTML literal. Campos mantêm os limites e fixtures anteriores; nenhuma informação é apagada para ganhar espaço.
 - O fluxo completo continua coberto: PREPARING/reserva, edição, início manual pelo motoboy, ON_ROUTE bloqueado, ocorrência, RETURNING e retorno ao fim da fila. Nenhuma regra do reducer mudou.
 - Navegador integrado: desktop/mobile, seleção e reserva, teclado, textos longos e fallback 320px; console e rede sem erros inesperados na captura.

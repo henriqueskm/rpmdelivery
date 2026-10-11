@@ -446,7 +446,7 @@
   flex-wrap: wrap;
   align-items: start;
   gap: 8px;
-  padding: 8px 0;
+  padding: 7px 0;
   border-bottom: 1px solid #e9ece6;
 }
 .ops-stop-number {
@@ -486,7 +486,7 @@
   font-size: 17px;
 }
 .ops-builder-actions {
-  padding: 10px 12px;
+  padding: 8px 12px;
   border-top: 1px solid var(--line);
 }
 .ops-builder-actions label {

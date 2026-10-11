@@ -12,6 +12,8 @@ test("pico preserva área útil no desktop e atribuição acessível no mobile",
   for (const [width, height] of [[1280, 800], [1440, 900], [390, 844]]) {
     await page.setViewportSize({ width, height });
     await page.goto("/preview/operacao?scenario=busy");
+    // Fontes locais precisam estar prontas antes de medir a geometria das linhas.
+    await page.evaluate(() => document.fonts.ready.then(() => undefined));
     await page.getByRole("checkbox", { name: "Selecionar visíveis", exact: true }).check();
     const completeRows = async (selector: string) => page.locator(selector).evaluateAll((rows) => {
       const list = rows[0].closest(".ops-panel-scroll")!.getBoundingClientRect();
