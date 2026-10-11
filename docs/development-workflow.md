@@ -10,7 +10,7 @@ ChatGPT atua como arquiteto/revisor: ajuda a definir escopo, comportamento, risc
 4. **Comparação visual:** compare a implementação com o mesmo frame, estado e viewport do Figma. Confira desktop/mobile e use screenshots quando ajudarem. Corrija problemas e repita o fluxo afetado.
 5. **Playwright:** execute `npm run verify` e os E2E relevantes; antes da revisão, rode `npm run test:e2e` para os dois perfis. Registre resultados e limitações.
 6. **PR:** quando autorizado a publicar, prepare um PR com problema resolvido, mudanças, evidências visuais úteis, testes e riscos. Execute `git diff --check`. Se a tarefa pedir parar antes de commit/push, entregue o diff local para revisão.
-7. **Revisão:** ChatGPT e/ou o responsável revisam o diff e as evidências. Banco, RLS, autenticação, concorrência, pagamentos e tracking exigem atenção especial. Não faça merge automaticamente; alterações em produção exigem autorização explícita.
+7. **Revisão:** mudanças visuais relevantes passam pela revisão independente do `rpmdelivery_visual_critic` ([invocação e limites](visual-critic.md)) depois da implementação do Builder e antes da aprovação humana. PRs exclusivamente de backend/documentação não acionam esse agente. ChatGPT e/ou o responsável revisam o diff e as evidências. Banco, RLS, autenticação, concorrência, pagamentos e tracking exigem atenção especial. Não faça merge automaticamente; alterações em produção exigem autorização explícita.
 
 ## Comandos de QA
 
