@@ -56,17 +56,17 @@ test("login → onboarding → RPC → dashboard → sair, sem erros inesperados
   await page.getByRole("button", { name: "Preparar meu restaurante" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(
-    page.getByRole("heading", { name: "Um novo ritmo começa aqui." }),
+    page.getByRole("heading", { name: "Central de operações" }),
   ).toBeVisible();
   await expect(
-    page.getByText("Restaurante configurado", { exact: true }),
+    page.getByText("Demonstração com dados fictícios.", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "A próxima entrega é um novo começo." }),
+    page.getByRole("heading", { name: "Aguardando despacho" }),
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Um novo ritmo começa aqui." }),
+    page.getByRole("heading", { name: "Central de operações" }),
   ).toBeVisible();
   expect(calls.rpc).toEqual([
     { p_name: testRestaurant.name, ...geoPayload },

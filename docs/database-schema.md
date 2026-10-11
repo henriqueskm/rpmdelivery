@@ -272,9 +272,10 @@ Regras:
 - approved_at deve ser preenchido na aprovação
 - started_at deve ser preenchido quando o turno for aprovado
 - available_since deve ser preenchido quando o turno entrar em AVAILABLE
-- ao receber uma rota, AVAILABLE → ON_ROUTE
+- ao receber uma rota PREPARING, o motoboy fica reservado e é excluído da fila; o turno permanece AVAILABLE (reserva derivada da rota ativa, sem novo enum)
+- somente o início manual pelo próprio motoboy, validado no backend, muda a rota PREPARING → ON_ROUTE e o turno AVAILABLE → ON_ROUTE; a atribuição não inicia tracking nem notificações
 - após concluir a última entrega, ON_ROUTE → RETURNING
-- ao retornar ao estabelecimento, RETURNING → AVAILABLE
+- ao confirmar manualmente o retorno ao estabelecimento, RETURNING → AVAILABLE, com entrada no final da fila
 - ao encerrar o expediente, AVAILABLE → ENDED
 - se a loja recusar a solicitação, PENDING → REJECTED
 - não é permitido encerrar o turno enquanto houver rota ativa

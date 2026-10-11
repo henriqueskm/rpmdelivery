@@ -329,7 +329,14 @@ O próximo sugerido pelo sistema é João.
 
 Quando João recebe uma rota:
 
-AVAILABLE → ON_ROUTE
+A rota fica em PREPARING. João fica reservado e sai da fila de sugestões,
+mesmo que o turno permaneça AVAILABLE. "Reservado" é um estado visual derivado
+da rota ativa, não um novo valor do enum de turno.
+
+Somente quando João toca em "Iniciar rota" no aplicativo do motoboy, com
+validação no backend: PREPARING → ON_ROUTE e AVAILABLE → ON_ROUTE.
+A atribuição pela loja não inicia tracking, notificações ou entregas.
+A composição e a sequência podem mudar em PREPARING e ficam bloqueadas em ON_ROUTE.
 
 Quando conclui a última entrega:
 
@@ -337,7 +344,7 @@ ON_ROUTE → RETURNING
 
 Quando chega ao estabelecimento:
 
-RETURNING → AVAILABLE
+Após confirmação manual do retorno pelo motoboy: RETURNING → AVAILABLE.
 
 Nesse momento:
 
