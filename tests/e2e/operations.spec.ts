@@ -23,6 +23,7 @@ test("observações integrais e conferência ampliada preservam foco e montagem 
     await expect(dialog).toContainText("Alergia alimentar: conferir etiqueta.");
     await expect(dialog).toContainText("Não deixar na recepção sem confirmação.");
     await expect(dialog).toContainText("Entrada pela portaria de visitantes.");
+    await expect(dialog.locator(".ops-stop-address").first()).toHaveText(/Avenida/);
     await expect(dialog).toContainText("Demonstração · dados fictícios");
     expect(await dialog.locator(".ops-stop-note").first().evaluate(el => el.scrollHeight <= el.clientHeight && getComputedStyle(el).webkitLineClamp === "none")).toBe(true);
     expect(await dialog.locator(".ops-sequence-controls button").evaluateAll(elements => elements.every(el => el.getBoundingClientRect().width >= 44 && el.getBoundingClientRect().height >= 44))).toBe(true);

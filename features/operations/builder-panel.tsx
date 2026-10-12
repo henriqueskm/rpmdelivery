@@ -147,6 +147,7 @@ function BuilderContent({
                     </strong>
                     <span>{o.neighborhood}</span>
                   </div>
+                  {onClose && <p className="ops-stop-address">{o.address}</p>}
                   {o.complement && (
                     <p className="ops-stop-reference">
                       <strong>Referência:</strong> {o.complement}

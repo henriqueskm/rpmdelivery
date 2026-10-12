@@ -482,6 +482,7 @@
   justify-content: end;
 }
 .ops-stop-note,
+.ops-stop-address,
 .ops-stop-reference {
   grid-column: 2 / -1;
   margin: 0;
@@ -492,6 +493,9 @@
 }
 .ops-stop-reference {
   color: #647068;
+}
+.ops-stop-address {
+  color: var(--foreground);
 }
 .operations .ops-expand {
   padding: 4px 8px;

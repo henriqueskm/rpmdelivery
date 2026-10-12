@@ -19,19 +19,23 @@ As instruções quebram linhas naturalmente, sem ellipsis, line-clamp ou oculta�
 
 Só existe uma instância dos controles da montagem por vez. O modo ampliado usa os mesmos props, callbacks e seleção local, sem duplicar estado operacional. O aviso “Demonstração · dados fictícios, sem persistência” permanece visível na conferência.
 
+A primeira revisão nativa independente confirmou os dois P2 nas capturas e encontrou outro P2: a falta de rua/número para conferir o destino. O Builder acrescentou o endereço integral no modo ampliado, usando a largura disponível antes da referência/observação. O compacto mantém o resumo e acesso explícito por Conferir. O [relatório inicial](reviews/pr-10-visual-critic-p2.md) permanece registrado com evidências imutáveis e limitações.
+
 ## Comparação mensurável
 
 Antes: UI do HEAD `7fe01d6aaeb326e4d2869e226d06d57d451861ae` (o merge da main não mudou produto). Mesmos fixtures, viewport, DPR 1, 20 pedidos selecionados do cenário `busy`, fontes carregadas e listas/página na rolagem inicial. Mobile usa toque emulado. Uma parada completa inclui textos, instruções, controles e limite inferior da linha, dentro da lista e do viewport.
 
 | Viewport | Paradas compactas antes | Paradas compactas depois, com observações | Paradas em Conferir | Área da sequência antes → compacta → ampliada (px) |
 | --- | --- | --- | --- | --- |
-| 1280×800 | 3 | 3 | 9 | 275 → 283 → 516 |
-| 1440×900 | 7 | 7 | 10 | 393 → 401 → 616 |
+| 1280×800 | 3 | 3 | 6 | 275 → 283 → 516 |
+| 1440×900 | 7 | 7 | 8 | 393 → 401 → 616 |
 | 320×844 | 2 | 2 | 4 | 218 → 242 → 523 |
-| 375×844 | 3 | 3 | 7 | 218 → 258 → 541 |
-| 390×844 | 3 | 3 | 7 | 236 → 276 → 559 |
+| 375×844 | 3 | 3 | 5 | 218 → 258 → 541 |
+| 390×844 | 3 | 3 | 6 | 236 → 276 → 559 |
 
-O ganho ampliado exige tocar em Conferir; não é atribuído indevidamente à montagem compacta. Contagens dependem dos textos do dataset. No cenário `worst`, os novos complementos e notas extensas aumentam a altura das linhas: preferiu-se preservar toda informação a esconder instruções para aumentar contagens. Na conferência ampliada, o cenário longo mostra duas paradas completas em 320px, quatro em 375px e cinco em 390px; a sequência permanece rolável. Seletor e CTA estão dentro do viewport em todas as capturas, sem overflow horizontal.
+O ganho ampliado exige tocar em Conferir; não é atribuído indevidamente à montagem compacta. Contagens dependem dos textos do dataset. No cenário `worst`, os novos complementos, endereços e notas extensas aumentam a altura das linhas: preferiu-se preservar toda informação a esconder instruções para aumentar contagens. Na conferência ampliada final, o cenário longo mostra duas paradas completas em 320px e três em 375/390px; a sequência permanece rolável. Seletor e CTA estão dentro do viewport em todas as capturas, sem overflow horizontal.
+
+Após a observação do Critic sobre linhas aparentemente completas junto à borda, a medição passou a registrar `listTop/listBottom` e `rowBounds` com coordenadas fracionárias. `completeStops` exige também que o limite inferior inteiro da linha (borda/padding) esteja dentro da área; conteúdo legível com poucos pixels de padding cortados não é contado. `totalNotes` é quantidade montada, enquanto `visibleNotes` conta apenas notas integralmente visíveis. Não são contagens de todas as informações da rota visíveis ao mesmo tempo.
 
 Dados brutos: [antes](screenshots/p2-final/before-measurements.json) e [depois](screenshots/p2-final/after-measurements.json). Há capturas do cenário de pico e textos longos nos cinco tamanhos, com montagem compacta antes/depois e conferência ampliada depois, somente dados fictícios.
 
@@ -50,3 +54,5 @@ Foi necessário alinhar o ignore do ESLint aos artefatos já ignorados pelo Git:
 QA do Builder usa `emil-design-eng`, `mobile-native`, `break-ui`, `rpmdelivery-qa` e revisão React. O Visual Critic é invocado nativamente em uma sessão nova, read-only, após a implementação/validação; seu relatório e limitações são entregues separadamente, sem correção pelo próprio agente.
 
 Não existe frame Figma aprovado. A identidade do raio foi preservada. Emulação não valida hardware físico, teclado virtual, gestos, safe areas ou zoom nativo de 200%.
+
+Resultados locais finais: verify aprovado (lint, typegen/TypeScript e build), 11 unitários aprovados, SQL/PGlite local aprovado e audit de produção com zero vulnerabilidades. O QA integrado confirmou 320/375/390 e desktop, observações, reordenação, foco/Escape e atribuição PREPARING; captura de console/network sem erros inesperados e sem truncamento. Resultados de Playwright, segunda revisão independente e CI são registrados na entrega/PR, com o HEAD correspondente.
