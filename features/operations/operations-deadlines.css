@@ -61,6 +61,11 @@
 .ops-deadline-fill { display: block; height: 100%; background: var(--deadline-color); border-radius: inherit; }
 @media (max-width: 600px) {
   .ops-deadline-other-day strong { flex-basis: 100%; order: -1; }
+  .ops-order { padding-block: 1px; row-gap: 0; }
+  .ops-order .ops-order-identity { line-height: 1.25; }
+  .operations .ops-order-edit-promise { grid-row: 1; margin-block: -5px; align-self: start; }
+  .ops-order .ops-order-note,
+  .ops-order-deadline { grid-column: 2 / -1; }
 }
 .operations .ops-deadline-button {
   min-height: 44px;

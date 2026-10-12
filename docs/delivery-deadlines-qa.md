@@ -10,11 +10,11 @@ Capturas em [screenshots/deadlines-pickup](screenshots/deadlines-pickup), medida
 | --- | --- | --- | --- |
 | 1280×800 | 6 → 6 | 3 → 4 | 6 → 6 |
 | 1440×900 | 8 → 8 | 7 → 7 | 8 → 8 |
-| 320×844 | 3 → 3 | 2 → 2 | 4 → 4 |
-| 375×844 | 5 → 4 | 3 → 3 | 5 → 6 |
-| 390×844 | 5 → 4 | 3 → 3 | 6 → 6 |
+| 320×844 | 3 → 4 | 2 → 2 | 4 → 4 |
+| 375×844 | 5 → 5 | 3 → 3 | 5 → 6 |
+| 390×844 | 5 → 5 | 3 → 3 | 6 → 6 |
 
-A barra inferior e o horário na mesma linha atendem à escolha do usuário. No pico mobile 375/390, a linha adicional de prazo custa um pedido completo visível; nomes, bairros, observações integrais e alvos de 44px foram preservados. Os painéis mantêm altura e rolagem próprias. A conferência ampliada mantém o seletor e a atribuição disponíveis.
+A barra inferior e o horário na mesma linha atendem à escolha do usuário. Após o P2 do Critic, a ação Prazo foi concentrada junto da identificação no mobile; observações e barra passaram a ocupar a largura restante inteira. Espaçamentos verticais foram compactados, sem reduzir fontes ou alvos. Recuperamos cinco pedidos completos em 375/390 e ampliamos de três para quatro em 320; nomes, bairros, observações integrais e alvos de 44px foram preservados. Os painéis mantêm altura e rolagem próprias. A conferência ampliada mantém o seletor e a atribuição disponíveis.
 
 A visão do motoboy com vinte paradas mantém estado, prazo urgente e ação de início fora da lista rolável: área de lista de 352px em 320/375 e 369px em 390, ação inteira visível, sem overflow horizontal. Datas de outro dia permanecem explícitas; no mobile o texto de atraso pode ocupar a linha anterior para conservar barra e horário juntos.
 
@@ -33,7 +33,7 @@ Console integrado sem erros/warnings; CDP sem exceções, falhas de carregamento
 
 Instalação limpa com npm ci; verify (lint, TypeScript, build), 18 unitários, instalação SQL e SQL/PGlite locais aprovados. Audit de produção: zero vulnerabilidades. Audit completo: cinco alertas altos dev preexistentes, documentados no contrato; sem mudança de dependências ou gate.
 
-Foi observada uma falha intermitente no teste preexistente de debounce do onboarding durante uma execução local (`Rua` disparada antes da segunda entrada). O arquivo de onboarding e retries globais não foram alterados. A repetição completa passou com 62 testes; o resultado final e o CI constam na PR. Falhas de densidade durante desenvolvimento foram corrigidas no CSS sem reduzir os critérios do teste.
+Foram observadas falhas intermitentes nos testes preexistentes de debounce do onboarding em execuções locais concorrentes às capturas (consulta anterior disparada antes da segunda entrada/edição). O arquivo de onboarding e retries globais não foram alterados. Execuções completas subsequentes passaram com 62 testes; a validação final após refinamento usa --workers=1 para separar a suíte das capturas, sem alterar o workflow ou retries. o resultado final e o CI constam na PR. Falhas de densidade durante desenvolvimento foram corrigidas no CSS sem reduzir os critérios do teste.
 
 ## Limitações
 
