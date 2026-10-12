@@ -205,8 +205,8 @@ function BuilderContent({
           ))}
         </select>
         <p>
-          Motoboy reservado após atribuir.{" "}
-          <strong>Somente ele inicia a rota.</strong>
+          Motoboy reservado. {" "}
+          <strong>Loja libera a retirada; só ele inicia.</strong>
         </p>
         <div className="ops-assign-buttons">
           <button

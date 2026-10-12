@@ -1,18 +1,24 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { editableOrders, normalized, plural, type DemoState } from "./model";
 import { Badge, Empty, Icon } from "./ui";
+import { DeadlineText } from "./deadline-view";
 
 export function OrdersPanel({
   state,
   selected,
   editingId,
   onSelect,
+  onDeadline,
+  now,
 }: {
   state: DemoState;
   selected: string[];
   editingId?: string;
   onSelect: (ids: string[]) => void;
+  onDeadline: (id: string) => void;
+  now: number;
 }) {
+  const checkboxPrefix = useId();
   const [search, setSearch] = useState("");
   const [notesOnly, setNotesOnly] = useState(false);
   const [page, setPage] = useState(0);
@@ -48,7 +54,7 @@ export function OrdersPanel({
             : `${filtered.length}/${orders.length}`}
         </Badge>
       </div>
-      <div className="ops-filters">
+      <div className="ops-filters ops-filters-with-default">
         <label className="ops-search">
           <Icon name="search" />
           <input
@@ -62,6 +68,9 @@ export function OrdersPanel({
             }}
           />
         </label>
+        <button className="ops-default-promise" aria-label="Configurar prazo padrão" onClick={() => onDeadline("default")}>
+          <span>Padrão</span><strong>{state.defaultPromiseMinutes} min</strong>
+        </button>
       </div>
       <div className="ops-list-toolbar">
         <label>
@@ -110,37 +119,37 @@ export function OrdersPanel({
           </Empty>
         ) : (
           visible.map((o) => (
-            <label
+            <div
               className={`ops-order ${selected.includes(o.id) ? "is-selected" : ""}`}
               key={o.id}
             >
               <input
+                id={`${checkboxPrefix}-${o.id}`}
                 type="checkbox"
                 aria-label={`Selecionar pedido ${o.reference}`}
                 checked={selected.includes(o.id)}
                 onChange={() => toggle(o.id)}
               />
-              <span className="ops-order-content">
+              <label htmlFor={`${checkboxPrefix}-${o.id}`} className="ops-order-content">
                 <span className="ops-order-top">
                   <span className="ops-order-identity">
                     <strong className="ops-order-ref">#{o.reference}</strong>
+                    <span className="ops-destination">{o.neighborhood}</span>
                     <span className="ops-customer" dir="auto">
                       {o.customer}
                     </span>
                   </span>
-                  <time>
-                    {o.waitMinutes === 0 ? "Agora" : `${o.waitMinutes} min`}
-                  </time>
                 </span>
-                <span className="ops-destination">{o.neighborhood}</span>
-                {o.notes && (
-                  <span className="ops-order-note">
+              </label>
+              <button className="ops-order-edit-promise" aria-label={`Editar prazo do pedido ${o.reference}`} title="Editar horário original e prazo prometido" onClick={() => onDeadline(o.id)}>Prazo</button>
+              {o.notes && (
+                  <label htmlFor={`${checkboxPrefix}-${o.id}`} className="ops-order-note">
                     <span aria-hidden="true">!</span>
                     {o.notes}
-                  </span>
+                  </label>
                 )}
-              </span>
-            </label>
+              <div className="ops-order-deadline"><DeadlineText order={o} now={now} /></div>
+            </div>
           ))
         )}
       </div>

@@ -1,4 +1,5 @@
 import type { DemoState, DemoOrder } from "./model";
+import { DEFAULT_PROMISE_MINUTES, DEMO_EPOCH, MINUTE } from "./deadlines.ts";
 
 export type Scenario = "demo" | "worst" | "empty" | "one" | "busy";
 const waiting = [
@@ -56,15 +57,27 @@ function order(
     address,
     complement: "",
     notes,
-    waitMinutes,
+    orderedAt: DEMO_EPOCH - waitMinutes * MINUTE,
+    createdAt: DEMO_EPOCH - waitMinutes * MINUTE,
+    promisedMinutes: DEFAULT_PROMISE_MINUTES,
     status: "OPEN",
     delivery: "WAITING",
   };
 }
-export function createDemoState(scenario: Scenario = "demo"): DemoState {
+export function createDemoState(scenario: Scenario = "demo", now = DEMO_EPOCH): DemoState {
+  function anchored(value: DemoState): DemoState {
+    const offset = now - DEMO_EPOCH;
+    return { ...value,
+      orders: value.orders.map(o => ({ ...o, orderedAt: o.orderedAt + offset, createdAt: o.createdAt + offset })),
+      routes: value.routes.map(r => ({ ...r, pickupReleasedAt: r.pickupReleasedAt === null ? null : r.pickupReleasedAt + offset })),
+    };
+  }
   const orders = waiting.map((row, i) =>
     order(row[0], row[1], row[2], row[3], row[4], 6 + i * 4),
   );
+  // Two orders were received before registration: near/overdue examples, no sorting.
+  orders[1].orderedAt = DEMO_EPOCH - 52 * MINUTE;
+  orders[2].orderedAt = DEMO_EPOCH - 68 * MINUTE;
   orders.push(
     {
       ...order("1042", "Camila Rocha", "Centro", "Rua das Oliveiras, 37"),
@@ -103,6 +116,7 @@ export function createDemoState(scenario: Scenario = "demo"): DemoState {
     },
   );
   const state: DemoState = {
+    defaultPromiseMinutes: DEFAULT_PROMISE_MINUTES,
     orders,
     nextOrder: 1049,
     nextRoute: 43,
@@ -179,6 +193,7 @@ export function createDemoState(scenario: Scenario = "demo"): DemoState {
         courierId: "marcos",
         orderIds: ["demo-order-1042", "demo-order-1041"],
         status: "PREPARING",
+        pickupReleasedAt: null,
       },
       {
         id: "route-41",
@@ -186,6 +201,7 @@ export function createDemoState(scenario: Scenario = "demo"): DemoState {
         courierId: "rafa",
         orderIds: ["demo-order-1040", "demo-order-1039"],
         status: "ON_ROUTE",
+        pickupReleasedAt: DEMO_EPOCH - 12 * MINUTE,
       },
       {
         id: "route-40",
@@ -193,6 +209,7 @@ export function createDemoState(scenario: Scenario = "demo"): DemoState {
         courierId: "diego",
         orderIds: ["demo-order-1038"],
         status: "RETURNING",
+        pickupReleasedAt: DEMO_EPOCH - 45 * MINUTE,
       },
       {
         id: "route-39",
@@ -200,18 +217,19 @@ export function createDemoState(scenario: Scenario = "demo"): DemoState {
         courierId: "bianca",
         orderIds: ["demo-order-1037"],
         status: "COMPLETED",
+        pickupReleasedAt: DEMO_EPOCH - 70 * MINUTE,
       },
     ],
   };
   if (scenario === "empty")
-    return { ...state, orders: [], couriers: [], routes: [] };
+    return anchored({ ...state, orders: [], couriers: [], routes: [] });
   if (scenario === "one")
-    return {
+    return anchored({
       ...state,
       orders: [orders[0]],
       couriers: [state.couriers[0]],
       routes: [],
-    };
+    });
   if (scenario === "worst") {
     state.orders[0] = {
       ...orders[0],
@@ -223,7 +241,7 @@ export function createDemoState(scenario: Scenario = "demo"): DemoState {
         "Bloco Primavera, torre B, apartamento 1804. Entrada pela portaria de visitantes.",
       notes:
         "Alergia alimentar: conferir etiqueta. Entregar pela entrada lateral do condomínio, próximo à portaria de visitantes. Não deixar na recepção sem confirmação.",
-      waitMinutes: 1284,
+      orderedAt: DEMO_EPOCH - 1284 * MINUTE,
     };
     state.orders[1] = {
       ...orders[1],
@@ -257,5 +275,5 @@ export function createDemoState(scenario: Scenario = "demo"): DemoState {
     state.orders = [...many, ...orders.filter((o) => o.delivery !== "WAITING")];
     state.nextOrder = 3000;
   }
-  return state;
+  return anchored(state);
 }

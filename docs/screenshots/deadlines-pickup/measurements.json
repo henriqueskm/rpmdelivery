@@ -1,0 +1,202 @@
+{
+  "clock": 1791828000000,
+  "timezone": "America/Sao_Paulo",
+  "dpr": 1,
+  "metrics": [
+    {
+      "phase": "before",
+      "width": 1280,
+      "height": 800,
+      "orders": {
+        "height": 350,
+        "complete": 6
+      },
+      "builder": {
+        "height": 282.890625,
+        "complete": 3
+      },
+      "expanded": {
+        "height": 515.5,
+        "complete": 6
+      }
+    },
+    {
+      "phase": "before",
+      "width": 1440,
+      "height": 900,
+      "orders": {
+        "height": 450,
+        "complete": 8
+      },
+      "builder": {
+        "height": 400.890625,
+        "complete": 7
+      },
+      "expanded": {
+        "height": 615.5,
+        "complete": 8
+      }
+    },
+    {
+      "phase": "before",
+      "width": 320,
+      "height": 844,
+      "orders": {
+        "height": 271.421875,
+        "complete": 3
+      },
+      "builder": {
+        "height": 241.890625,
+        "complete": 2
+      },
+      "expanded": {
+        "height": 523.109375,
+        "complete": 4
+      }
+    },
+    {
+      "phase": "before",
+      "width": 375,
+      "height": 844,
+      "orders": {
+        "height": 287.421875,
+        "complete": 5
+      },
+      "builder": {
+        "height": 257.890625,
+        "complete": 3
+      },
+      "expanded": {
+        "height": 540.5,
+        "complete": 5
+      }
+    },
+    {
+      "phase": "before",
+      "width": 390,
+      "height": 844,
+      "orders": {
+        "height": 287.421875,
+        "complete": 5
+      },
+      "builder": {
+        "height": 275.890625,
+        "complete": 3
+      },
+      "expanded": {
+        "height": 558.5,
+        "complete": 6
+      }
+    },
+    {
+      "phase": "after",
+      "width": 1280,
+      "height": 800,
+      "orders": {
+        "height": 350,
+        "complete": 6
+      },
+      "builder": {
+        "height": 300.890625,
+        "complete": 4
+      },
+      "expanded": {
+        "height": 515.5,
+        "complete": 6
+      },
+      "driver": {
+        "listHeight": 378,
+        "actionVisible": true,
+        "overflow": false
+      }
+    },
+    {
+      "phase": "after",
+      "width": 1440,
+      "height": 900,
+      "orders": {
+        "height": 450,
+        "complete": 8
+      },
+      "builder": {
+        "height": 400.890625,
+        "complete": 7
+      },
+      "expanded": {
+        "height": 615.5,
+        "complete": 8
+      },
+      "driver": {
+        "listHeight": 478,
+        "actionVisible": true,
+        "overflow": false
+      }
+    },
+    {
+      "phase": "after",
+      "width": 320,
+      "height": 844,
+      "orders": {
+        "height": 271.421875,
+        "complete": 4
+      },
+      "builder": {
+        "height": 241.890625,
+        "complete": 2
+      },
+      "expanded": {
+        "height": 523.109375,
+        "complete": 4
+      },
+      "driver": {
+        "listHeight": 352,
+        "actionVisible": true,
+        "overflow": false
+      }
+    },
+    {
+      "phase": "after",
+      "width": 375,
+      "height": 844,
+      "orders": {
+        "height": 287.421875,
+        "complete": 5
+      },
+      "builder": {
+        "height": 275.890625,
+        "complete": 3
+      },
+      "expanded": {
+        "height": 558.5,
+        "complete": 6
+      },
+      "driver": {
+        "listHeight": 352,
+        "actionVisible": true,
+        "overflow": false
+      }
+    },
+    {
+      "phase": "after",
+      "width": 390,
+      "height": 844,
+      "orders": {
+        "height": 287.421875,
+        "complete": 5
+      },
+      "builder": {
+        "height": 275.890625,
+        "complete": 3
+      },
+      "expanded": {
+        "height": 558.5,
+        "complete": 6
+      },
+      "driver": {
+        "listHeight": 369,
+        "actionVisible": true,
+        "overflow": false
+      }
+    }
+  ]
+}

@@ -1,36 +1,20 @@
 "use client";
 
-import {
-  useReducer,
-  useRef,
-  useState,
-  type ReactNode,
-  type RefObject,
-  type KeyboardEvent,
-} from "react";
+import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { Brand } from "@/components/brand";
-import { createDemoState, type Scenario } from "./fixtures";
-import {
-  availableCouriers,
-  operationsReducer,
-  type Command,
-  type NewOrder,
-} from "./model";
+import { type Scenario } from "./fixtures";
 import { BuilderPanel } from "./builder-panel";
 import { CouriersPanel } from "./couriers-panel";
 import { OrdersPanel } from "./orders-panel";
 import { RoutesPanel } from "./routes-panel";
-import { CourierDialog, NewOrderDialog } from "./dialogs";
+import { NewOrderDialog } from "./dialogs";
+import { CourierDialog } from "./courier-dialog";
+import { DeadlineDialog } from "./deadline-dialog";
+import { tabs, useOperationsController } from "./use-operations-controller";
+import { useOperationsClock } from "./use-operations-clock";
 import { Icon } from "./ui";
 import "./operations.css";
-
-const tabs = [
-  { id: "orders", label: "Pedidos" },
-  { id: "builder", label: "Montagem" },
-  { id: "couriers", label: "Motoboys" },
-  { id: "routes", label: "Rotas" },
-] as const;
-type Tab = (typeof tabs)[number]["id"];
+import "./operations-deadlines.css";
 
 export function Operations({
   restaurantName,
@@ -45,6 +29,7 @@ export function Operations({
   preview?: boolean;
   initialScenario?: Scenario;
 }) {
+  const now = useOperationsClock();
   const [scenario, setScenario] = useState<Scenario>(initialScenario);
   const scenarioRef = useRef<HTMLSelectElement>(null);
   function changeScenario(next: Scenario) {
@@ -56,9 +41,11 @@ export function Operations({
       window.requestAnimationFrame(() => scenarioRef.current?.focus());
     }
   }
+  if (!now) return <main className="operations"><p role="status">Carregando demonstração operacional…</p></main>;
   return (
     <OperationsWorkspace
       key={scenario}
+      now={now}
       restaurantName={restaurantName}
       email={email}
       accountAction={accountAction}
@@ -71,6 +58,7 @@ export function Operations({
 }
 
 function OperationsWorkspace({
+  now,
   restaurantName,
   email,
   accountAction,
@@ -79,6 +67,7 @@ function OperationsWorkspace({
   onScenario,
   scenarioRef,
 }: {
+  now: number;
   restaurantName: string;
   email?: string;
   accountAction?: ReactNode;
@@ -87,102 +76,12 @@ function OperationsWorkspace({
   onScenario: (scenario: Scenario) => void;
   scenarioRef: RefObject<HTMLSelectElement | null>;
 }) {
-  const [state, dispatch] = useReducer(
-    operationsReducer,
-    scenario,
-    createDemoState,
-  );
-  const [selected, setSelected] = useState<string[]>([]);
-  const [editingId, setEditingId] = useState<string>();
-  const [courierId, setCourierId] = useState("");
-  const [activeTab, setActiveTab] = useState<Tab>("orders");
-  const [notice, setNotice] = useState("");
-  const [courierRouteId, setCourierRouteId] = useState<string>();
-  const newDialog = useRef<HTMLDialogElement>(null);
-  const courierDialog = useRef<HTMLDialogElement>(null);
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  function showArea(tab: Tab) {
-    setActiveTab(tab);
-    if (window.matchMedia("(max-width: 1099px)").matches) {
-      tabRefs.current[tabs.findIndex((t) => t.id === tab)]?.focus();
-    }
-  }
-  function cancel() {
-    setSelected([]);
-    setEditingId(undefined);
-    setCourierId("");
-  }
-  function assign() {
-    const chosen = editingId
-      ? state.routes.find((r) => r.id === editingId)?.courierId
-      : (availableCouriers(state).find((c) => c.id === courierId)?.id ??
-        availableCouriers(state)[0]?.id);
-    if (!chosen) return;
-    const command: Command = {
-      type: "assign",
-      ids: selected,
-      courierId: chosen,
-      editingId,
-    };
-    if (operationsReducer(state, command) === state) {
-      setNotice(
-        "Não foi possível montar essa rota. Confira os pedidos e a disponibilidade.",
-      );
-      return;
-    }
-    dispatch(command);
-    setNotice(
-      editingId
-        ? "Montagem atualizada na demonstração. O início continua dependendo do motoboy."
-        : "Rota em PREPARING. Motoboy reservado; aguardando início manual pelo motoboy. Nada foi enviado.",
-    );
-    cancel();
-    showArea("routes");
-  }
-  function edit(id: string) {
-    const route = state.routes.find(
-      (r) => r.id === id && r.status === "PREPARING",
-    );
-    if (!route) return;
-    setSelected([...route.orderIds]);
-    setEditingId(id);
-    setCourierId(route.courierId);
-    showArea("builder");
-    setNotice(
-      `Editando ${route.reference}. Pedidos e sequência podem mudar enquanto PREPARING.`,
-    );
-  }
-  function add(order: NewOrder) {
-    dispatch({ type: "add", order });
-    setActiveTab("orders");
-    setNotice(
-      "Pedido fictício cadastrado. Aguardando despacho; disponível somente nesta sessão da página.",
-    );
-  }
-  function courierCommand(command: Command) {
-    dispatch(command);
-    setNotice(
-      command.type === "start"
-        ? "Início manual simulado pelo motoboy. ON_ROUTE; sequência bloqueada. Tracking e notificações não foram ativados."
-        : command.type === "finish"
-          ? "Entregas concluídas na simulação. Motoboy retornando, ainda fora da fila."
-          : "Retorno confirmado na simulação. Motoboy no final da fila de disponíveis.",
-    );
-    if (command.type === "start" && command.routeId === editingId) cancel();
-  }
-  function tabKey(event: KeyboardEvent<HTMLButtonElement>, index: number) {
-    if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return;
-    event.preventDefault();
-    const next =
-      event.key === "Home"
-        ? 0
-        : event.key === "End"
-          ? 3
-          : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) %
-            tabs.length;
-    setActiveTab(tabs[next].id);
-    tabRefs.current[next]?.focus();
-  }
+  const {
+    state, selected, setSelected, editingId, courierId, setCourierId, activeTab, setActiveTab,
+    notice, courierRouteId, setCourierRouteId, deadlineTarget, setDeadlineTarget,
+    newDialog, courierDialog, deadlineDialog, tabRefs,
+    assign, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, tabKey,
+  } = useOperationsController(scenario, now);
   return (
     <main className="operations">
       <header className="ops-header">
@@ -206,12 +105,7 @@ function OperationsWorkspace({
           </div>
           <button
             className="ops-primary"
-            onClick={() => {
-              newDialog.current?.showModal();
-              newDialog.current
-                ?.querySelector<HTMLInputElement>('input[name="customer"]')
-                ?.focus();
-            }}
+            onClick={openNewOrder}
           >
             <Icon name="plus" /> Novo pedido
           </button>
@@ -244,7 +138,7 @@ function OperationsWorkspace({
           aria-live="polite"
         >
           {notice ||
-            "Selecione pedidos para montar uma rota. O início é sempre feito pelo motoboy."}
+            "Selecione pedidos para montar uma rota. A loja libera a retirada; só o motoboy inicia."}
         </div>
         <nav
           className="ops-mobile-tabs"
@@ -281,6 +175,8 @@ function OperationsWorkspace({
           >
             <OrdersPanel
               state={state}
+              now={now}
+              onDeadline={setDeadlineTarget}
               selected={selected}
               editingId={editingId}
               onSelect={setSelected}
@@ -320,6 +216,10 @@ function OperationsWorkspace({
         >
           <RoutesPanel
             state={state}
+            now={now}
+            onDeadline={setDeadlineTarget}
+            onRelease={release}
+            onRevokeRelease={revokeRelease}
             onEdit={edit}
             onCourierView={(id) => {
               setCourierRouteId(id);
@@ -332,8 +232,10 @@ function OperationsWorkspace({
           <span>Protótipo de despacho • sem conexão operacional ao banco</span>
         </footer>
       </div>
-      <NewOrderDialog dialogRef={newDialog} onAdd={add} />
+      <NewOrderDialog dialogRef={newDialog} now={now} defaultPromiseMinutes={state.defaultPromiseMinutes} onAdd={add} />
+      <DeadlineDialog dialogRef={deadlineDialog} state={state} target={deadlineTarget} onSave={saveDeadline} onClose={() => setDeadlineTarget(undefined)} />
       <CourierDialog
+        now={now}
         dialogRef={courierDialog}
         state={state}
         routeId={courierRouteId}

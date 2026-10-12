@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { mockSupabase } from "./support/supabase";
 
 async function area(page: Page, name: string) {
+  await expect(page.getByRole("heading", { name: "Central de operações", exact: true })).toBeVisible();
   const tab = page.getByRole("tab", { name, exact: true });
   if (await tab.isVisible()) await tab.click();
 }
@@ -192,6 +193,7 @@ test("cadastro e despacho locais: reserva, início pelo motoboy, bloqueio e reto
     .click();
   await page.getByRole("button", { name: "Salvar montagem (demo)" }).click();
   await expect(created.getByRole("listitem")).toHaveCount(2);
+  await created.getByRole("button", { name: "Liberar retirada", exact: true }).click();
   await created
     .getByRole("button", { name: "Visão do motoboy (demo)" })
     .click();
@@ -199,7 +201,7 @@ test("cadastro e despacho locais: reserva, início pelo motoboy, bloqueio e reto
   await expect(driver).toContainText("Cliente fictício de teste");
   await expect(driver).toContainText("Portaria azul");
   await driver
-    .getByRole("button", { name: "Iniciar rota — simulação" })
+    .getByRole("button", { name: "Recolhi os pedidos · Iniciar rota" })
     .click();
   await expect(driver).toContainText("Em rota");
   await expect(
@@ -263,7 +265,7 @@ test("PREPARING pode ajustar composição; ocorrência em ON_ROUTE exige decisã
     .click();
   await expect(page.getByLabel("Motoboy reservado")).toBeDisabled();
   await page.getByRole("button", { name: "Salvar montagem (demo)" }).click();
-  await expect(route(page, "R-42").getByRole("listitem")).toHaveText([
+  await expect(route(page, "R-42").locator(".ops-route-destination")).toHaveText([
     "#1048 · Vila Mariana",
     "#1041 · Bela Vista",
   ]);

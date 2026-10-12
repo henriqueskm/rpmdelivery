@@ -1,0 +1,120 @@
+.ops-filters-with-default {
+  display: flex;
+  gap: 6px;
+}
+.ops-filters-with-default .ops-search { flex: 1; min-width: 0; }
+.operations .ops-default-promise {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  min-height: 44px;
+  font-size: 12px;
+}
+.ops-default-promise span, .ops-default-promise strong { display: block; }
+.ops-default-promise span { color: #647068; }
+.ops-order {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 44px;
+  gap: 3px 8px;
+  padding-block: 4px;
+}
+.ops-order .ops-order-content { width: auto; cursor: pointer; align-self: center; }
+.ops-order .ops-order-identity { gap: 0 8px; line-height: 1.3; }
+.operations .ops-order-edit-promise {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  font-size: 11px;
+  background: transparent;
+  border-color: transparent;
+  grid-column: 3;
+  grid-row: 1 / 4;
+  align-self: center;
+}
+.ops-order .ops-order-note { grid-column: 2; grid-row: 2; margin-top: 0; }
+.ops-order-deadline { grid-column: 2; grid-row: 3; min-width: 0; }
+.ops-deadline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  width: 100%;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  color: #425349;
+}
+.ops-deadline strong { font-size: inherit; font-weight: 600; }
+.ops-deadline time { font-size: 11px; color: #647068; white-space: normal; }
+.ops-deadline-green { --deadline-color: #277347; }
+.ops-deadline-orange { --deadline-color: #9b6500; }
+.ops-deadline-red { --deadline-color: #b43524; }
+.ops-deadline strong { color: var(--deadline-color, #647068); }
+.ops-deadline-track {
+  flex: 1;
+  min-width: 24px;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #e2e7df;
+}
+.ops-deadline-track.is-overdue { background: #efd7d1; }
+.ops-deadline-fill { display: block; height: 100%; background: var(--deadline-color); border-radius: inherit; }
+@media (max-width: 600px) {
+  .ops-deadline-other-day strong { flex-basis: 100%; order: -1; }
+  .ops-order { padding-block: 1px; row-gap: 0; }
+  .ops-order .ops-order-identity { line-height: 1.25; }
+  .operations .ops-order-edit-promise { grid-row: 1; margin-block: -5px; align-self: start; }
+  .ops-order .ops-order-note,
+  .ops-order-deadline { grid-column: 2 / -1; }
+}
+.operations .ops-deadline-button {
+  min-height: 44px;
+  width: 100%;
+  padding: 2px 3px;
+  background: transparent;
+  border-color: transparent;
+  text-align: left;
+  align-self: start;
+}
+.ops-route-card li { display: flex; flex-wrap: wrap; gap: 0 8px; align-items: start; }
+.ops-route-destination { flex: 1; min-width: 0; }
+.ops-route-card li > .ops-deadline-button { margin-block: -3px; }
+.ops-route-card li > .ops-badge { align-self: center; }
+.operations .ops-release { background: #275940; border-color: #275940; color: white; }
+.ops-route-hint.ops-pickup-ready { color: #275940; font-weight: 650; }
+.ops-route-hint.ops-pickup-waiting { color: #805600; }
+.ops-pickup { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 6px; font-size: 13px; }
+.ops-pickup.is-waiting { color: #705009; background: #faf0d8; }
+.ops-pickup.is-released { color: #275940; background: #e5f1e8; }
+.ops-urgent-deadline { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.ops-urgent-deadline > span { min-width: 0; overflow-wrap: anywhere; }
+.ops-urgent-deadline .ops-deadline { flex-shrink: 0; }
+.ops-deadline-help { color: #647068; font-size: 12px; line-height: 1.5; }
+.ops-courier-deliveries .ops-deadline { display: flex; margin-top: 6px; }
+.ops-courier-deliveries .ops-deadline span { color: inherit; }
+.ops-courier-deliveries .ops-deadline-track,
+.ops-courier-deliveries .ops-deadline-fill { margin: 0; }
+.ops-courier-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  height: min(900px, calc(100dvh - 16px));
+  max-height: calc(100dvh - 16px);
+  padding: 16px;
+  overflow: clip;
+}
+.ops-courier-dialog > :not(.ops-courier-deliveries) { flex-shrink: 0; }
+.ops-courier-dialog .ops-dialog-heading h2 { font-size: 20px; }
+.ops-courier-dialog .ops-dialog-notice { margin: 8px 0; padding: 8px 10px; }
+.ops-courier-dialog .ops-pickup { margin: 8px 0; padding: 8px 10px; }
+.ops-courier-dialog .ops-deadline-help { margin: 6px 0; }
+.ops-courier-action-hint { font-size: 12px; color: #647068; margin: 6px 0; }
+.ops-courier-dialog .ops-courier-deliveries {
+  flex: 1;
+  min-height: 80px;
+  margin: 6px 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+@media (hover: hover) and (pointer: fine) {
+  .operations .ops-release:not(:disabled):hover { background: #1d4531; }
+}

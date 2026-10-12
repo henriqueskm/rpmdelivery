@@ -338,6 +338,8 @@ validação no backend: PREPARING → ON_ROUTE e AVAILABLE → ON_ROUTE.
 A atribuição pela loja não inicia tracking, notificações ou entregas.
 A composição e a sequência podem mudar em PREPARING e ficam bloqueadas em ON_ROUTE.
 
+A evolução demonstrativa exige liberação de retirada pela loja, única para todos os pedidos da rota, antes do início pelo próprio motoboy. Essa liberação mantém PREPARING; mudar o conjunto de pedidos a invalida, apenas reordenar não. Prazos prometidos partem do horário original do pedido e não representam ETA. Consulte [campos e contrato futuro](delivery-deadlines-pickup.md); nenhuma transição operacional real foi integrada nesta etapa.
+
 Quando conclui a última entrega:
 
 ON_ROUTE → RETURNING

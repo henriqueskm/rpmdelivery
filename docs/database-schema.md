@@ -777,3 +777,7 @@ Ainda serão definidos separadamente:
 - cálculo de distância;
 - push notifications;
 - geofence.
+
+## Evolução planejada: prazos e retirada
+
+O [protótipo de prazos e liberação](delivery-deadlines-pickup.md) documenta campos futuros de promessa/horário original do pedido e liberação/versão de composição da rota. Eles ainda não representam alteração do schema aplicado: nenhuma migration ou RPC é adicionada nesta PR. A integração exigirá revisão de RLS, identidade, fuso/relógio do servidor, auditoria e transações para liberação, edição e início concorrentes.
