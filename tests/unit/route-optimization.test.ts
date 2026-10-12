@@ -113,6 +113,9 @@ test("proposta invalida com seleção, prazo, coordenadas, ordem ou fase modific
   assert.notEqual(proposalSignature(deadline,ids),key);
   const coords={...state,orders:state.orders.map(o=>o.id===ids[0]?{...o,location:fixtureCoordinate(8)}:o)};
   assert.notEqual(proposalSignature(coords,ids),key);
+  const route=state.routes[0],draftKey=proposalSignature(state,route.orderIds,route.id);
+  const composition={...state,routes:state.routes.map(r=>r.id===route.id?{...r,orderIds:[r.orderIds[0]]}:r)};
+  assert.notEqual(proposalSignature(composition,route.orderIds,route.id),draftKey);
 });
 test("aplicar ordem sugerida ao mesmo conjunto preserva liberação; ON_ROUTE rejeita no domínio",()=>{
   const state=createDemoState(),route=state.routes[0];

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DemoState } from "./model";
-import { localDateTime, parseLocalDateTime } from "./deadlines";
+import { calendarTime, localDateTime, parseLocalDateTime } from "./deadlines";
 import { demoOptimizationInput, proposalSignature } from "./optimization-input";
 import { useRouteProposal } from "./use-route-proposal";
 import { SequenceComparison } from "./sequence-comparison";
+import { OptimizationSummary } from "./optimization-summary";
 import { MAX_STOPS } from "../route-optimization/types";
 import "./optimization.css";
 
@@ -23,6 +24,8 @@ export function OptimizationDialog({ state, selected, editingId, scenario, now, 
   const dialog = useRef<HTMLDialogElement>(null);
   const [departure, setDeparture] = useState(() => localDateTime(now + 5*60000));
   const [service, setService] = useState("2");
+  const [editParameters, setEditParameters] = useState(false);
+  const [detail, setDetail] = useState<"manual"|"suggested">("suggested");
   const {job,calculate} = useRouteProposal();
   const snapshot = useMemo(() => proposalSignature(state,selected,editingId),[state,selected,editingId]);
   const key = JSON.stringify([snapshot,scenario,departure,service]);
@@ -35,15 +38,21 @@ export function OptimizationDialog({ state, selected, editingId, scenario, now, 
   const blocked = !!editingId && state.routes.find(r => r.id === editingId)?.status !== "PREPARING";
   useEffect(() => { dialog.current?.showModal(); dialog.current?.querySelector<HTMLInputElement>("input")?.focus(); }, []);
   function request() {
+    setEditParameters(false);
+    setDetail("suggested");
     calculate(key, () => demoOptimizationInput(state,selected,editingId,scenario,departureAt,serviceSeconds));
   }
   return <dialog ref={dialog} className="ops-dialog ops-optimization-dialog" aria-label="Sugerir sequência" onClose={onClose}>
     <div className="ops-dialog-heading"><h2>Sugerir sequência</h2><button aria-label="Fechar sugestão" onClick={()=>dialog.current?.close()}>×</button></div>
     <p className="ops-dialog-notice">Demonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.</p>
+    <div className={`ops-opt-hypotheses ${result&&!editParameters ? "is-compact" : ""}`}>
+      {result && <div className="ops-opt-hypotheses-summary"><span>Saída {calendarTime(result.departureAt)} · {result.serviceSeconds/60} min/parada</span>
+        <button aria-expanded={editParameters} onClick={()=>setEditParameters(v=>!v)}>Editar hipóteses</button></div>}
     <div className="ops-opt-controls">
       <label>Saída estimada<input type="datetime-local" value={departure} onChange={e=>setDeparture(e.target.value)} /></label>
       <label>Atendimento por parada (min)<input type="number" inputMode="numeric" min={0} max={30} step={1} value={service} onChange={e=>setService(e.target.value)} /></label>
       <button disabled={pending || blocked || selected.length>MAX_STOPS} onClick={request}>Calcular sugestão (demo)</button>
+    </div>
     </div>
     <div className="ops-opt-scroll" tabIndex={0} aria-label="Comparação das sequências">
       {!job && <p>Até {MAX_STOPS} paradas. Primeiro menos entregas atrasadas; depois menor atraso total, deslocamento e retorno. Nada muda sem aplicar.</p>}
@@ -56,7 +65,12 @@ export function OptimizationDialog({ state, selected, editingId, scenario, now, 
           ? "Nenhuma sequência cumpre todos os prazos sob estas hipóteses. Há risco de atraso."
           : "Sem atraso previsto na sugestão sob estas hipóteses; a saída e o trânsito podem mudar."}
           {unchanged && " A ordem manual já é a melhor neste cenário."}</p>
-        <div className="ops-opt-columns"><SequenceComparison title="Ordem manual" route={result.manual} state={state} departureAt={result.departureAt} />
+        <OptimizationSummary result={result} />
+        <div className="ops-opt-detail-switch" aria-label="Detalhes da comparação">
+          <button aria-pressed={detail==="suggested"} onClick={()=>setDetail("suggested")}>Ver sugerida</button>
+          <button aria-pressed={detail==="manual"} onClick={()=>setDetail("manual")}>Ver manual</button>
+        </div>
+        <div className="ops-opt-columns" data-detail={detail}><SequenceComparison title="Ordem manual" route={result.manual} state={state} departureAt={result.departureAt} />
           <SequenceComparison title="Ordem sugerida" route={result.suggested} state={state} departureAt={result.departureAt} /></div>
       </>}
     </div>

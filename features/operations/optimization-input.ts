@@ -4,8 +4,9 @@ import { fixtureMatrix } from "../route-optimization/fixtures.ts";
 import { MAX_STOPS, OptimizationError, isConfirmed, type OptimizationInput } from "../route-optimization/types.ts";
 
 export function proposalSignature(state: DemoState, ids: string[], editingId?: string) {
+  const route = state.routes.find(r => r.id === editingId);
   return JSON.stringify([state.restaurantLocation, ids.map(id => state.orders.find(o => o.id === id)),
-    editingId, state.routes.find(r => r.id === editingId)?.status]);
+    editingId, route?.status, route?.orderIds]);
 }
 export function demoOptimizationInput(state: DemoState, ids: string[], editingId: string | undefined,
   scenario: string, departureAt: number, serviceSeconds: number): OptimizationInput {

@@ -55,6 +55,8 @@ A proposta guarda uma assinatura dos pedidos selecionados, sua ordem/conteúdo/p
 
 Datas de outro dia aparecem explicitamente. Margens são arredondadas para baixo e atraso para cima, evitando margem otimista. Não se anuncia garantia de cumprimento; as estimativas são condicionadas à saída/atendimento/matriz.
 
+No mobile, após calcular, as hipóteses ficam resumidas com ação Editar hipóteses. Um resumo de **ambas** as ordens apresenta duração/distância/atrasos antes das listas. Detalhes alternáveis abrem na sugerida; nomes, endereços e limites permanecem integrais. Desktop mantém comparação em duas colunas e controles disponíveis. O rodapé mantém toque ≥44px, sem hover com contraste insuficiente.
+
 ## O que usa mocks
 
 Preview e dashboard demonstrativo usam coordenadas de fixture e um pequeno grafo dirigido, escrito como dados de teste, sem relação garantida com as ruas ilustradas. Floyd–Warshall apenas prepara a matriz **simulada** desse grafo; não calcula uma viagem real a partir das coordenadas. O motor principal recebe a matriz pronta.
