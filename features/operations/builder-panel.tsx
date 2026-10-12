@@ -3,6 +3,7 @@ import { availableCouriers, plural, type DemoState } from "./model";
 import { Badge, Empty, Icon, RouteBadge } from "./ui";
 
 type BuilderProps = {
+  onSuggest: () => void;
   state: DemoState;
   selected: string[];
   editingId?: string;
@@ -78,6 +79,7 @@ function BuilderContent({
   onExpand,
   onClose,
   expandButton,
+  onSuggest,
 }: BuilderProps & {
   onExpand?: () => void;
   onClose?: () => void;
@@ -123,6 +125,9 @@ function BuilderContent({
       <div className="ops-builder-summary">
         <RouteBadge status="PREPARING" />
         <span>{plural(selected.length, "entrega", "entregas")}</span>
+        <button className="ops-suggest" disabled={selected.length<2 || (!!editing && editing.status!=="PREPARING")} onClick={onSuggest}>
+          Sugerir sequência
+        </button>
       </div>
       <div
         className="ops-panel-scroll"

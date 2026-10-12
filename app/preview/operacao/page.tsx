@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Operations } from "@/features/operations/operations";
-import type { Scenario } from "@/features/operations/fixtures";
+import { optimizationScenarios, type Scenario } from "@/features/operations/fixtures";
 
 export const metadata: Metadata = {
   title: "Central de operações — Preview | RpmDelivery",
@@ -12,7 +12,7 @@ export default async function OperationsPreview({
   searchParams,
 }: PageProps<"/preview/operacao">) {
   const { scenario } = await searchParams;
-  const allowed: Scenario[] = ["demo", "worst", "empty", "one", "busy"];
+  const allowed: Scenario[] = ["demo", "worst", "empty", "one", "busy", ...optimizationScenarios.map(([value])=>value)];
   const initialScenario = allowed.includes(scenario as Scenario)
     ? (scenario as Scenario)
     : "demo";

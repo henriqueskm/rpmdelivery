@@ -1,7 +1,14 @@
 import type { DemoState, DemoOrder } from "./model";
 import { DEFAULT_PROMISE_MINUTES, DEMO_EPOCH, MINUTE } from "./deadlines.ts";
+import { fixtureCoordinate } from "../route-optimization/fixtures.ts";
 
-export type Scenario = "demo" | "worst" | "empty" | "one" | "busy";
+export const optimizationScenarios = [
+  ["opt-short", "Otimização · rota curta"], ["opt-near", "Otimização · destinos próximos"],
+  ["opt-urgent", "Otimização · urgente distante"], ["opt-tight", "Otimização · prazos próximos"],
+  ["opt-impossible", "Otimização · prazos impossíveis"], ["opt-no-route", "Otimização · destino sem rota"],
+  ["opt-unavailable", "Otimização · indisponível"], ["opt-missing", "Otimização · sem coordenadas"],
+] as const;
+export type Scenario = "demo" | "worst" | "empty" | "one" | "busy" | (typeof optimizationScenarios)[number][0];
 const waiting = [
   [
     "1048",
@@ -57,6 +64,7 @@ function order(
     address,
     complement: "",
     notes,
+    location: fixtureCoordinate(1 + (1048 - Number(reference) + 8000) % 8),
     orderedAt: DEMO_EPOCH - waitMinutes * MINUTE,
     createdAt: DEMO_EPOCH - waitMinutes * MINUTE,
     promisedMinutes: DEFAULT_PROMISE_MINUTES,
@@ -116,6 +124,7 @@ export function createDemoState(scenario: Scenario = "demo", now = DEMO_EPOCH): 
     },
   );
   const state: DemoState = {
+    restaurantLocation: fixtureCoordinate(0),
     defaultPromiseMinutes: DEFAULT_PROMISE_MINUTES,
     orders,
     nextOrder: 1049,
@@ -274,6 +283,19 @@ export function createDemoState(scenario: Scenario = "demo", now = DEMO_EPOCH): 
     );
     state.orders = [...many, ...orders.filter((o) => o.delivery !== "WAITING")];
     state.nextOrder = 3000;
+  }
+  if (scenario.startsWith("opt-")) {
+    state.orders.filter(o => o.delivery === "WAITING").forEach((o, i) => {
+      o.orderedAt = DEMO_EPOCH - 10 * MINUTE; o.promisedMinutes = 60;
+      if (scenario === "opt-tight") o.promisedMinutes = 22 + i;
+      if (scenario === "opt-impossible") o.promisedMinutes = 11;
+      if (scenario === "opt-urgent" && i === 1) o.promisedMinutes = 27;
+    });
+    if (scenario === "opt-missing") state.orders[0].location = undefined;
+    if (scenario === "opt-short") {
+      state.orders = state.orders.filter((o,i) => i < 2 || o.delivery !== "WAITING");
+      state.orders[1].location = fixtureCoordinate(3);
+    }
   }
   return anchored(state);
 }
