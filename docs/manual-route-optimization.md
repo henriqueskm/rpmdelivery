@@ -47,7 +47,7 @@ Proteções são locais ao processo, não uma quota distribuída. Antes de conec
 
 ## Interface e invalidação
 
-Selecione pedidos → Sugerir sequência → configure saída/atendimento → Calcular sugestão → compare manual/sugerida → Aplicar ou Descartar. Aplicar altera somente a sequência da montagem, que continua exigindo atribuição/salvamento existente. Não inicia rota, tracking, liberação ou notificação.
+Selecione pedidos → Sugerir sequência → configure saída/atendimento → Calcular sugestão → veja recomendação, benefícios, desvantagens e riscos → Manter ordem atual ou Aplicar sequência. Aplicar altera somente a sequência da montagem, que continua exigindo atribuição/salvamento existente. Não inicia rota, tracking, liberação ou notificação.
 
 A prévia e o motor carregam sob demanda; não calculam nem criam timers para quem usa só a montagem manual. O diálogo fica fora dos painéis ocultáveis, como os demais diálogos da operação, para resistir à troca desktop/mobile.
 
@@ -55,7 +55,7 @@ A proposta guarda uma assinatura dos pedidos selecionados, sua ordem/conteúdo/p
 
 Datas de outro dia aparecem explicitamente. Margens são arredondadas para baixo e atraso para cima, evitando margem otimista. Não se anuncia garantia de cumprimento; as estimativas são condicionadas à saída/atendimento/matriz.
 
-No mobile, após calcular, as hipóteses ficam resumidas com ação Editar hipóteses. Um resumo de **ambas** as ordens apresenta duração/distância/atrasos antes das listas. Detalhes alternáveis abrem na sugerida; nomes, endereços e limites permanecem integrais. Desktop mantém comparação em duas colunas e controles disponíveis. O rodapé mantém toque ≥44px, sem hover com contraste insuficiente.
+Após calcular, desktop e mobile resumem as hipóteses com ação Editar hipóteses. A recomendação precede três deltas de atraso/duração/distância, alertas de margem apertada e uma sequência compacta com posições alteradas. Cores semânticas sempre acompanham números, texto ou ícones. “Ver comparação detalhada”, antes da sequência e fechado por padrão, preserva nomes, endereços, chegada, entrega, limites, margens e retorno das duas ordens; abre em duas colunas no desktop e empilha no mobile. O rodapé mantém toque ≥44px. Veja [evidências de UX](reviews/optimization-decision-ux.md).
 
 ## O que usa mocks
 

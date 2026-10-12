@@ -82,9 +82,22 @@ test("oito paradas preservam IDs, mudanças de posição e todos os detalhes sem
   expect(new Set(codes).size).toBe(8);expect([...codes].sort()).toEqual(Array.from({length:8},(_,i)=>`#${2000+i}`));
   expect(await sequence.locator('[data-moved="true"]').count()).toBeGreaterThan(0);
   await expect(dialog(page).getByRole("region",{name:"Ordem manual"})).toHaveCount(0);
-  await dialog(page).getByText("Ver comparação detalhada",{exact:true}).click();
-  await expect(dialog(page).getByRole("region",{name:"Ordem sugerida"}).locator("li")).toHaveCount(8);
-  await expect(dialog(page).getByRole("region",{name:"Ordem manual"}).locator("li")).toHaveCount(8);
+  for(const width of [320,375,390,1280,1440]) {
+    await page.setViewportSize({width,height:width===1280?800:width===1440?900:844});
+    const details=dialog(page).locator(".ops-opt-details summary");
+    const bounds=await details.boundingBox(), scroll=await page.locator(".ops-opt-scroll").boundingBox();
+    expect(bounds!.height).toBeGreaterThanOrEqual(44);
+    expect(bounds!.y).toBeGreaterThanOrEqual(scroll!.y);
+    expect(bounds!.y+bounds!.height).toBeLessThanOrEqual(scroll!.y+scroll!.height);
+    await details.press("Enter");
+    await expect(details).toBeFocused();
+    await expect(dialog(page).getByRole("region",{name:"Ordem sugerida"}).locator("li")).toHaveCount(8);
+    await expect(dialog(page).getByRole("region",{name:"Ordem manual"}).locator("li")).toHaveCount(8);
+    await details.press("Space");
+    await expect(details).toBeFocused();
+    await expect(dialog(page).locator(".ops-opt-details")).not.toHaveAttribute("open", "");
+    await page.locator(".ops-opt-scroll").press("Control+Home");
+  }
 });
 test("descartar, mudar hipóteses e cancelar cálculo não aplicam proposta obsoleta",async({page})=>{
   await open(page);

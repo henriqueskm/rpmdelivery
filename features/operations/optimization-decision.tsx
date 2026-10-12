@@ -17,6 +17,11 @@ export function OptimizationDecision({ result, state, now }: {result:Comparison;
     {risk && <section className="ops-opt-risk" data-tone={risk.tone} aria-label="Riscos de prazo">
       <strong><span aria-hidden="true">⚠</span> {risk.title}</strong><p>{risk.text}</p>
     </section>}
+    <details className="ops-opt-details">
+      <summary>Ver comparação detalhada</summary>
+      <div className="ops-opt-columns"><SequenceComparison title="Ordem manual" route={result.manual} state={state} departureAt={result.departureAt} now={now} />
+        <SequenceComparison title="Ordem sugerida" route={result.suggested} state={state} departureAt={result.departureAt} now={now} /></div>
+    </details>
     <section className="ops-opt-sequence" aria-label="Nova sequência">
       <h3>Nova sequência <span>· {result.suggested.ids.length} pedidos</span></h3>
       <ol>{result.suggested.stops.map((stop,index) => {
@@ -34,10 +39,5 @@ export function OptimizationDecision({ result, state, now }: {result:Comparison;
         </li>;
       })}</ol>
     </section>
-    <details className="ops-opt-details">
-      <summary>Ver comparação detalhada</summary>
-      <div className="ops-opt-columns"><SequenceComparison title="Ordem manual" route={result.manual} state={state} departureAt={result.departureAt} now={now} />
-        <SequenceComparison title="Ordem sugerida" route={result.suggested} state={state} departureAt={result.departureAt} now={now} /></div>
-    </details>
   </>;
 }

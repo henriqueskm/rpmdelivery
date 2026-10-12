@@ -1,0 +1,2078 @@
+[
+  {
+    "name": "urgent-320",
+    "scenario": "opt-urgent",
+    "metrics": {
+      "viewport": [
+        320,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 523.4375,
+        "bottom": 739.40625
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 0
+        },
+        {
+          "label": "Nova sequência",
+          "count": 0
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 146.109375
+        }
+      ],
+      "footer": [
+        {
+          "label": "Manter ordem atual",
+          "height": 58.59375,
+          "bottom": 819
+        },
+        {
+          "label": "Aplicar sequência",
+          "height": 58.59375,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "text": "Atrasos previstos1→0entregas↓ 1 atraso evitado",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "Tempo total27→27min= Sem alteração",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Distância8,4→8,5km! +100 mPequena desvantagem",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "⚠ Atenção: prazo muito apertado1 entrega tem margem inferior a 1 min. Uma saída mais tarde pode causar atraso.",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 41 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:17 · atraso estimado 2 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 24 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:17 · margem estimada <1 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 28 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 24 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "⚠ Prazo muito apertado · margem <1 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Margem 28 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 24 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\nRecomendação\nAntecipe as entregas mais urgentes\n\nEvita 1 atraso previsto com a nova sequência.\n\nAtrasos previstos\n1\n→\n0\nentregas\n↓ 1 atraso evitado\nTempo total\n27\n→\n27\nmin\n= Sem alteração\nDistância\n8,4\n→\n8,5\nkm\n! +100 m\nPequena desvantagem\n⚠ Atenção: prazo muito apertado\n\n1 entrega tem margem inferior a 1 min. Uma saída mais tarde pode causar atraso.\n\nVer comparação detalhada\nNova sequência · 3 pedidos\n1\n#1047\nCentro\nEntrega 15:17 · limite 15:17\n↕ 2 → 1\n⚠ Prazo muito apertado · margem <1 min\n2\n#1048\nVila Mariana\nEntrega 15:22 · limite 15:50\n↕ 1 → 2\nMargem 28 min\n3\n#1046\nJardim Paulista\nEntrega 15:26 · limite 15:50\nMargem 24 min\nManter ordem atual\nAplicar sequência",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "eight-320",
+    "scenario": "busy",
+    "metrics": {
+      "viewport": [
+        320,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 523.4375,
+        "bottom": 739.40625
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 0
+        },
+        {
+          "label": "Nova sequência",
+          "count": 0
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 132.046875
+        }
+      ],
+      "footer": [
+        {
+          "label": "Manter ordem atual",
+          "height": 58.59375,
+          "bottom": 819
+        },
+        {
+          "label": "Aplicar sequência",
+          "height": 58.59375,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "text": "Atrasos previstos3→0entregas↓ 3 atrasos evitados",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "Tempo total80→53min↓ −27 min",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "Distância25,3→14,4km↓ −10,9 km",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "⚠ Atenção: prazo apertado1 entrega tem margem inferior a 5 min. Uma saída mais tarde pode causar atraso.",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 16:00 · margem estimada 51 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:59 · margem estimada 35 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:58 · margem estimada 23 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:57 · margem estimada 14 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:56 · margem estimada <1 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 15:55 · atraso estimado 7 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:54 · atraso estimado 12 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:53 · atraso estimado 25 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:57 · margem estimada 43 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:59 · margem estimada 41 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:58 · margem estimada 29 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:53 · margem estimada 19 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 16:00 · margem estimada 21 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:54 · margem estimada 11 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:55 · margem estimada 7 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:56 · margem estimada 3 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Margem 43 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 41 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 29 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 19 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 21 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 11 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 7 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "⚠ Prazo apertado · margem 3 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        }
+      ]
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\nRecomendação\nAntecipe as entregas mais urgentes\n\nEvita 3 atrasos previstos com a nova sequência.\n\nAtrasos previstos\n3\n→\n0\nentregas\n↓ 3 atrasos evitados\nTempo total\n80\n→\n53\nmin\n↓ −27 min\nDistância\n25,3\n→\n14,4\nkm\n↓ −10,9 km\n⚠ Atenção: prazo apertado\n\n1 entrega tem margem inferior a 5 min. Uma saída mais tarde pode causar atraso.\n\nVer comparação detalhada\nNova sequência · 8 pedidos\n1\n#2003\nCentro\nEntrega 15:14 · limite 15:57\n↕ 4 → 1\nMargem 43 min\n2\n#2001\nCentro\nEntrega 15:18 · limite 15:59\nMargem 41 min\n3\n#2002\nVila Mariana\nEntrega 15:29 · limite 15:58\nMargem 29 min\n4\n#2007\nCentro\nEntrega 15:34 · limite 15:53\n↕ 8 → 4\nMargem 19 min\n5\n#2000\nVila Mariana\nEntrega 15:39 · limite 16:00\n↕ 1 → 5\nMargem 21 min\n6\n#2006\nVila Mariana\nEntrega 15:43 · limite 15:54\n↕ 7 → 6\nMargem 11 min\n7\n#2005\nCentro\nEntrega 15:48 · limite 15:55\n↕ 6 → 7\nMargem 7 min\n8\n#2004\nVila Mariana\nEntrega 15:53 · limite 15:56\n↕ 5 → 8\n⚠ Prazo apertado · margem 3 min\nManter ordem atual\nAplicar sequência",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "urgent-375",
+    "scenario": "opt-urgent",
+    "metrics": {
+      "viewport": [
+        375,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 555.421875,
+        "bottom": 754
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 0
+        },
+        {
+          "label": "Nova sequência",
+          "count": 1
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 136.5
+        }
+      ],
+      "footer": [
+        {
+          "label": "Manter ordem atual",
+          "height": 44,
+          "bottom": 819
+        },
+        {
+          "label": "Aplicar sequência",
+          "height": 44,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "text": "Atrasos previstos1→0entregas↓ 1 atraso evitado",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "Tempo total27→27min= Sem alteração",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Distância8,4→8,5km! +100 mPequena desvantagem",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "⚠ Atenção: prazo muito apertado1 entrega tem margem inferior a 1 min. Uma saída mais tarde pode causar atraso.",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 41 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:17 · atraso estimado 2 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 24 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:17 · margem estimada <1 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 28 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 24 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "⚠ Prazo muito apertado · margem <1 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Margem 28 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 24 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\nRecomendação\nAntecipe as entregas mais urgentes\n\nEvita 1 atraso previsto com a nova sequência.\n\nAtrasos previstos\n1\n→\n0\nentregas\n↓ 1 atraso evitado\nTempo total\n27\n→\n27\nmin\n= Sem alteração\nDistância\n8,4\n→\n8,5\nkm\n! +100 m\nPequena desvantagem\n⚠ Atenção: prazo muito apertado\n\n1 entrega tem margem inferior a 1 min. Uma saída mais tarde pode causar atraso.\n\nVer comparação detalhada\nNova sequência · 3 pedidos\n1\n#1047\nCentro\nEntrega 15:17 · limite 15:17\n↕ 2 → 1\n⚠ Prazo muito apertado · margem <1 min\n2\n#1048\nVila Mariana\nEntrega 15:22 · limite 15:50\n↕ 1 → 2\nMargem 28 min\n3\n#1046\nJardim Paulista\nEntrega 15:26 · limite 15:50\nMargem 24 min\nManter ordem atual\nAplicar sequência",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "eight-375",
+    "scenario": "busy",
+    "metrics": {
+      "viewport": [
+        375,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 555.421875,
+        "bottom": 754
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 0
+        },
+        {
+          "label": "Nova sequência",
+          "count": 1
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 132.046875
+        }
+      ],
+      "footer": [
+        {
+          "label": "Manter ordem atual",
+          "height": 44,
+          "bottom": 819
+        },
+        {
+          "label": "Aplicar sequência",
+          "height": 44,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "text": "Atrasos previstos3→0entregas↓ 3 atrasos evitados",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "Tempo total80→53min↓ −27 min",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "Distância25,3→14,4km↓ −10,9 km",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "⚠ Atenção: prazo apertado1 entrega tem margem inferior a 5 min. Uma saída mais tarde pode causar atraso.",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 16:00 · margem estimada 51 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:59 · margem estimada 35 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:58 · margem estimada 23 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:57 · margem estimada 14 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:56 · margem estimada <1 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 15:55 · atraso estimado 7 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:54 · atraso estimado 12 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:53 · atraso estimado 25 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:57 · margem estimada 43 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:59 · margem estimada 41 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:58 · margem estimada 29 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:53 · margem estimada 19 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 16:00 · margem estimada 21 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:54 · margem estimada 11 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:55 · margem estimada 7 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:56 · margem estimada 3 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Margem 43 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 41 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 29 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 19 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 21 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 11 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 7 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "⚠ Prazo apertado · margem 3 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        }
+      ]
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\nRecomendação\nAntecipe as entregas mais urgentes\n\nEvita 3 atrasos previstos com a nova sequência.\n\nAtrasos previstos\n3\n→\n0\nentregas\n↓ 3 atrasos evitados\nTempo total\n80\n→\n53\nmin\n↓ −27 min\nDistância\n25,3\n→\n14,4\nkm\n↓ −10,9 km\n⚠ Atenção: prazo apertado\n\n1 entrega tem margem inferior a 5 min. Uma saída mais tarde pode causar atraso.\n\nVer comparação detalhada\nNova sequência · 8 pedidos\n1\n#2003\nCentro\nEntrega 15:14 · limite 15:57\n↕ 4 → 1\nMargem 43 min\n2\n#2001\nCentro\nEntrega 15:18 · limite 15:59\nMargem 41 min\n3\n#2002\nVila Mariana\nEntrega 15:29 · limite 15:58\nMargem 29 min\n4\n#2007\nCentro\nEntrega 15:34 · limite 15:53\n↕ 8 → 4\nMargem 19 min\n5\n#2000\nVila Mariana\nEntrega 15:39 · limite 16:00\n↕ 1 → 5\nMargem 21 min\n6\n#2006\nVila Mariana\nEntrega 15:43 · limite 15:54\n↕ 7 → 6\nMargem 11 min\n7\n#2005\nCentro\nEntrega 15:48 · limite 15:55\n↕ 6 → 7\nMargem 7 min\n8\n#2004\nVila Mariana\nEntrega 15:53 · limite 15:56\n↕ 5 → 8\n⚠ Prazo apertado · margem 3 min\nManter ordem atual\nAplicar sequência",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "urgent-390",
+    "scenario": "opt-urgent",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 555.421875,
+        "bottom": 754
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 0
+        },
+        {
+          "label": "Nova sequência",
+          "count": 1
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 136.5
+        }
+      ],
+      "footer": [
+        {
+          "label": "Manter ordem atual",
+          "height": 44,
+          "bottom": 819
+        },
+        {
+          "label": "Aplicar sequência",
+          "height": 44,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "text": "Atrasos previstos1→0entregas↓ 1 atraso evitado",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "Tempo total27→27min= Sem alteração",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Distância8,4→8,5km! +100 mPequena desvantagem",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "⚠ Atenção: prazo muito apertado1 entrega tem margem inferior a 1 min. Uma saída mais tarde pode causar atraso.",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 41 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:17 · atraso estimado 2 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 24 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:17 · margem estimada <1 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 28 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 24 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "⚠ Prazo muito apertado · margem <1 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Margem 28 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 24 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\nRecomendação\nAntecipe as entregas mais urgentes\n\nEvita 1 atraso previsto com a nova sequência.\n\nAtrasos previstos\n1\n→\n0\nentregas\n↓ 1 atraso evitado\nTempo total\n27\n→\n27\nmin\n= Sem alteração\nDistância\n8,4\n→\n8,5\nkm\n! +100 m\nPequena desvantagem\n⚠ Atenção: prazo muito apertado\n\n1 entrega tem margem inferior a 1 min. Uma saída mais tarde pode causar atraso.\n\nVer comparação detalhada\nNova sequência · 3 pedidos\n1\n#1047\nCentro\nEntrega 15:17 · limite 15:17\n↕ 2 → 1\n⚠ Prazo muito apertado · margem <1 min\n2\n#1048\nVila Mariana\nEntrega 15:22 · limite 15:50\n↕ 1 → 2\nMargem 28 min\n3\n#1046\nJardim Paulista\nEntrega 15:26 · limite 15:50\nMargem 24 min\nManter ordem atual\nAplicar sequência",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "eight-390",
+    "scenario": "busy",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 555.421875,
+        "bottom": 754
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 0
+        },
+        {
+          "label": "Nova sequência",
+          "count": 2
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 116.109375
+        }
+      ],
+      "footer": [
+        {
+          "label": "Manter ordem atual",
+          "height": 44,
+          "bottom": 819
+        },
+        {
+          "label": "Aplicar sequência",
+          "height": 44,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "text": "Atrasos previstos3→0entregas↓ 3 atrasos evitados",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "Tempo total80→53min↓ −27 min",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "Distância25,3→14,4km↓ −10,9 km",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "⚠ Atenção: prazo apertado1 entrega tem margem inferior a 5 min. Uma saída mais tarde pode causar atraso.",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 16:00 · margem estimada 51 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:59 · margem estimada 35 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:58 · margem estimada 23 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:57 · margem estimada 14 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:56 · margem estimada <1 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 15:55 · atraso estimado 7 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:54 · atraso estimado 12 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:53 · atraso estimado 25 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:57 · margem estimada 43 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:59 · margem estimada 41 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:58 · margem estimada 29 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:53 · margem estimada 19 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 16:00 · margem estimada 21 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:54 · margem estimada 11 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:55 · margem estimada 7 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:56 · margem estimada 3 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Margem 43 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 41 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 29 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 19 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 21 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 11 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 7 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "⚠ Prazo apertado · margem 3 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        }
+      ]
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\nRecomendação\nAntecipe as entregas mais urgentes\n\nEvita 3 atrasos previstos com a nova sequência.\n\nAtrasos previstos\n3\n→\n0\nentregas\n↓ 3 atrasos evitados\nTempo total\n80\n→\n53\nmin\n↓ −27 min\nDistância\n25,3\n→\n14,4\nkm\n↓ −10,9 km\n⚠ Atenção: prazo apertado\n\n1 entrega tem margem inferior a 5 min. Uma saída mais tarde pode causar atraso.\n\nVer comparação detalhada\nNova sequência · 8 pedidos\n1\n#2003\nCentro\nEntrega 15:14 · limite 15:57\n↕ 4 → 1\nMargem 43 min\n2\n#2001\nCentro\nEntrega 15:18 · limite 15:59\nMargem 41 min\n3\n#2002\nVila Mariana\nEntrega 15:29 · limite 15:58\nMargem 29 min\n4\n#2007\nCentro\nEntrega 15:34 · limite 15:53\n↕ 8 → 4\nMargem 19 min\n5\n#2000\nVila Mariana\nEntrega 15:39 · limite 16:00\n↕ 1 → 5\nMargem 21 min\n6\n#2006\nVila Mariana\nEntrega 15:43 · limite 15:54\n↕ 7 → 6\nMargem 11 min\n7\n#2005\nCentro\nEntrega 15:48 · limite 15:55\n↕ 6 → 7\nMargem 7 min\n8\n#2004\nVila Mariana\nEntrega 15:53 · limite 15:56\n↕ 5 → 8\n⚠ Prazo apertado · margem 3 min\nManter ordem atual\nAplicar sequência",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "urgent-1280",
+    "scenario": "opt-urgent",
+    "metrics": {
+      "viewport": [
+        1280,
+        800
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 508.8125,
+        "bottom": 698
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 0
+        },
+        {
+          "label": "Nova sequência",
+          "count": 2
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 119.71875
+        }
+      ],
+      "footer": [
+        {
+          "label": "Manter ordem atual",
+          "height": 44,
+          "bottom": 763
+        },
+        {
+          "label": "Aplicar sequência",
+          "height": 44,
+          "bottom": 763
+        }
+      ],
+      "tones": [
+        {
+          "text": "Atrasos previstos1→0entregas↓ 1 atraso evitado",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "Tempo total27→27min= Sem alteração",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Distância8,4→8,5km! +100 mPequena desvantagem",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "⚠ Atenção: prazo muito apertado1 entrega tem margem inferior a 1 min. Uma saída mais tarde pode causar atraso.",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 41 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:17 · atraso estimado 2 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 24 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:17 · margem estimada <1 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 28 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 24 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "⚠ Prazo muito apertado · margem <1 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Margem 28 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 24 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\nRecomendação\nAntecipe as entregas mais urgentes\n\nEvita 1 atraso previsto com a nova sequência.\n\nAtrasos previstos\n1\n→\n0\nentregas\n↓ 1 atraso evitado\nTempo total\n27\n→\n27\nmin\n= Sem alteração\nDistância\n8,4\n→\n8,5\nkm\n! +100 m\nPequena desvantagem\n⚠ Atenção: prazo muito apertado\n\n1 entrega tem margem inferior a 1 min. Uma saída mais tarde pode causar atraso.\n\nVer comparação detalhada\nNova sequência · 3 pedidos\n1\n#1047\nCentro\nEntrega 15:17 · limite 15:17\n↕ 2 → 1\n⚠ Prazo muito apertado · margem <1 min\n2\n#1048\nVila Mariana\nEntrega 15:22 · limite 15:50\n↕ 1 → 2\nMargem 28 min\n3\n#1046\nJardim Paulista\nEntrega 15:26 · limite 15:50\nMargem 24 min\nManter ordem atual\nAplicar sequência",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "eight-1280",
+    "scenario": "busy",
+    "metrics": {
+      "viewport": [
+        1280,
+        800
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 508.8125,
+        "bottom": 698
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 0
+        },
+        {
+          "label": "Nova sequência",
+          "count": 2
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 97.875
+        }
+      ],
+      "footer": [
+        {
+          "label": "Manter ordem atual",
+          "height": 44,
+          "bottom": 763
+        },
+        {
+          "label": "Aplicar sequência",
+          "height": 44,
+          "bottom": 763
+        }
+      ],
+      "tones": [
+        {
+          "text": "Atrasos previstos3→0entregas↓ 3 atrasos evitados",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "Tempo total80→53min↓ −27 min",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "Distância25,3→14,4km↓ −10,9 km",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "⚠ Atenção: prazo apertado1 entrega tem margem inferior a 5 min. Uma saída mais tarde pode causar atraso.",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 16:00 · margem estimada 51 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:59 · margem estimada 35 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:58 · margem estimada 23 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:57 · margem estimada 14 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:56 · margem estimada <1 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 15:55 · atraso estimado 7 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:54 · atraso estimado 12 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:53 · atraso estimado 25 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:57 · margem estimada 43 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:59 · margem estimada 41 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:58 · margem estimada 29 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:53 · margem estimada 19 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 16:00 · margem estimada 21 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:54 · margem estimada 11 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:55 · margem estimada 7 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:56 · margem estimada 3 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Margem 43 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 41 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 29 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 19 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 21 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 11 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 7 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "⚠ Prazo apertado · margem 3 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        }
+      ]
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\nRecomendação\nAntecipe as entregas mais urgentes\n\nEvita 3 atrasos previstos com a nova sequência.\n\nAtrasos previstos\n3\n→\n0\nentregas\n↓ 3 atrasos evitados\nTempo total\n80\n→\n53\nmin\n↓ −27 min\nDistância\n25,3\n→\n14,4\nkm\n↓ −10,9 km\n⚠ Atenção: prazo apertado\n\n1 entrega tem margem inferior a 5 min. Uma saída mais tarde pode causar atraso.\n\nVer comparação detalhada\nNova sequência · 8 pedidos\n1\n#2003\nCentro\nEntrega 15:14 · limite 15:57\n↕ 4 → 1\nMargem 43 min\n2\n#2001\nCentro\nEntrega 15:18 · limite 15:59\nMargem 41 min\n3\n#2002\nVila Mariana\nEntrega 15:29 · limite 15:58\nMargem 29 min\n4\n#2007\nCentro\nEntrega 15:34 · limite 15:53\n↕ 8 → 4\nMargem 19 min\n5\n#2000\nVila Mariana\nEntrega 15:39 · limite 16:00\n↕ 1 → 5\nMargem 21 min\n6\n#2006\nVila Mariana\nEntrega 15:43 · limite 15:54\n↕ 7 → 6\nMargem 11 min\n7\n#2005\nCentro\nEntrega 15:48 · limite 15:55\n↕ 6 → 7\nMargem 7 min\n8\n#2004\nVila Mariana\nEntrega 15:53 · limite 15:56\n↕ 5 → 8\n⚠ Prazo apertado · margem 3 min\nManter ordem atual\nAplicar sequência",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "urgent-1440",
+    "scenario": "opt-urgent",
+    "metrics": {
+      "viewport": [
+        1440,
+        900
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 549.078125,
+        "bottom": 768.125
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 0
+        },
+        {
+          "label": "Nova sequência",
+          "count": 3
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 119.71875
+        }
+      ],
+      "footer": [
+        {
+          "label": "Manter ordem atual",
+          "height": 44,
+          "bottom": 833.125
+        },
+        {
+          "label": "Aplicar sequência",
+          "height": 44,
+          "bottom": 833.125
+        }
+      ],
+      "tones": [
+        {
+          "text": "Atrasos previstos1→0entregas↓ 1 atraso evitado",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "Tempo total27→27min= Sem alteração",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Distância8,4→8,5km! +100 mPequena desvantagem",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "⚠ Atenção: prazo muito apertado1 entrega tem margem inferior a 1 min. Uma saída mais tarde pode causar atraso.",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 41 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:17 · atraso estimado 2 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 24 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:17 · margem estimada <1 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 28 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:50 · margem estimada 24 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "⚠ Prazo muito apertado · margem <1 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Margem 28 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 24 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\nRecomendação\nAntecipe as entregas mais urgentes\n\nEvita 1 atraso previsto com a nova sequência.\n\nAtrasos previstos\n1\n→\n0\nentregas\n↓ 1 atraso evitado\nTempo total\n27\n→\n27\nmin\n= Sem alteração\nDistância\n8,4\n→\n8,5\nkm\n! +100 m\nPequena desvantagem\n⚠ Atenção: prazo muito apertado\n\n1 entrega tem margem inferior a 1 min. Uma saída mais tarde pode causar atraso.\n\nVer comparação detalhada\nNova sequência · 3 pedidos\n1\n#1047\nCentro\nEntrega 15:17 · limite 15:17\n↕ 2 → 1\n⚠ Prazo muito apertado · margem <1 min\n2\n#1048\nVila Mariana\nEntrega 15:22 · limite 15:50\n↕ 1 → 2\nMargem 28 min\n3\n#1046\nJardim Paulista\nEntrega 15:26 · limite 15:50\nMargem 24 min\nManter ordem atual\nAplicar sequência",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "eight-1440",
+    "scenario": "busy",
+    "metrics": {
+      "viewport": [
+        1440,
+        900
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 608.8125,
+        "bottom": 798
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 0
+        },
+        {
+          "label": "Nova sequência",
+          "count": 4
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 97.875
+        }
+      ],
+      "footer": [
+        {
+          "label": "Manter ordem atual",
+          "height": 44,
+          "bottom": 863
+        },
+        {
+          "label": "Aplicar sequência",
+          "height": 44,
+          "bottom": 863
+        }
+      ],
+      "tones": [
+        {
+          "text": "Atrasos previstos3→0entregas↓ 3 atrasos evitados",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "Tempo total80→53min↓ −27 min",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "Distância25,3→14,4km↓ −10,9 km",
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "text": "⚠ Atenção: prazo apertado1 entrega tem margem inferior a 5 min. Uma saída mais tarde pode causar atraso.",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 16:00 · margem estimada 51 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:59 · margem estimada 35 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:58 · margem estimada 23 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:57 · margem estimada 14 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:56 · margem estimada <1 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Limite 15:55 · atraso estimado 7 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:54 · atraso estimado 12 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:53 · atraso estimado 25 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:57 · margem estimada 43 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:59 · margem estimada 41 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:58 · margem estimada 29 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:53 · margem estimada 19 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 16:00 · margem estimada 21 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:54 · margem estimada 11 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:55 · margem estimada 7 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Limite 15:56 · margem estimada 3 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "text": "Margem 43 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 41 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 29 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 19 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 21 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 11 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Margem 7 min",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "⚠ Prazo apertado · margem 3 min",
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        }
+      ]
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\nRecomendação\nAntecipe as entregas mais urgentes\n\nEvita 3 atrasos previstos com a nova sequência.\n\nAtrasos previstos\n3\n→\n0\nentregas\n↓ 3 atrasos evitados\nTempo total\n80\n→\n53\nmin\n↓ −27 min\nDistância\n25,3\n→\n14,4\nkm\n↓ −10,9 km\n⚠ Atenção: prazo apertado\n\n1 entrega tem margem inferior a 5 min. Uma saída mais tarde pode causar atraso.\n\nVer comparação detalhada\nNova sequência · 8 pedidos\n1\n#2003\nCentro\nEntrega 15:14 · limite 15:57\n↕ 4 → 1\nMargem 43 min\n2\n#2001\nCentro\nEntrega 15:18 · limite 15:59\nMargem 41 min\n3\n#2002\nVila Mariana\nEntrega 15:29 · limite 15:58\nMargem 29 min\n4\n#2007\nCentro\nEntrega 15:34 · limite 15:53\n↕ 8 → 4\nMargem 19 min\n5\n#2000\nVila Mariana\nEntrega 15:39 · limite 16:00\n↕ 1 → 5\nMargem 21 min\n6\n#2006\nVila Mariana\nEntrega 15:43 · limite 15:54\n↕ 7 → 6\nMargem 11 min\n7\n#2005\nCentro\nEntrega 15:48 · limite 15:55\n↕ 6 → 7\nMargem 7 min\n8\n#2004\nVila Mariana\nEntrega 15:53 · limite 15:56\n↕ 5 → 8\n⚠ Prazo apertado · margem 3 min\nManter ordem atual\nAplicar sequência",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "long-320",
+    "scenario": "worst",
+    "metrics": {
+      "viewport": [
+        320,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 523.4375,
+        "bottom": 739.40625
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 0
+        },
+        {
+          "label": "Nova sequência",
+          "count": 0
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 132.046875
+        }
+      ],
+      "footer": [
+        {
+          "label": "Manter ordem atual",
+          "height": 58.59375,
+          "bottom": 819
+        },
+        {
+          "label": "Aplicar sequência",
+          "height": 58.59375,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "text": "Atrasos previstos3→3entregas= Mesma quantidade",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Tempo total27→27min= Sem alteração",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Distância8,4→8,4km= Sem alteração",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "⚠ 3 entregas permanecem com atraso previstoNenhuma sequência cumpre todos os prazos sob estas hipóteses.",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 11/10, 18:36 · atraso estimado 1233 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:08 · atraso estimado 11 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 14:52 · atraso estimado 34 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 11/10, 18:36 · atraso estimado 1233 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 14:52 · atraso estimado 21 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:08 · atraso estimado 17 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "⚠ Prazo vencido · atraso previsto 1233 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "⚠ Prazo vencido · atraso previsto 21 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "⚠ Atraso previsto 17 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\nRecomendação\nReduza o atraso total\n\nA nova ordem reduz o atraso total previsto em 7 min.\n\nAtrasos previstos\n3\n→\n3\nentregas\n= Mesma quantidade\nTempo total\n27\n→\n27\nmin\n= Sem alteração\nDistância\n8,4\n→\n8,4\nkm\n= Sem alteração\n⚠ 3 entregas permanecem com atraso previsto\n\nNenhuma sequência cumpre todos os prazos sob estas hipóteses.\n\nVer comparação detalhada\nNova sequência · 3 pedidos\n1\n#1048\nResidencial Parque dos Girassóis — Setor Norte\nEntrega 15:09 · limite 11/10, 18:36\n⚠ Prazo vencido · atraso previsto 1233 min\n2\n#1046\nJardim Paulista\nEntrega 15:13 · limite 14:52\n↕ 3 → 2\n⚠ Prazo vencido · atraso previsto 21 min\n3\n#WHATSAPP-20261011-PEDIDO-ALMOCO-1284\nCentro\nEntrega 15:25 · limite 15:08\n↕ 2 → 3\n⚠ Atraso previsto 17 min\nManter ordem atual\nAplicar sequência",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "impossible-390",
+    "scenario": "opt-impossible",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 555.421875,
+        "bottom": 754
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 0
+        },
+        {
+          "label": "Nova sequência",
+          "count": 2
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 116.109375
+        }
+      ],
+      "footer": [
+        {
+          "label": "Manter ordem atual",
+          "height": 44,
+          "bottom": 819
+        },
+        {
+          "label": "Aplicar sequência",
+          "height": 44,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "text": "Atrasos previstos3→3entregas= Mesma quantidade",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Tempo total27→27min= Sem alteração",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "Distância8,4→8,4km= Sem alteração",
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "text": "⚠ 3 entregas permanecem com atraso previstoNenhuma sequência cumpre todos os prazos sob estas hipóteses.",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:01 · atraso estimado 8 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:01 · atraso estimado 18 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:01 · atraso estimado 25 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:01 · atraso estimado 8 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:01 · atraso estimado 12 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "Limite 15:01 · atraso estimado 24 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "⚠ Atraso previsto 8 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "⚠ Atraso previsto 12 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "text": "⚠ Atraso previsto 24 min",
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\nRecomendação\nReduza o atraso total\n\nA nova ordem reduz o atraso total previsto em 7 min.\n\nAtrasos previstos\n3\n→\n3\nentregas\n= Mesma quantidade\nTempo total\n27\n→\n27\nmin\n= Sem alteração\nDistância\n8,4\n→\n8,4\nkm\n= Sem alteração\n⚠ 3 entregas permanecem com atraso previsto\n\nNenhuma sequência cumpre todos os prazos sob estas hipóteses.\n\nVer comparação detalhada\nNova sequência · 3 pedidos\n1\n#1048\nVila Mariana\nEntrega 15:09 · limite 15:01\n⚠ Atraso previsto 8 min\n2\n#1046\nJardim Paulista\nEntrega 15:13 · limite 15:01\n↕ 3 → 2\n⚠ Atraso previsto 12 min\n3\n#1047\nCentro\nEntrega 15:25 · limite 15:01\n↕ 2 → 3\n⚠ Atraso previsto 24 min\nManter ordem atual\nAplicar sequência",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "missing-390",
+    "scenario": "opt-missing",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 80,
+        "bottom": 586.859375
+      },
+      "initialCompleteStops": [],
+      "metrics": [],
+      "footer": [
+        {
+          "label": "Manter ordem atual",
+          "height": 44,
+          "bottom": 651.859375
+        },
+        {
+          "label": "Aplicar sequência",
+          "height": 44,
+          "bottom": 651.859375
+        }
+      ],
+      "tones": []
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída estimada\nAtendimento por parada (min)\nCalcular sugestão (demo)\n\nFaltam coordenadas confirmadas. A montagem manual continua disponível; o cadastro demonstrativo não geocodifica endereços.\n\nManter ordem atual\nAplicar sequência",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "no-route-390",
+    "scenario": "opt-no-route",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 80,
+        "bottom": 586.859375
+      },
+      "initialCompleteStops": [],
+      "metrics": [],
+      "footer": [
+        {
+          "label": "Manter ordem atual",
+          "height": 44,
+          "bottom": 651.859375
+        },
+        {
+          "label": "Aplicar sequência",
+          "height": 44,
+          "bottom": 651.859375
+        }
+      ],
+      "tones": []
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída estimada\nAtendimento por parada (min)\nCalcular sugestão (demo)\n\nNão existe percurso completo com retorno à loja nesta matriz. Confira os destinos; não foi removido nenhum pedido.\n\nManter ordem atual\nAplicar sequência",
+    "issues": [],
+    "external": []
+  }
+]
