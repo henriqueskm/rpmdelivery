@@ -1,0 +1,1642 @@
+[
+  {
+    "width": 1280,
+    "height": 800,
+    "scenario": "busy",
+    "mode": "inline",
+    "listHeight": 283,
+    "visibleListHeight": 283,
+    "listTop": 316.53125,
+    "listBottom": 599.421875,
+    "rowBounds": [
+      {
+        "top": 316.53125,
+        "bottom": 406.09375,
+        "complete": true
+      },
+      {
+        "top": 406.09375,
+        "bottom": 476.265625,
+        "complete": true
+      },
+      {
+        "top": 476.265625,
+        "bottom": 546.4375,
+        "complete": true
+      },
+      {
+        "top": 546.4375,
+        "bottom": 616.609375,
+        "complete": false
+      },
+      {
+        "top": 616.609375,
+        "bottom": 686.78125,
+        "complete": false
+      },
+      {
+        "top": 686.78125,
+        "bottom": 756.953125,
+        "complete": false
+      },
+      {
+        "top": 756.953125,
+        "bottom": 827.125,
+        "complete": false
+      },
+      {
+        "top": 827.125,
+        "bottom": 897.296875,
+        "complete": false
+      },
+      {
+        "top": 897.296875,
+        "bottom": 967.46875,
+        "complete": false
+      },
+      {
+        "top": 967.46875,
+        "bottom": 1057.03125,
+        "complete": false
+      },
+      {
+        "top": 1057.03125,
+        "bottom": 1127.203125,
+        "complete": false
+      },
+      {
+        "top": 1127.203125,
+        "bottom": 1197.375,
+        "complete": false
+      },
+      {
+        "top": 1197.375,
+        "bottom": 1267.546875,
+        "complete": false
+      },
+      {
+        "top": 1267.546875,
+        "bottom": 1337.71875,
+        "complete": false
+      },
+      {
+        "top": 1337.71875,
+        "bottom": 1407.890625,
+        "complete": false
+      },
+      {
+        "top": 1407.890625,
+        "bottom": 1478.0625,
+        "complete": false
+      },
+      {
+        "top": 1478.0625,
+        "bottom": 1548.234375,
+        "complete": false
+      },
+      {
+        "top": 1548.234375,
+        "bottom": 1618.40625,
+        "complete": false
+      },
+      {
+        "top": 1618.40625,
+        "bottom": 1707.96875,
+        "complete": false
+      },
+      {
+        "top": 1707.96875,
+        "bottom": 1778.140625,
+        "complete": false
+      }
+    ],
+    "completeStops": 3,
+    "totalNotes": 3,
+    "visibleNotes": 1,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 1280,
+    "height": 800,
+    "scenario": "busy",
+    "mode": "expanded",
+    "listHeight": 516,
+    "visibleListHeight": 516,
+    "listTop": 114.328125,
+    "listBottom": 629.828125,
+    "rowBounds": [
+      {
+        "top": 114.328125,
+        "bottom": 205.890625,
+        "complete": true
+      },
+      {
+        "top": 205.890625,
+        "bottom": 278.0625,
+        "complete": true
+      },
+      {
+        "top": 278.0625,
+        "bottom": 350.234375,
+        "complete": true
+      },
+      {
+        "top": 350.234375,
+        "bottom": 422.40625,
+        "complete": true
+      },
+      {
+        "top": 422.40625,
+        "bottom": 494.578125,
+        "complete": true
+      },
+      {
+        "top": 494.578125,
+        "bottom": 566.75,
+        "complete": true
+      },
+      {
+        "top": 566.75,
+        "bottom": 638.921875,
+        "complete": false
+      },
+      {
+        "top": 638.921875,
+        "bottom": 711.09375,
+        "complete": false
+      },
+      {
+        "top": 711.09375,
+        "bottom": 783.265625,
+        "complete": false
+      },
+      {
+        "top": 783.265625,
+        "bottom": 874.828125,
+        "complete": false
+      },
+      {
+        "top": 874.828125,
+        "bottom": 947,
+        "complete": false
+      },
+      {
+        "top": 947,
+        "bottom": 1019.171875,
+        "complete": false
+      },
+      {
+        "top": 1019.171875,
+        "bottom": 1091.34375,
+        "complete": false
+      },
+      {
+        "top": 1091.34375,
+        "bottom": 1163.515625,
+        "complete": false
+      },
+      {
+        "top": 1163.515625,
+        "bottom": 1235.6875,
+        "complete": false
+      },
+      {
+        "top": 1235.6875,
+        "bottom": 1307.859375,
+        "complete": false
+      },
+      {
+        "top": 1307.859375,
+        "bottom": 1380.03125,
+        "complete": false
+      },
+      {
+        "top": 1380.03125,
+        "bottom": 1452.203125,
+        "complete": false
+      },
+      {
+        "top": 1452.203125,
+        "bottom": 1543.765625,
+        "complete": false
+      },
+      {
+        "top": 1543.765625,
+        "bottom": 1615.9375,
+        "complete": false
+      }
+    ],
+    "completeStops": 6,
+    "totalNotes": 3,
+    "visibleNotes": 1,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 1280,
+    "height": 800,
+    "scenario": "worst",
+    "mode": "inline",
+    "listHeight": 283,
+    "visibleListHeight": 283,
+    "listTop": 316.53125,
+    "listBottom": 599.421875,
+    "rowBounds": [
+      {
+        "top": 316.53125,
+        "bottom": 512.4375,
+        "complete": true
+      },
+      {
+        "top": 512.4375,
+        "bottom": 619.390625,
+        "complete": false
+      },
+      {
+        "top": 619.390625,
+        "bottom": 672.171875,
+        "complete": false
+      },
+      {
+        "top": 672.171875,
+        "bottom": 744.34375,
+        "complete": false
+      },
+      {
+        "top": 744.34375,
+        "bottom": 797.125,
+        "complete": false
+      },
+      {
+        "top": 797.125,
+        "bottom": 869.296875,
+        "complete": false
+      }
+    ],
+    "completeStops": 1,
+    "totalNotes": 4,
+    "visibleNotes": 1,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 1280,
+    "height": 800,
+    "scenario": "worst",
+    "mode": "expanded",
+    "listHeight": 516,
+    "visibleListHeight": 516,
+    "listTop": 114.328125,
+    "listBottom": 629.828125,
+    "rowBounds": [
+      {
+        "top": 114.328125,
+        "bottom": 242.671875,
+        "complete": true
+      },
+      {
+        "top": 242.671875,
+        "bottom": 334.234375,
+        "complete": true
+      },
+      {
+        "top": 334.234375,
+        "bottom": 406.40625,
+        "complete": true
+      },
+      {
+        "top": 406.40625,
+        "bottom": 497.96875,
+        "complete": true
+      },
+      {
+        "top": 497.96875,
+        "bottom": 570.140625,
+        "complete": true
+      },
+      {
+        "top": 570.140625,
+        "bottom": 661.703125,
+        "complete": false
+      }
+    ],
+    "completeStops": 5,
+    "totalNotes": 4,
+    "visibleNotes": 3,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "scenario": "busy",
+    "mode": "inline",
+    "listHeight": 401,
+    "visibleListHeight": 401,
+    "listTop": 316.53125,
+    "listBottom": 717.421875,
+    "rowBounds": [
+      {
+        "top": 316.53125,
+        "bottom": 388.703125,
+        "complete": true
+      },
+      {
+        "top": 388.703125,
+        "bottom": 441.484375,
+        "complete": true
+      },
+      {
+        "top": 441.484375,
+        "bottom": 494.265625,
+        "complete": true
+      },
+      {
+        "top": 494.265625,
+        "bottom": 547.046875,
+        "complete": true
+      },
+      {
+        "top": 547.046875,
+        "bottom": 599.828125,
+        "complete": true
+      },
+      {
+        "top": 599.828125,
+        "bottom": 652.609375,
+        "complete": true
+      },
+      {
+        "top": 652.609375,
+        "bottom": 705.390625,
+        "complete": true
+      },
+      {
+        "top": 705.390625,
+        "bottom": 758.171875,
+        "complete": false
+      },
+      {
+        "top": 758.171875,
+        "bottom": 810.953125,
+        "complete": false
+      },
+      {
+        "top": 810.953125,
+        "bottom": 883.125,
+        "complete": false
+      },
+      {
+        "top": 883.125,
+        "bottom": 935.90625,
+        "complete": false
+      },
+      {
+        "top": 935.90625,
+        "bottom": 988.6875,
+        "complete": false
+      },
+      {
+        "top": 988.6875,
+        "bottom": 1041.46875,
+        "complete": false
+      },
+      {
+        "top": 1041.46875,
+        "bottom": 1094.25,
+        "complete": false
+      },
+      {
+        "top": 1094.25,
+        "bottom": 1147.03125,
+        "complete": false
+      },
+      {
+        "top": 1147.03125,
+        "bottom": 1199.8125,
+        "complete": false
+      },
+      {
+        "top": 1199.8125,
+        "bottom": 1252.59375,
+        "complete": false
+      },
+      {
+        "top": 1252.59375,
+        "bottom": 1305.375,
+        "complete": false
+      },
+      {
+        "top": 1305.375,
+        "bottom": 1377.546875,
+        "complete": false
+      },
+      {
+        "top": 1377.546875,
+        "bottom": 1430.328125,
+        "complete": false
+      }
+    ],
+    "completeStops": 7,
+    "totalNotes": 3,
+    "visibleNotes": 1,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "scenario": "busy",
+    "mode": "expanded",
+    "listHeight": 616,
+    "visibleListHeight": 616,
+    "listTop": 114.328125,
+    "listBottom": 729.828125,
+    "rowBounds": [
+      {
+        "top": 114.328125,
+        "bottom": 205.890625,
+        "complete": true
+      },
+      {
+        "top": 205.890625,
+        "bottom": 278.0625,
+        "complete": true
+      },
+      {
+        "top": 278.0625,
+        "bottom": 350.234375,
+        "complete": true
+      },
+      {
+        "top": 350.234375,
+        "bottom": 422.40625,
+        "complete": true
+      },
+      {
+        "top": 422.40625,
+        "bottom": 494.578125,
+        "complete": true
+      },
+      {
+        "top": 494.578125,
+        "bottom": 566.75,
+        "complete": true
+      },
+      {
+        "top": 566.75,
+        "bottom": 638.921875,
+        "complete": true
+      },
+      {
+        "top": 638.921875,
+        "bottom": 711.09375,
+        "complete": true
+      },
+      {
+        "top": 711.09375,
+        "bottom": 783.265625,
+        "complete": false
+      },
+      {
+        "top": 783.265625,
+        "bottom": 874.828125,
+        "complete": false
+      },
+      {
+        "top": 874.828125,
+        "bottom": 947,
+        "complete": false
+      },
+      {
+        "top": 947,
+        "bottom": 1019.171875,
+        "complete": false
+      },
+      {
+        "top": 1019.171875,
+        "bottom": 1091.34375,
+        "complete": false
+      },
+      {
+        "top": 1091.34375,
+        "bottom": 1163.515625,
+        "complete": false
+      },
+      {
+        "top": 1163.515625,
+        "bottom": 1235.6875,
+        "complete": false
+      },
+      {
+        "top": 1235.6875,
+        "bottom": 1307.859375,
+        "complete": false
+      },
+      {
+        "top": 1307.859375,
+        "bottom": 1380.03125,
+        "complete": false
+      },
+      {
+        "top": 1380.03125,
+        "bottom": 1452.203125,
+        "complete": false
+      },
+      {
+        "top": 1452.203125,
+        "bottom": 1543.765625,
+        "complete": false
+      },
+      {
+        "top": 1543.765625,
+        "bottom": 1615.9375,
+        "complete": false
+      }
+    ],
+    "completeStops": 8,
+    "totalNotes": 3,
+    "visibleNotes": 1,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "scenario": "worst",
+    "mode": "inline",
+    "listHeight": 401,
+    "visibleListHeight": 401,
+    "listTop": 316.53125,
+    "listBottom": 717.421875,
+    "rowBounds": [
+      {
+        "top": 316.53125,
+        "bottom": 495.046875,
+        "complete": true
+      },
+      {
+        "top": 495.046875,
+        "bottom": 584.609375,
+        "complete": true
+      },
+      {
+        "top": 584.609375,
+        "bottom": 637.390625,
+        "complete": true
+      },
+      {
+        "top": 637.390625,
+        "bottom": 709.5625,
+        "complete": true
+      },
+      {
+        "top": 709.5625,
+        "bottom": 762.34375,
+        "complete": false
+      },
+      {
+        "top": 762.34375,
+        "bottom": 834.515625,
+        "complete": false
+      }
+    ],
+    "completeStops": 4,
+    "totalNotes": 4,
+    "visibleNotes": 3,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "scenario": "worst",
+    "mode": "expanded",
+    "listHeight": 616,
+    "visibleListHeight": 616,
+    "listTop": 114.328125,
+    "listBottom": 729.828125,
+    "rowBounds": [
+      {
+        "top": 114.328125,
+        "bottom": 242.671875,
+        "complete": true
+      },
+      {
+        "top": 242.671875,
+        "bottom": 334.234375,
+        "complete": true
+      },
+      {
+        "top": 334.234375,
+        "bottom": 406.40625,
+        "complete": true
+      },
+      {
+        "top": 406.40625,
+        "bottom": 497.96875,
+        "complete": true
+      },
+      {
+        "top": 497.96875,
+        "bottom": 570.140625,
+        "complete": true
+      },
+      {
+        "top": 570.140625,
+        "bottom": 661.703125,
+        "complete": true
+      }
+    ],
+    "completeStops": 6,
+    "totalNotes": 4,
+    "visibleNotes": 4,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 320,
+    "height": 844,
+    "scenario": "busy",
+    "mode": "inline",
+    "listHeight": 242,
+    "visibleListHeight": 242,
+    "listTop": 410.796875,
+    "listBottom": 652.6875,
+    "rowBounds": [
+      {
+        "top": 410.796875,
+        "bottom": 546.359375,
+        "complete": true
+      },
+      {
+        "top": 546.359375,
+        "bottom": 645.140625,
+        "complete": true
+      },
+      {
+        "top": 645.140625,
+        "bottom": 743.921875,
+        "complete": false
+      },
+      {
+        "top": 743.921875,
+        "bottom": 842.703125,
+        "complete": false
+      },
+      {
+        "top": 842.703125,
+        "bottom": 941.484375,
+        "complete": false
+      },
+      {
+        "top": 941.484375,
+        "bottom": 1040.265625,
+        "complete": false
+      },
+      {
+        "top": 1040.265625,
+        "bottom": 1139.046875,
+        "complete": false
+      },
+      {
+        "top": 1139.046875,
+        "bottom": 1237.828125,
+        "complete": false
+      },
+      {
+        "top": 1237.828125,
+        "bottom": 1336.609375,
+        "complete": false
+      },
+      {
+        "top": 1336.609375,
+        "bottom": 1472.171875,
+        "complete": false
+      },
+      {
+        "top": 1472.171875,
+        "bottom": 1570.953125,
+        "complete": false
+      },
+      {
+        "top": 1570.953125,
+        "bottom": 1669.734375,
+        "complete": false
+      },
+      {
+        "top": 1669.734375,
+        "bottom": 1768.515625,
+        "complete": false
+      },
+      {
+        "top": 1768.515625,
+        "bottom": 1867.296875,
+        "complete": false
+      },
+      {
+        "top": 1867.296875,
+        "bottom": 1966.078125,
+        "complete": false
+      },
+      {
+        "top": 1966.078125,
+        "bottom": 2064.859375,
+        "complete": false
+      },
+      {
+        "top": 2064.859375,
+        "bottom": 2163.640625,
+        "complete": false
+      },
+      {
+        "top": 2163.640625,
+        "bottom": 2262.421875,
+        "complete": false
+      },
+      {
+        "top": 2262.421875,
+        "bottom": 2397.984375,
+        "complete": false
+      },
+      {
+        "top": 2397.984375,
+        "bottom": 2496.765625,
+        "complete": false
+      }
+    ],
+    "completeStops": 2,
+    "totalNotes": 3,
+    "visibleNotes": 1,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 320,
+    "height": 844,
+    "scenario": "busy",
+    "mode": "expanded",
+    "listHeight": 523,
+    "visibleListHeight": 523,
+    "listTop": 131.71875,
+    "listBottom": 654.828125,
+    "rowBounds": [
+      {
+        "top": 131.71875,
+        "bottom": 286.671875,
+        "complete": true
+      },
+      {
+        "top": 286.671875,
+        "bottom": 404.84375,
+        "complete": true
+      },
+      {
+        "top": 404.84375,
+        "bottom": 523.015625,
+        "complete": true
+      },
+      {
+        "top": 523.015625,
+        "bottom": 641.1875,
+        "complete": true
+      },
+      {
+        "top": 641.1875,
+        "bottom": 759.359375,
+        "complete": false
+      },
+      {
+        "top": 759.359375,
+        "bottom": 877.53125,
+        "complete": false
+      },
+      {
+        "top": 877.53125,
+        "bottom": 995.703125,
+        "complete": false
+      },
+      {
+        "top": 995.703125,
+        "bottom": 1113.875,
+        "complete": false
+      },
+      {
+        "top": 1113.875,
+        "bottom": 1232.046875,
+        "complete": false
+      },
+      {
+        "top": 1232.046875,
+        "bottom": 1387,
+        "complete": false
+      },
+      {
+        "top": 1387,
+        "bottom": 1505.171875,
+        "complete": false
+      },
+      {
+        "top": 1505.171875,
+        "bottom": 1623.34375,
+        "complete": false
+      },
+      {
+        "top": 1623.34375,
+        "bottom": 1741.515625,
+        "complete": false
+      },
+      {
+        "top": 1741.515625,
+        "bottom": 1859.6875,
+        "complete": false
+      },
+      {
+        "top": 1859.6875,
+        "bottom": 1977.859375,
+        "complete": false
+      },
+      {
+        "top": 1977.859375,
+        "bottom": 2096.03125,
+        "complete": false
+      },
+      {
+        "top": 2096.03125,
+        "bottom": 2214.203125,
+        "complete": false
+      },
+      {
+        "top": 2214.203125,
+        "bottom": 2332.375,
+        "complete": false
+      },
+      {
+        "top": 2332.375,
+        "bottom": 2487.328125,
+        "complete": false
+      },
+      {
+        "top": 2487.328125,
+        "bottom": 2605.5,
+        "complete": false
+      }
+    ],
+    "completeStops": 4,
+    "totalNotes": 3,
+    "visibleNotes": 1,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 320,
+    "height": 844,
+    "scenario": "worst",
+    "mode": "inline",
+    "listHeight": 242,
+    "visibleListHeight": 242,
+    "listTop": 410.796875,
+    "listBottom": 652.6875,
+    "rowBounds": [
+      {
+        "top": 410.796875,
+        "bottom": 687.484375,
+        "complete": false
+      },
+      {
+        "top": 687.484375,
+        "bottom": 840.4375,
+        "complete": false
+      },
+      {
+        "top": 840.4375,
+        "bottom": 939.21875,
+        "complete": false
+      },
+      {
+        "top": 939.21875,
+        "bottom": 1074.78125,
+        "complete": false
+      },
+      {
+        "top": 1074.78125,
+        "bottom": 1173.5625,
+        "complete": false
+      },
+      {
+        "top": 1173.5625,
+        "bottom": 1291.734375,
+        "complete": false
+      }
+    ],
+    "completeStops": 0,
+    "totalNotes": 4,
+    "visibleNotes": 1,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 320,
+    "height": 844,
+    "scenario": "worst",
+    "mode": "expanded",
+    "listHeight": 523,
+    "visibleListHeight": 523,
+    "listTop": 131.71875,
+    "listBottom": 654.828125,
+    "rowBounds": [
+      {
+        "top": 131.71875,
+        "bottom": 462.578125,
+        "complete": true
+      },
+      {
+        "top": 462.578125,
+        "bottom": 634.921875,
+        "complete": true
+      },
+      {
+        "top": 634.921875,
+        "bottom": 753.09375,
+        "complete": false
+      },
+      {
+        "top": 753.09375,
+        "bottom": 908.046875,
+        "complete": false
+      },
+      {
+        "top": 908.046875,
+        "bottom": 1026.21875,
+        "complete": false
+      },
+      {
+        "top": 1026.21875,
+        "bottom": 1163.78125,
+        "complete": false
+      }
+    ],
+    "completeStops": 2,
+    "totalNotes": 4,
+    "visibleNotes": 2,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 375,
+    "height": 844,
+    "scenario": "busy",
+    "mode": "inline",
+    "listHeight": 258,
+    "visibleListHeight": 258,
+    "listTop": 393.40625,
+    "listBottom": 651.296875,
+    "rowBounds": [
+      {
+        "top": 393.40625,
+        "bottom": 482.96875,
+        "complete": true
+      },
+      {
+        "top": 482.96875,
+        "bottom": 553.140625,
+        "complete": true
+      },
+      {
+        "top": 553.140625,
+        "bottom": 623.3125,
+        "complete": true
+      },
+      {
+        "top": 623.3125,
+        "bottom": 693.484375,
+        "complete": false
+      },
+      {
+        "top": 693.484375,
+        "bottom": 763.65625,
+        "complete": false
+      },
+      {
+        "top": 763.65625,
+        "bottom": 833.828125,
+        "complete": false
+      },
+      {
+        "top": 833.828125,
+        "bottom": 904,
+        "complete": false
+      },
+      {
+        "top": 904,
+        "bottom": 974.171875,
+        "complete": false
+      },
+      {
+        "top": 974.171875,
+        "bottom": 1044.34375,
+        "complete": false
+      },
+      {
+        "top": 1044.34375,
+        "bottom": 1133.90625,
+        "complete": false
+      },
+      {
+        "top": 1133.90625,
+        "bottom": 1204.078125,
+        "complete": false
+      },
+      {
+        "top": 1204.078125,
+        "bottom": 1274.25,
+        "complete": false
+      },
+      {
+        "top": 1274.25,
+        "bottom": 1344.421875,
+        "complete": false
+      },
+      {
+        "top": 1344.421875,
+        "bottom": 1414.59375,
+        "complete": false
+      },
+      {
+        "top": 1414.59375,
+        "bottom": 1484.765625,
+        "complete": false
+      },
+      {
+        "top": 1484.765625,
+        "bottom": 1554.9375,
+        "complete": false
+      },
+      {
+        "top": 1554.9375,
+        "bottom": 1625.109375,
+        "complete": false
+      },
+      {
+        "top": 1625.109375,
+        "bottom": 1695.28125,
+        "complete": false
+      },
+      {
+        "top": 1695.28125,
+        "bottom": 1784.84375,
+        "complete": false
+      },
+      {
+        "top": 1784.84375,
+        "bottom": 1855.015625,
+        "complete": false
+      }
+    ],
+    "completeStops": 3,
+    "totalNotes": 3,
+    "visibleNotes": 1,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 375,
+    "height": 844,
+    "scenario": "busy",
+    "mode": "expanded",
+    "listHeight": 541,
+    "visibleListHeight": 541,
+    "listTop": 114.328125,
+    "listBottom": 654.828125,
+    "rowBounds": [
+      {
+        "top": 114.328125,
+        "bottom": 223.28125,
+        "complete": true
+      },
+      {
+        "top": 223.28125,
+        "bottom": 312.84375,
+        "complete": true
+      },
+      {
+        "top": 312.84375,
+        "bottom": 402.40625,
+        "complete": true
+      },
+      {
+        "top": 402.40625,
+        "bottom": 491.96875,
+        "complete": true
+      },
+      {
+        "top": 491.96875,
+        "bottom": 581.53125,
+        "complete": true
+      },
+      {
+        "top": 581.53125,
+        "bottom": 671.09375,
+        "complete": false
+      },
+      {
+        "top": 671.09375,
+        "bottom": 760.65625,
+        "complete": false
+      },
+      {
+        "top": 760.65625,
+        "bottom": 850.21875,
+        "complete": false
+      },
+      {
+        "top": 850.21875,
+        "bottom": 939.78125,
+        "complete": false
+      },
+      {
+        "top": 939.78125,
+        "bottom": 1048.734375,
+        "complete": false
+      },
+      {
+        "top": 1048.734375,
+        "bottom": 1138.296875,
+        "complete": false
+      },
+      {
+        "top": 1138.296875,
+        "bottom": 1227.859375,
+        "complete": false
+      },
+      {
+        "top": 1227.859375,
+        "bottom": 1317.421875,
+        "complete": false
+      },
+      {
+        "top": 1317.421875,
+        "bottom": 1406.984375,
+        "complete": false
+      },
+      {
+        "top": 1406.984375,
+        "bottom": 1496.546875,
+        "complete": false
+      },
+      {
+        "top": 1496.546875,
+        "bottom": 1586.109375,
+        "complete": false
+      },
+      {
+        "top": 1586.109375,
+        "bottom": 1675.671875,
+        "complete": false
+      },
+      {
+        "top": 1675.671875,
+        "bottom": 1765.234375,
+        "complete": false
+      },
+      {
+        "top": 1765.234375,
+        "bottom": 1874.1875,
+        "complete": false
+      },
+      {
+        "top": 1874.1875,
+        "bottom": 1963.75,
+        "complete": false
+      }
+    ],
+    "completeStops": 5,
+    "totalNotes": 3,
+    "visibleNotes": 1,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 375,
+    "height": 844,
+    "scenario": "worst",
+    "mode": "inline",
+    "listHeight": 258,
+    "visibleListHeight": 258,
+    "listTop": 393.40625,
+    "listBottom": 651.296875,
+    "rowBounds": [
+      {
+        "top": 393.40625,
+        "bottom": 606.703125,
+        "complete": true
+      },
+      {
+        "top": 606.703125,
+        "bottom": 731.046875,
+        "complete": false
+      },
+      {
+        "top": 731.046875,
+        "bottom": 790.046875,
+        "complete": false
+      },
+      {
+        "top": 790.046875,
+        "bottom": 868.4375,
+        "complete": false
+      },
+      {
+        "top": 868.4375,
+        "bottom": 927.4375,
+        "complete": false
+      },
+      {
+        "top": 927.4375,
+        "bottom": 1005.828125,
+        "complete": false
+      }
+    ],
+    "completeStops": 1,
+    "totalNotes": 4,
+    "visibleNotes": 1,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 375,
+    "height": 844,
+    "scenario": "worst",
+    "mode": "expanded",
+    "listHeight": 541,
+    "visibleListHeight": 541,
+    "listTop": 114.328125,
+    "listBottom": 654.828125,
+    "rowBounds": [
+      {
+        "top": 114.328125,
+        "bottom": 381.796875,
+        "complete": true
+      },
+      {
+        "top": 381.796875,
+        "bottom": 525.53125,
+        "complete": true
+      },
+      {
+        "top": 525.53125,
+        "bottom": 603.921875,
+        "complete": true
+      },
+      {
+        "top": 603.921875,
+        "bottom": 701.703125,
+        "complete": false
+      },
+      {
+        "top": 701.703125,
+        "bottom": 780.09375,
+        "complete": false
+      },
+      {
+        "top": 780.09375,
+        "bottom": 877.875,
+        "complete": false
+      }
+    ],
+    "completeStops": 3,
+    "totalNotes": 4,
+    "visibleNotes": 2,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "scenario": "busy",
+    "mode": "inline",
+    "listHeight": 276,
+    "visibleListHeight": 276,
+    "listTop": 393.40625,
+    "listBottom": 669.296875,
+    "rowBounds": [
+      {
+        "top": 393.40625,
+        "bottom": 482.96875,
+        "complete": true
+      },
+      {
+        "top": 482.96875,
+        "bottom": 553.140625,
+        "complete": true
+      },
+      {
+        "top": 553.140625,
+        "bottom": 623.3125,
+        "complete": true
+      },
+      {
+        "top": 623.3125,
+        "bottom": 693.484375,
+        "complete": false
+      },
+      {
+        "top": 693.484375,
+        "bottom": 763.65625,
+        "complete": false
+      },
+      {
+        "top": 763.65625,
+        "bottom": 833.828125,
+        "complete": false
+      },
+      {
+        "top": 833.828125,
+        "bottom": 904,
+        "complete": false
+      },
+      {
+        "top": 904,
+        "bottom": 974.171875,
+        "complete": false
+      },
+      {
+        "top": 974.171875,
+        "bottom": 1044.34375,
+        "complete": false
+      },
+      {
+        "top": 1044.34375,
+        "bottom": 1133.90625,
+        "complete": false
+      },
+      {
+        "top": 1133.90625,
+        "bottom": 1204.078125,
+        "complete": false
+      },
+      {
+        "top": 1204.078125,
+        "bottom": 1274.25,
+        "complete": false
+      },
+      {
+        "top": 1274.25,
+        "bottom": 1344.421875,
+        "complete": false
+      },
+      {
+        "top": 1344.421875,
+        "bottom": 1414.59375,
+        "complete": false
+      },
+      {
+        "top": 1414.59375,
+        "bottom": 1484.765625,
+        "complete": false
+      },
+      {
+        "top": 1484.765625,
+        "bottom": 1554.9375,
+        "complete": false
+      },
+      {
+        "top": 1554.9375,
+        "bottom": 1625.109375,
+        "complete": false
+      },
+      {
+        "top": 1625.109375,
+        "bottom": 1695.28125,
+        "complete": false
+      },
+      {
+        "top": 1695.28125,
+        "bottom": 1784.84375,
+        "complete": false
+      },
+      {
+        "top": 1784.84375,
+        "bottom": 1855.015625,
+        "complete": false
+      }
+    ],
+    "completeStops": 3,
+    "totalNotes": 3,
+    "visibleNotes": 1,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "scenario": "busy",
+    "mode": "expanded",
+    "listHeight": 559,
+    "visibleListHeight": 559,
+    "listTop": 114.328125,
+    "listBottom": 672.828125,
+    "rowBounds": [
+      {
+        "top": 114.328125,
+        "bottom": 223.28125,
+        "complete": true
+      },
+      {
+        "top": 223.28125,
+        "bottom": 312.84375,
+        "complete": true
+      },
+      {
+        "top": 312.84375,
+        "bottom": 402.40625,
+        "complete": true
+      },
+      {
+        "top": 402.40625,
+        "bottom": 491.96875,
+        "complete": true
+      },
+      {
+        "top": 491.96875,
+        "bottom": 581.53125,
+        "complete": true
+      },
+      {
+        "top": 581.53125,
+        "bottom": 671.09375,
+        "complete": true
+      },
+      {
+        "top": 671.09375,
+        "bottom": 760.65625,
+        "complete": false
+      },
+      {
+        "top": 760.65625,
+        "bottom": 850.21875,
+        "complete": false
+      },
+      {
+        "top": 850.21875,
+        "bottom": 939.78125,
+        "complete": false
+      },
+      {
+        "top": 939.78125,
+        "bottom": 1048.734375,
+        "complete": false
+      },
+      {
+        "top": 1048.734375,
+        "bottom": 1138.296875,
+        "complete": false
+      },
+      {
+        "top": 1138.296875,
+        "bottom": 1227.859375,
+        "complete": false
+      },
+      {
+        "top": 1227.859375,
+        "bottom": 1317.421875,
+        "complete": false
+      },
+      {
+        "top": 1317.421875,
+        "bottom": 1406.984375,
+        "complete": false
+      },
+      {
+        "top": 1406.984375,
+        "bottom": 1496.546875,
+        "complete": false
+      },
+      {
+        "top": 1496.546875,
+        "bottom": 1586.109375,
+        "complete": false
+      },
+      {
+        "top": 1586.109375,
+        "bottom": 1675.671875,
+        "complete": false
+      },
+      {
+        "top": 1675.671875,
+        "bottom": 1765.234375,
+        "complete": false
+      },
+      {
+        "top": 1765.234375,
+        "bottom": 1874.1875,
+        "complete": false
+      },
+      {
+        "top": 1874.1875,
+        "bottom": 1963.75,
+        "complete": false
+      }
+    ],
+    "completeStops": 6,
+    "totalNotes": 3,
+    "visibleNotes": 1,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "scenario": "worst",
+    "mode": "inline",
+    "listHeight": 276,
+    "visibleListHeight": 276,
+    "listTop": 393.40625,
+    "listBottom": 669.296875,
+    "rowBounds": [
+      {
+        "top": 393.40625,
+        "bottom": 606.703125,
+        "complete": true
+      },
+      {
+        "top": 606.703125,
+        "bottom": 731.046875,
+        "complete": false
+      },
+      {
+        "top": 731.046875,
+        "bottom": 790.046875,
+        "complete": false
+      },
+      {
+        "top": 790.046875,
+        "bottom": 868.4375,
+        "complete": false
+      },
+      {
+        "top": 868.4375,
+        "bottom": 927.4375,
+        "complete": false
+      },
+      {
+        "top": 927.4375,
+        "bottom": 1005.828125,
+        "complete": false
+      }
+    ],
+    "completeStops": 1,
+    "totalNotes": 4,
+    "visibleNotes": 1,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "scenario": "worst",
+    "mode": "expanded",
+    "listHeight": 559,
+    "visibleListHeight": 559,
+    "listTop": 114.328125,
+    "listBottom": 672.828125,
+    "rowBounds": [
+      {
+        "top": 114.328125,
+        "bottom": 364.40625,
+        "complete": true
+      },
+      {
+        "top": 364.40625,
+        "bottom": 508.140625,
+        "complete": true
+      },
+      {
+        "top": 508.140625,
+        "bottom": 586.53125,
+        "complete": true
+      },
+      {
+        "top": 586.53125,
+        "bottom": 684.3125,
+        "complete": false
+      },
+      {
+        "top": 684.3125,
+        "bottom": 762.703125,
+        "complete": false
+      },
+      {
+        "top": 762.703125,
+        "bottom": 860.484375,
+        "complete": false
+      }
+    ],
+    "completeStops": 3,
+    "totalNotes": 4,
+    "visibleNotes": 2,
+    "ctaInViewport": true,
+    "overflow": false
+  }
+]

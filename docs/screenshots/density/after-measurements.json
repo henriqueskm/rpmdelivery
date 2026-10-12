@@ -1,0 +1,74 @@
+[
+  {
+    "width": 1280,
+    "height": 800,
+    "area": "desktop",
+    "orders": {
+      "listHeight": 350,
+      "viewportListHeight": 350,
+      "completeRows": 6,
+      "panelRows": 6
+    },
+    "stops": {
+      "listHeight": 275,
+      "viewportListHeight": 275,
+      "completeRows": 3,
+      "panelRows": 3
+    },
+    "overflow": false
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "area": "desktop",
+    "orders": {
+      "listHeight": 450,
+      "viewportListHeight": 450,
+      "completeRows": 8,
+      "panelRows": 8
+    },
+    "stops": {
+      "listHeight": 393,
+      "viewportListHeight": 393,
+      "completeRows": 7,
+      "panelRows": 7
+    },
+    "overflow": false
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "area": "orders",
+    "orders": {
+      "listHeight": 255,
+      "viewportListHeight": 255,
+      "completeRows": 4,
+      "panelRows": 4
+    },
+    "stops": {
+      "listHeight": 0,
+      "viewportListHeight": 0,
+      "completeRows": 0,
+      "panelRows": 0
+    },
+    "overflow": false
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "area": "builder",
+    "orders": {
+      "listHeight": 0,
+      "viewportListHeight": 0,
+      "completeRows": 0,
+      "panelRows": 0
+    },
+    "stops": {
+      "listHeight": 236,
+      "viewportListHeight": 236,
+      "completeRows": 3,
+      "panelRows": 3
+    },
+    "overflow": false
+  }
+]

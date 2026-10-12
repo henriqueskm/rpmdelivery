@@ -1,0 +1,122 @@
+[
+  {
+    "width": 1280,
+    "height": 800,
+    "scenario": "busy",
+    "mode": "inline",
+    "listHeight": 275,
+    "visibleListHeight": 275,
+    "completeStops": 3,
+    "notes": 0,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 1280,
+    "height": 800,
+    "scenario": "worst",
+    "mode": "inline",
+    "listHeight": 275,
+    "visibleListHeight": 275,
+    "completeStops": 4,
+    "notes": 0,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "scenario": "busy",
+    "mode": "inline",
+    "listHeight": 393,
+    "visibleListHeight": 393,
+    "completeStops": 7,
+    "notes": 0,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "scenario": "worst",
+    "mode": "inline",
+    "listHeight": 393,
+    "visibleListHeight": 393,
+    "completeStops": 6,
+    "notes": 0,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 320,
+    "height": 844,
+    "scenario": "busy",
+    "mode": "inline",
+    "listHeight": 218,
+    "visibleListHeight": 218,
+    "completeStops": 2,
+    "notes": 0,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 320,
+    "height": 844,
+    "scenario": "worst",
+    "mode": "inline",
+    "listHeight": 218,
+    "visibleListHeight": 218,
+    "completeStops": 1,
+    "notes": 0,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 375,
+    "height": 844,
+    "scenario": "busy",
+    "mode": "inline",
+    "listHeight": 218,
+    "visibleListHeight": 218,
+    "completeStops": 3,
+    "notes": 0,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 375,
+    "height": 844,
+    "scenario": "worst",
+    "mode": "inline",
+    "listHeight": 218,
+    "visibleListHeight": 218,
+    "completeStops": 2,
+    "notes": 0,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "scenario": "busy",
+    "mode": "inline",
+    "listHeight": 236,
+    "visibleListHeight": 236,
+    "completeStops": 3,
+    "notes": 0,
+    "ctaInViewport": true,
+    "overflow": false
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "scenario": "worst",
+    "mode": "inline",
+    "listHeight": 236,
+    "visibleListHeight": 236,
+    "completeStops": 2,
+    "notes": 0,
+    "ctaInViewport": true,
+    "overflow": false
+  }
+]
