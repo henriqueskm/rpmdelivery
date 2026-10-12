@@ -8,6 +8,60 @@ async function area(page: Page, name: string) {
 const route = (page: Page, reference: string) =>
   page.getByRole("article", { name: `Rota ${reference}`, exact: true });
 
+test("observações integrais e conferência ampliada preservam foco e montagem em 320/375/390", async ({ page }) => {
+  for (const width of [320, 375, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/preview/operacao?scenario=worst");
+    const originalNote = await page.locator(".ops-order-note").first().innerText();
+    await page.getByRole("checkbox", { name: "Selecionar visíveis", exact: true }).check();
+    await page.getByRole("tab", { name: /^Montagem/ }).click();
+    await expect(page.locator(".ops-stop-note").first()).toContainText(originalNote.replace(/^!\s*/, ""));
+    const expand = page.getByRole("button", { name: "Ampliar conferência da rota" });
+    await expand.press("Enter");
+    const dialog = page.getByRole("dialog", { name: "Conferir montagem" });
+    await expect(dialog.getByRole("button", { name: "Fechar conferência" })).toBeFocused();
+    await expect(dialog).toContainText("Alergia alimentar: conferir etiqueta.");
+    await expect(dialog).toContainText("Não deixar na recepção sem confirmação.");
+    await expect(dialog).toContainText("Entrada pela portaria de visitantes.");
+    await expect(dialog).toContainText("Demonstração · dados fictícios");
+    expect(await dialog.locator(".ops-stop-note").first().evaluate(el => el.scrollHeight <= el.clientHeight && getComputedStyle(el).webkitLineClamp === "none")).toBe(true);
+    expect(await dialog.locator(".ops-sequence-controls button").evaluateAll(elements => elements.every(el => el.getBoundingClientRect().width >= 44 && el.getBoundingClientRect().height >= 44))).toBe(true);
+    await dialog.getByRole("button", { name: "Mover pedido 1048 para baixo" }).click();
+    await expect(dialog.locator(".ops-stop-content").nth(1)).toContainText("#1048");
+    await page.keyboard.press("Escape");
+    await expect(dialog).not.toBeVisible();
+    await expect(expand).toBeFocused();
+    await expect(page.locator(".ops-stop-content").nth(1)).toContainText("#1048");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+});
+
+test("conferência de pico amplia sequência e atribui somente PREPARING", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/preview/operacao?scenario=busy");
+  await page.getByRole("checkbox", { name: "Selecionar visíveis", exact: true }).check();
+  await page.getByRole("tab", { name: /^Montagem/ }).click();
+  const measure = async () => page.locator(".ops-sequence li").evaluateAll(rows => {
+    const list = rows[0].closest(".ops-panel-scroll")!.getBoundingClientRect();
+    return rows.filter(el => { const r = el.getBoundingClientRect(); return r.top >= Math.max(0, list.top) && r.bottom <= Math.min(innerHeight, list.bottom); }).length;
+  });
+  const inline = await measure();
+  await page.getByRole("button", { name: "Ampliar conferência da rota" }).click();
+  const dialog = page.getByRole("dialog", { name: "Conferir montagem" });
+  expect(await measure()).toBeGreaterThanOrEqual(inline + 3);
+  for (const control of [dialog.getByLabel("Motoboy disponível"), dialog.getByRole("button", { name: "Atribuir rota (demo)" })]) {
+    const r = await control.boundingBox();
+    expect(r!.y + r!.height).toBeLessThanOrEqual(844);
+  }
+  await dialog.getByLabel("Motoboy disponível").selectOption("livia");
+  await dialog.getByRole("button", { name: "Atribuir rota (demo)" }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByRole("tab", { name: "Rotas", exact: true })).toBeFocused();
+  await expect(route(page, "R-43")).toContainText("Em preparação");
+  await expect(route(page, "R-43")).toContainText("Lívia Oliveira");
+  await expect(route(page, "R-43").getByRole("button", { name: /Iniciar rota/ })).toHaveCount(0);
+});
+
 test("pico preserva área útil no desktop e atribuição acessível no mobile", async ({ page }) => {
   for (const [width, height] of [[1280, 800], [1440, 900], [390, 844]]) {
     await page.setViewportSize({ width, height });

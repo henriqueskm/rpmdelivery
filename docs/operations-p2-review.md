@@ -1,0 +1,52 @@
+# PR #10 — observações e conferência de rotas
+
+## Integração e escopo
+
+`origin/main` recebeu a PR #11 no squash `a550ce5ac987f7b90275e8de22d7c9416fb42d8d`. A integração na branch existente `feat/restaurant-operations-dashboard` foi feita por merge, sem conflitos, sem reescrever histórico e sem alterar o checkout principal. O commit de integração é `d1db791` e preserva o Visual Critic e sua documentação.
+
+Na consulta inicial, GitHub retornou `MERGEABLE/CLEAN` e o CI anterior aprovado; o bloqueio histórico não foi reproduzido. A branch ainda não incluía a nova main. A API de regras da branch retornou 403 por limitação do plano do repositório, portanto não foi atribuída uma causa não comprovada ao aviso. O estado final, depois do push, está registrado na PR.
+
+Esta alteração é exclusivamente do protótipo visual. PREPARING/reserva, edição, início manual pelo motoboy, ON_ROUTE bloqueado, ocorrência, RETURNING e retorno ao fim da fila continuam no reducer anterior. Não há CRUD, novas transições reais, sons, janelas de ocorrências, notificações, migrations, Supabase, autenticação, dependências ou produção.
+
+## Os dois P2
+
+| Antes | Depois | Benefício |
+| --- | --- | --- |
+| Observações só em Pedidos | Observação integral e complemento/referência também em cada parada | Conferir alergias, portaria e instruções antes da atribuição, sem alternar abas |
+| Janela pequena para conferir muitas entregas no mobile | Cabeçalho compacto e botão “Conferir” abre montagem ampliada, com a mesma seleção e sequência | Mais paradas visíveis, mantendo motoboy/atribuição acessíveis |
+
+As instruções quebram linhas naturalmente, sem ellipsis, line-clamp ou ocultação. Linhas sem instruções opcionais não reservam espaço para elas. Em 320px, controles podem ficar abaixo da identificação para preservar leitura e toque ≥44×44px. A ampliação usa um dialog nativo: fundo inerte, foco inicial em Fechar, Escape e retorno de foco ao botão Conferir. Ao atribuir pela conferência, o dialog fecha e a área Rotas recebe o foco no mobile; a rota continua PREPARING.
+
+Só existe uma instância dos controles da montagem por vez. O modo ampliado usa os mesmos props, callbacks e seleção local, sem duplicar estado operacional. O aviso “Demonstração · dados fictícios, sem persistência” permanece visível na conferência.
+
+## Comparação mensurável
+
+Antes: UI do HEAD `7fe01d6aaeb326e4d2869e226d06d57d451861ae` (o merge da main não mudou produto). Mesmos fixtures, viewport, DPR 1, 20 pedidos selecionados do cenário `busy`, fontes carregadas e listas/página na rolagem inicial. Mobile usa toque emulado. Uma parada completa inclui textos, instruções, controles e limite inferior da linha, dentro da lista e do viewport.
+
+| Viewport | Paradas compactas antes | Paradas compactas depois, com observações | Paradas em Conferir | Área da sequência antes → compacta → ampliada (px) |
+| --- | --- | --- | --- | --- |
+| 1280×800 | 3 | 3 | 9 | 275 → 283 → 516 |
+| 1440×900 | 7 | 7 | 10 | 393 → 401 → 616 |
+| 320×844 | 2 | 2 | 4 | 218 → 242 → 523 |
+| 375×844 | 3 | 3 | 7 | 218 → 258 → 541 |
+| 390×844 | 3 | 3 | 7 | 236 → 276 → 559 |
+
+O ganho ampliado exige tocar em Conferir; não é atribuído indevidamente à montagem compacta. Contagens dependem dos textos do dataset. No cenário `worst`, os novos complementos e notas extensas aumentam a altura das linhas: preferiu-se preservar toda informação a esconder instruções para aumentar contagens. Na conferência ampliada, o cenário longo mostra duas paradas completas em 320px, quatro em 375px e cinco em 390px; a sequência permanece rolável. Seletor e CTA estão dentro do viewport em todas as capturas, sem overflow horizontal.
+
+Dados brutos: [antes](screenshots/p2-final/before-measurements.json) e [depois](screenshots/p2-final/after-measurements.json). Há capturas do cenário de pico e textos longos nos cinco tamanhos, com montagem compacta antes/depois e conferência ampliada depois, somente dados fictícios.
+
+| Exemplo | Antes | Depois compacto | Conferência |
+| --- | --- | --- | --- |
+| Pico 390px | ![Antes 390](screenshots/p2-final/before-busy-390-inline.jpg) | ![Depois 390](screenshots/p2-final/after-busy-390-inline.jpg) | ![Conferir 390](screenshots/p2-final/after-busy-390-expanded.jpg) |
+| Pico 320px | ![Antes 320](screenshots/p2-final/before-busy-320-inline.jpg) | ![Depois 320](screenshots/p2-final/after-busy-320-inline.jpg) | ![Conferir 320](screenshots/p2-final/after-busy-320-expanded.jpg) |
+| Textos longos 390px | ![Antes textos](screenshots/p2-final/before-worst-390-inline.jpg) | ![Depois textos](screenshots/p2-final/after-worst-390-inline.jpg) | ![Conferir textos](screenshots/p2-final/after-worst-390-expanded.jpg) |
+
+## Validação
+
+Os E2E cobrem observação integral, referência de portaria, alergia, controles de 44px em 320/375/390, abertura pelo teclado, foco, Escape, preservação da sequência, ganho de capacidade e atribuição PREPARING pelo modo ampliado. As verificações operacionais anteriores permanecem.
+
+Foi necessário alinhar o ignore do ESLint aos artefatos já ignorados pelo Git: `playwright-report/**` e `test-results/**`. Uma falha intermediária gerou JS externo do relatório, que o lint tentava analisar como código do projeto. Nenhuma regra de lint da aplicação foi relaxada e nenhuma evidência foi apagada.
+
+QA do Builder usa `emil-design-eng`, `mobile-native`, `break-ui`, `rpmdelivery-qa` e revisão React. O Visual Critic é invocado nativamente em uma sessão nova, read-only, após a implementação/validação; seu relatório e limitações são entregues separadamente, sem correção pelo próprio agente.
+
+Não existe frame Figma aprovado. A identidade do raio foi preservada. Emulação não valida hardware físico, teclado virtual, gestos, safe areas ou zoom nativo de 200%.
