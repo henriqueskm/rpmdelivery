@@ -3,8 +3,7 @@ import type { DemoState } from "./model";
 import { calendarTime, localDateTime, parseLocalDateTime } from "./deadlines";
 import { demoOptimizationInput, proposalSignature } from "./optimization-input";
 import { useRouteProposal } from "./use-route-proposal";
-import { SequenceComparison } from "./sequence-comparison";
-import { OptimizationSummary } from "./optimization-summary";
+import { OptimizationDecision } from "./optimization-decision";
 import { MAX_STOPS } from "../route-optimization/types";
 import "./optimization.css";
 
@@ -25,7 +24,6 @@ export function OptimizationDialog({ state, selected, editingId, scenario, now, 
   const [departure, setDeparture] = useState(() => localDateTime(now + 5*60000));
   const [service, setService] = useState("2");
   const [editParameters, setEditParameters] = useState(false);
-  const [detail, setDetail] = useState<"manual"|"suggested">("suggested");
   const {job,calculate} = useRouteProposal();
   const snapshot = useMemo(() => proposalSignature(state,selected,editingId),[state,selected,editingId]);
   const key = JSON.stringify([snapshot,scenario,departure,service]);
@@ -39,7 +37,6 @@ export function OptimizationDialog({ state, selected, editingId, scenario, now, 
   useEffect(() => { dialog.current?.showModal(); dialog.current?.querySelector<HTMLInputElement>("input")?.focus(); }, []);
   function request() {
     setEditParameters(false);
-    setDetail("suggested");
     calculate(key, () => demoOptimizationInput(state,selected,editingId,scenario,departureAt,serviceSeconds));
   }
   return <dialog ref={dialog} className="ops-dialog ops-optimization-dialog" aria-label="Sugerir sequência" onClose={onClose}>
@@ -55,30 +52,18 @@ export function OptimizationDialog({ state, selected, editingId, scenario, now, 
     </div>
     </div>
     <div className="ops-opt-scroll" tabIndex={0} aria-label="Comparação das sequências">
-      {!job && <p>Até {MAX_STOPS} paradas. Primeiro menos entregas atrasadas; depois menor atraso total, deslocamento e retorno. Nada muda sem aplicar.</p>}
+      {!job && <p>Até {MAX_STOPS} pedidos. Ajuste a saída e o atendimento, depois compare a sugestão. Nada muda sem aplicar.</p>}
       {selected.length>MAX_STOPS && <p role="alert">{messages.limit}</p>}
       {pending && <p role="status">Calculando com a matriz simulada…</p>}
       {stale && <p role="status">Dados ou saída estimada mudaram. Recalcule a sugestão antes de aplicar.</p>}
       {!stale && job?.status==="error" && <p role="alert">{messages[job.error!]??messages.invalid}</p>}
-      {result && <>
-        <p className="ops-opt-verdict" role="status">{!result.allDeadlinesPossible
-          ? "Nenhuma sequência cumpre todos os prazos sob estas hipóteses. Há risco de atraso."
-          : "Sem atraso previsto na sugestão sob estas hipóteses; a saída e o trânsito podem mudar."}
-          {unchanged && " A ordem manual já é a melhor neste cenário."}</p>
-        <OptimizationSummary result={result} />
-        <div className="ops-opt-detail-switch" aria-label="Detalhes da comparação">
-          <button aria-pressed={detail==="suggested"} onClick={()=>setDetail("suggested")}>Ver sugerida</button>
-          <button aria-pressed={detail==="manual"} onClick={()=>setDetail("manual")}>Ver manual</button>
-        </div>
-        <div className="ops-opt-columns" data-detail={detail}><SequenceComparison title="Ordem manual" route={result.manual} state={state} departureAt={result.departureAt} />
-          <SequenceComparison title="Ordem sugerida" route={result.suggested} state={state} departureAt={result.departureAt} /></div>
-      </>}
+      {result && <OptimizationDecision result={result} state={state} now={now} />}
     </div>
     <div className="ops-opt-footer">
-      <button onClick={()=>dialog.current?.close()}>Descartar</button>
+      <button onClick={()=>dialog.current?.close()}>Manter ordem atual</button>
       <button className="ops-primary" disabled={!result||unchanged||blocked||stale} onClick={()=>{
         if(result&&!blocked&&!stale){onApply(result.suggested.ids);dialog.current?.close();}
-      }}>Aplicar sequência (demo)</button>
+      }}>Aplicar sequência</button>
     </div>
   </dialog>;
 }
