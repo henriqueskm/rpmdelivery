@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createDemoState } from "../../features/operations/fixtures.ts";
+import { DEMO_EPOCH } from "../../features/operations/deadlines.ts";
 import {
   availableCouriers,
   courierLabel,
@@ -82,7 +83,8 @@ test("edição libera pedidos removidos e reordena somente enquanto PREPARING", 
     "WAITING",
   );
   assert.equal(edited.nextRoute, state.nextRoute);
-  const started = operationsReducer(edited, {
+  const released = operationsReducer(edited, { type: "release", routeId: "route-42", expectedOrderIds: edited.routes[0].orderIds, now: DEMO_EPOCH });
+  const started = operationsReducer(released, {
     type: "start",
     routeId: "route-42",
     actorId: "marcos",
@@ -116,6 +118,7 @@ test("somente o ator da rota inicia; retorno confirmado devolve ao fim da fila",
     }),
     state,
   );
+  state = operationsReducer(state, { type: "release", routeId: "route-42", expectedOrderIds: state.routes[0].orderIds, now: DEMO_EPOCH });
   state = operationsReducer(state, {
     type: "start",
     routeId: "route-42",
@@ -164,6 +167,7 @@ test("ocorrência pendente impede conclusão e pedido inválido não é cadastra
   assert.equal(
     operationsReducer(state, {
       type: "add",
+      now: DEMO_EPOCH,
       order: {
         reference: "",
         customer: "  ",
@@ -172,12 +176,15 @@ test("ocorrência pendente impede conclusão e pedido inválido não é cadastra
         neighborhood: "",
         complement: "",
         notes: "",
+        orderedAt: DEMO_EPOCH,
+        promisedMinutes: 60,
       },
     }),
     state,
   );
   const next = operationsReducer(state, {
     type: "add",
+    now: DEMO_EPOCH,
     order: {
       reference: "",
       customer: "Cliente fictício",
@@ -186,6 +193,8 @@ test("ocorrência pendente impede conclusão e pedido inválido não é cadastra
       neighborhood: "Centro",
       complement: "",
       notes: "",
+      orderedAt: DEMO_EPOCH,
+      promisedMinutes: 60,
     },
   });
   assert.equal(next.orders[0].reference, "1049");

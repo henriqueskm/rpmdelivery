@@ -1,14 +1,21 @@
 import { plural, type DemoState } from "./model";
 import { Badge, Empty, Icon, RouteBadge } from "./ui";
+import { DeadlineButton } from "./deadline-view";
 
 export function RoutesPanel({
   state,
   onEdit,
   onCourierView,
+  onRelease,
+  onDeadline,
+  now,
 }: {
   state: DemoState;
   onEdit: (id: string) => void;
   onCourierView: (id: string) => void;
+  onRelease: (id: string) => void;
+  onDeadline: (id: string) => void;
+  now: number;
 }) {
   const issues = state.orders.filter((o) => o.delivery === "ATTEMPT_FAILED");
   return (
@@ -74,9 +81,10 @@ export function RoutesPanel({
                     const o = state.orders.find((o) => o.id === id)!;
                     return (
                       <li key={id}>
-                        <span>
+                        <span className="ops-route-destination">
                           #{o.reference} · {o.neighborhood}
                         </span>
+                        <DeadlineButton order={o} now={now} onEdit={() => onDeadline(o.id)} />
                         {o.delivery === "ATTEMPT_FAILED" && (
                           <Badge tone="red">Ocorrência</Badge>
                         )}
@@ -84,9 +92,9 @@ export function RoutesPanel({
                     );
                   })}
                 </ol>
-                <p className="ops-route-hint">
+                <p className={`ops-route-hint ${r.status === "PREPARING" ? r.pickupReleasedAt === null ? "ops-pickup-waiting" : "ops-pickup-ready" : ""}`}>
                   {r.status === "PREPARING"
-                    ? "Aguardando início pelo motoboy"
+                    ? r.pickupReleasedAt === null ? "Aguardando liberação · todos os pedidos juntos" : "Pronto para retirada · início exclusivo pelo motoboy"
                     : r.status === "ON_ROUTE"
                       ? "Composição e sequência bloqueadas"
                       : r.status === "RETURNING"
@@ -95,9 +103,14 @@ export function RoutesPanel({
                 </p>
                 <div className="ops-route-buttons">
                   {r.status === "PREPARING" && (
+                    <>
+                    {r.pickupReleasedAt === null && <button className="ops-release" onClick={() => onRelease(r.id)}>
+                      Liberar retirada
+                    </button>}
                     <button onClick={() => onEdit(r.id)}>
                       Editar montagem
                     </button>
+                    </>
                   )}
                   {r.status !== "COMPLETED" && (
                     <button

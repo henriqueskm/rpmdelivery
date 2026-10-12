@@ -23,9 +23,10 @@ mas não preservam cadastros, seleções ou rotas criadas.
    das sugestões de disponibilidade. Os pedidos ainda não estão em entrega.
 5. Edite a montagem enquanto PREPARING. Remover um pedido devolve-o ao despacho;
    o motoboy reservado continua vinculado à mesma rota.
-6. Abra **Visão do motoboy (demo)**. Somente nessa visão separada há
-   **Iniciar rota — simulação**. Depois de ON_ROUTE, a composição e a sequência
-   ficam bloqueadas.
+6. Abra **Visão do motoboy (demo)** para consultar a rota atribuída ainda em
+   PREPARING. A loja confirma todos os pedidos juntos por **Liberar retirada**.
+   Só depois **Recolhi os pedidos · Iniciar rota**, na visão separada, fica
+   disponível. Depois de ON_ROUTE, composição e sequência ficam bloqueadas.
 7. Simule as entregas: o motoboy fica RETURNING. Confirme o retorno nessa visão
    para devolvê-lo ao final da fila. Uma ocorrência pendente impede a conclusão.
 
@@ -33,6 +34,8 @@ Todos os botões de cadastro, atribuição e ciclo da rota indicam demonstraçã
 Não existe etapa "Em preparo", "Pronto" ou "Marcar como pronto" para pedidos.
 O rótulo "Em preparação" pertence à rota PREPARING, não ao preparo de alimentos.
 "Reservado" deriva da rota ativa; não cria um novo enum no banco.
+
+Prazos e liberação evoluem esta demonstração conforme o [contrato de prazos/retirada](delivery-deadlines-pickup.md). Alterar o conjunto de pedidos exige nova liberação; apenas reordenar preserva a confirmação. Não são novas etapas de preparo por pedido.
 
 ## Estrutura visual e referências
 

@@ -1,3 +1,5 @@
+import { validOrderTime, validPromise } from "./deadlines.ts";
+
 export type RouteStatus = "PREPARING" | "ON_ROUTE" | "RETURNING" | "COMPLETED";
 export type ShiftStatus = "AVAILABLE" | "ON_ROUTE" | "RETURNING" | "PENDING";
 export type DemoOrder = {
@@ -9,7 +11,9 @@ export type DemoOrder = {
   neighborhood: string;
   complement: string;
   notes: string;
-  waitMinutes: number;
+  orderedAt: number;
+  createdAt: number;
+  promisedMinutes: number;
   status: "OPEN" | "DELIVERING" | "DELIVERED";
   delivery:
     "WAITING" | "ASSIGNED" | "ON_ROUTE" | "ATTEMPT_FAILED" | "DELIVERED";
@@ -30,8 +34,10 @@ export type DemoRoute = {
   courierId: string;
   orderIds: string[];
   status: RouteStatus;
+  pickupReleasedAt: number | null;
 };
 export type DemoState = {
+  defaultPromiseMinutes: number;
   orders: DemoOrder[];
   couriers: DemoCourier[];
   routes: DemoRoute[];
@@ -48,9 +54,14 @@ export type NewOrder = Pick<
   | "neighborhood"
   | "complement"
   | "notes"
+  | "orderedAt"
+  | "promisedMinutes"
 >;
 export type Command =
-  | { type: "add"; order: NewOrder }
+  | { type: "add"; order: NewOrder; now: number }
+  | { type: "default-promise"; minutes: number }
+  | { type: "deadline"; orderId: string; orderedAt: number; minutes: number }
+  | { type: "release"; routeId: string; expectedOrderIds: string[]; now: number }
   | { type: "assign"; ids: string[]; courierId: string; editingId?: string }
   | { type: "start" | "finish" | "arrive"; routeId: string; actorId: string };
 
@@ -101,9 +112,30 @@ export function operationsReducer(
   state: DemoState,
   command: Command,
 ): DemoState {
+  if (command.type === "default-promise") {
+    return validPromise(command.minutes) ? { ...state, defaultPromiseMinutes: command.minutes } : state;
+  }
+  if (command.type === "deadline") {
+    const order = state.orders.find(o => o.id === command.orderId && o.delivery !== "DELIVERED");
+    if (!order || !validPromise(command.minutes) || !validOrderTime(command.orderedAt, order.createdAt)) return state;
+    return { ...state, orders: state.orders.map(o => o.id === order.id
+      ? { ...o, orderedAt: command.orderedAt, promisedMinutes: command.minutes } : o) };
+  }
+  if (command.type === "release") {
+    const route = state.routes.find(r => r.id === command.routeId);
+    const courier = state.couriers.find(c => c.id === route?.courierId);
+    if (!route || route.status !== "PREPARING" || route.pickupReleasedAt !== null ||
+      !courier?.activeLink || courier.shift !== "AVAILABLE" || !route.orderIds.length ||
+      !validOrderTime(command.now, command.now) ||
+      new Set(command.expectedOrderIds).size !== route.orderIds.length ||
+      command.expectedOrderIds.length !== route.orderIds.length ||
+      !route.orderIds.every(id => command.expectedOrderIds.includes(id) && state.orders.some(o => o.id === id && o.delivery === "ASSIGNED"))) return state;
+    return { ...state, routes: state.routes.map(r => r.id === route.id ? { ...r, pickupReleasedAt: command.now } : r) };
+  }
   if (command.type === "add") {
     const order = command.order;
     if (
+      !validOrderTime(order.orderedAt, command.now) || !validPromise(order.promisedMinutes) ||
       ![order.customer, order.phone, order.address, order.neighborhood].every(
         (v) => v.trim(),
       )
@@ -117,7 +149,7 @@ export function operationsReducer(
           ...order,
           id: `demo-order-${state.nextOrder}`,
           reference: order.reference.trim() || String(state.nextOrder),
-          waitMinutes: 0,
+          createdAt: command.now,
           status: "OPEN",
           delivery: "WAITING",
         },
@@ -156,6 +188,8 @@ export function operationsReducer(
       courierId: courier.id,
       orderIds: [...command.ids],
       status: "PREPARING",
+      pickupReleasedAt: editing && editing.orderIds.length === command.ids.length &&
+        editing.orderIds.every(id => command.ids.includes(id)) ? editing.pickupReleasedAt : null,
     };
     return {
       ...state,
@@ -183,7 +217,8 @@ export function operationsReducer(
     if (
       route.status !== "PREPARING" ||
       courier.shift !== "AVAILABLE" ||
-      !route.orderIds.length
+      !validOrderTime(route.pickupReleasedAt ?? NaN, route.pickupReleasedAt ?? NaN) || !route.orderIds.length ||
+      !route.orderIds.every(id => state.orders.some(o => o.id === id && o.delivery === "ASSIGNED"))
     )
       return state;
     status = "ON_ROUTE";
