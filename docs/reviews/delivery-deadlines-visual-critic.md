@@ -73,4 +73,3 @@ Não foram fornecidos resultados de verify, unitários ou E2E associados ao HEAD
 Sem aparelho físico, teclado virtual, safe areas, gestos, zoom nativo e comportamento com barras do navegador permanecem não testados. Não alterei viewport de navegador disponível, portanto não houve override a restaurar.
 
 Devolvo ao Builder como prioridade o **P2 de distribuição da coluna “Prazo” no mobile** e a validação interativa pendente do fluxo de liberação/início, edição e retorno. Nenhuma correção, aprovação, publicação ou merge foi realizado.
-
