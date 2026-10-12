@@ -42,14 +42,22 @@ test("conferência de pico amplia sequência e atribui somente PREPARING", async
   await page.goto("/preview/operacao?scenario=busy");
   await page.getByRole("checkbox", { name: "Selecionar visíveis", exact: true }).check();
   await page.getByRole("tab", { name: /^Montagem/ }).click();
+  await page.evaluate(() => document.fonts.ready);
   const measure = async () => page.locator(".ops-sequence li").evaluateAll(rows => {
     const list = rows[0].closest(".ops-panel-scroll")!.getBoundingClientRect();
-    return rows.filter(el => { const r = el.getBoundingClientRect(); return r.top >= Math.max(0, list.top) && r.bottom <= Math.min(innerHeight, list.bottom); }).length;
+    const top = Math.max(0, list.top), bottom = Math.min(innerHeight, list.bottom);
+    return {
+      visibleHeight: bottom - top,
+      completeStops: rows.filter(el => { const r = el.getBoundingClientRect(); return r.top >= top && r.bottom <= bottom; }).length,
+    };
   });
   const inline = await measure();
   await page.getByRole("button", { name: "Ampliar conferência da rota" }).click();
   const dialog = page.getByRole("dialog", { name: "Conferir montagem" });
-  expect(await measure()).toBeGreaterThanOrEqual(inline + 3);
+  const expanded = await measure();
+  // Text metrics differ between Windows and Linux; prove useful capacity and area.
+  expect(expanded.completeStops).toBeGreaterThanOrEqual(inline.completeStops + 2);
+  expect(expanded.visibleHeight).toBeGreaterThanOrEqual(inline.visibleHeight * 1.8);
   for (const control of [dialog.getByLabel("Motoboy disponível"), dialog.getByRole("button", { name: "Atribuir rota (demo)" })]) {
     const r = await control.boundingBox();
     expect(r!.y + r!.height).toBeLessThanOrEqual(844);
