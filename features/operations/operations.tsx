@@ -80,7 +80,7 @@ function OperationsWorkspace({
     state, selected, setSelected, editingId, courierId, setCourierId, activeTab, setActiveTab,
     notice, courierRouteId, setCourierRouteId, deadlineTarget, setDeadlineTarget,
     newDialog, courierDialog, deadlineDialog, tabRefs,
-    assign, edit, add, openNewOrder, cancel, release, saveDeadline, courierCommand, tabKey,
+    assign, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, tabKey,
   } = useOperationsController(scenario, now);
   return (
     <main className="operations">
@@ -219,6 +219,7 @@ function OperationsWorkspace({
             now={now}
             onDeadline={setDeadlineTarget}
             onRelease={release}
+            onRevokeRelease={revokeRelease}
             onEdit={edit}
             onCourierView={(id) => {
               setCourierRouteId(id);

@@ -7,6 +7,7 @@ export function RoutesPanel({
   onEdit,
   onCourierView,
   onRelease,
+  onRevokeRelease,
   onDeadline,
   now,
 }: {
@@ -14,6 +15,7 @@ export function RoutesPanel({
   onEdit: (id: string) => void;
   onCourierView: (id: string) => void;
   onRelease: (id: string) => void;
+  onRevokeRelease: (id: string) => void;
   onDeadline: (id: string) => void;
   now: number;
 }) {
@@ -104,8 +106,10 @@ export function RoutesPanel({
                 <div className="ops-route-buttons">
                   {r.status === "PREPARING" && (
                     <>
-                    {r.pickupReleasedAt === null && <button className="ops-release" onClick={() => onRelease(r.id)}>
+                    {r.pickupReleasedAt === null ? <button className="ops-release" onClick={() => onRelease(r.id)}>
                       Liberar retirada
+                    </button> : <button onClick={() => onRevokeRelease(r.id)}>
+                      Cancelar liberação
                     </button>}
                     <button onClick={() => onEdit(r.id)}>
                       Editar montagem

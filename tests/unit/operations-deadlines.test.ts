@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createDemoState } from "../../features/operations/fixtures.ts";
-import { operationsReducer, type DemoState } from "../../features/operations/model.ts";
+import { operationsReducer, availableCouriers, courierLabel, type DemoState } from "../../features/operations/model.ts";
 import { deadlineAt, deadlineInfo, mostUrgentOrder, DEMO_EPOCH, MINUTE } from "../../features/operations/deadlines.ts";
 
 const routeId = "route-42";
@@ -12,6 +12,38 @@ function edit(state: DemoState, ids: string[]) {
   return operationsReducer(state, { type: "assign", courierId: "marcos", editingId: routeId, ids });
 }
 const start = { type: "start", routeId, actorId: "marcos" } as const;
+const revoke = { type: "revoke-release", routeId } as const;
+
+test("revogar liberação bloqueia início, preserva pedidos/ordem/reserva/prazos e permite liberar novamente", () => {
+  const original = createDemoState();
+  const released = release(original);
+  const revoked = operationsReducer(released, revoke);
+  assert.notEqual(revoked, released);
+  assert.deepEqual(revoked, { ...released, routes: released.routes.map(r => r.id === routeId ? { ...r, pickupReleasedAt: null } : r) });
+  assert.equal(revoked.orders, released.orders);
+  assert.equal(revoked.couriers, released.couriers);
+  assert.equal(courierLabel(revoked, revoked.couriers.find(c => c.id === "marcos")!), "Reservado");
+  assert.equal(availableCouriers(revoked).some(c => c.id === "marcos"), false);
+  assert.equal(operationsReducer(revoked, start), revoked);
+  assert.equal(operationsReducer(revoked, revoke), revoked);
+  const confirmed = operationsReducer(revoked, { type: "release", routeId, expectedOrderIds: revoked.routes[0].orderIds, now: DEMO_EPOCH + MINUTE });
+  assert.equal(confirmed.routes[0].pickupReleasedAt, DEMO_EPOCH + MINUTE);
+  assert.equal(confirmed.routes[0].status, "PREPARING");
+  const started = operationsReducer(confirmed, start);
+  assert.equal(started.routes[0].status, "ON_ROUTE");
+  assert.deepEqual(started.routes[0].orderIds, original.routes[0].orderIds);
+  assert.equal(operationsReducer(started, revoke), started);
+});
+
+test("revogação inexistente/não liberada e após ON_ROUTE/RETURNING/COMPLETED é rejeitada no domínio", () => {
+  const state = createDemoState();
+  assert.equal(operationsReducer(state, revoke), state);
+  assert.equal(operationsReducer(state, { ...revoke, routeId: "missing" }), state);
+  for (const route of state.routes.filter(r => r.status !== "PREPARING")) {
+    assert.notEqual(route.pickupReleasedAt, null);
+    assert.equal(operationsReducer(state, { ...revoke, routeId: route.id }), state);
+  }
+});
 
 test("limite usa horário original, não cadastro/atribuição; fronteiras próximo e vencido são explícitas", () => {
   const order = { ...createDemoState().orders[0], orderedAt: DEMO_EPOCH - 30 * MINUTE, createdAt: DEMO_EPOCH - 5 * MINUTE, promisedMinutes: 60 };

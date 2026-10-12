@@ -17,6 +17,61 @@ const route = (page: Page) => page.getByRole("article", { name: "Rota R-42", exa
 const counter = (page: Page, ref: string) => page.locator(".ops-order").filter({ has: page.getByRole("checkbox", { name: `Selecionar pedido ${ref}`, exact: true }) }).locator(".ops-order-deadline");
 const deadline = (page: Page, ref: string) => page.getByRole("button", { name: `Editar prazo do pedido ${ref}`, exact: true });
 
+test("loja revoga retirada sem mudar rota; motoboy bloqueado até nova liberação em desktop/mobile", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", e => errors.push(e.message));
+  await frozen(page);
+  for (const [width, height] of [[1280, 800], [1440, 900], [320, 844], [375, 844], [390, 844]]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/preview/operacao");
+    await expect(page.getByRole("checkbox", { name: "Selecionar pedido 1048", exact: true })).toBeVisible();
+    await area(page, "Rotas");
+    const card = route(page);
+    const sequence = await card.locator(".ops-route-destination").allTextContents();
+    const dueTimes = await card.locator("time").evaluateAll(times => times.map(t => t.getAttribute("datetime")));
+    const releaseButton = card.getByRole("button", { name: "Liberar retirada", exact: true });
+    const cancel = card.getByRole("button", { name: "Cancelar liberação", exact: true });
+    await expect(cancel).toHaveCount(0);
+    await releaseButton.click();
+    await expect(card).toContainText("Pronto para retirada");
+    await expect(cancel).toBeVisible();
+    const box = await cancel.boundingBox();
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(width < 1100 ? 44 : 40);
+    await card.getByRole("button", { name: "Visão do motoboy (demo)" }).click();
+    const driver = page.getByRole("dialog", { name: "Aplicativo do motoboy" });
+    const startButton = driver.getByRole("button", { name: "Recolhi os pedidos · Iniciar rota" });
+    await expect(startButton).toBeEnabled();
+    await page.keyboard.press("Escape");
+    await cancel.press("Enter");
+    await expect(card).toContainText("Aguardando liberação");
+    await expect(card).toContainText("Em preparação");
+    await expect(cancel).toHaveCount(0);
+    await expect(releaseButton).toBeFocused();
+    expect(await card.locator(".ops-route-destination").allTextContents()).toEqual(sequence);
+    expect(await card.locator("time").evaluateAll(times => times.map(t => t.getAttribute("datetime")))).toEqual(dueTimes);
+    await area(page, "Motoboys");
+    await expect(page.locator(".ops-courier").filter({ hasText: "Marcos Pereira" })).toContainText("Reservado");
+    await area(page, "Rotas");
+    await card.getByRole("button", { name: "Visão do motoboy (demo)" }).click();
+    await expect(driver).toContainText("Aguardando liberação");
+    await expect(startButton).toBeDisabled();
+    await page.keyboard.press("Escape");
+    await releaseButton.click();
+    await card.getByRole("button", { name: "Visão do motoboy (demo)" }).click();
+    await expect(driver).toContainText("Pronto para retirada");
+    await expect(startButton).toBeEnabled();
+    await startButton.click();
+    await expect(driver).toContainText("Em rota");
+    await page.keyboard.press("Escape");
+    await expect(cancel).toHaveCount(0);
+    await expect(releaseButton).toHaveCount(0);
+    await expect(card.locator(".ops-route-destination")).toHaveText(sequence);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+  expect(errors).toEqual([]);
+});
+
 test("prazo original, override, contagem compartilhada e padrão para novos pedidos sem reordenação", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", e => errors.push(e.message));

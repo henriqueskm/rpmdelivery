@@ -62,6 +62,7 @@ export type Command =
   | { type: "default-promise"; minutes: number }
   | { type: "deadline"; orderId: string; orderedAt: number; minutes: number }
   | { type: "release"; routeId: string; expectedOrderIds: string[]; now: number }
+  | { type: "revoke-release"; routeId: string }
   | { type: "assign"; ids: string[]; courierId: string; editingId?: string }
   | { type: "start" | "finish" | "arrive"; routeId: string; actorId: string };
 
@@ -120,6 +121,11 @@ export function operationsReducer(
     if (!order || !validPromise(command.minutes) || !validOrderTime(command.orderedAt, order.createdAt)) return state;
     return { ...state, orders: state.orders.map(o => o.id === order.id
       ? { ...o, orderedAt: command.orderedAt, promisedMinutes: command.minutes } : o) };
+  }
+  if (command.type === "revoke-release") {
+    const route = state.routes.find(r => r.id === command.routeId);
+    if (!route || route.status !== "PREPARING" || route.pickupReleasedAt === null) return state;
+    return { ...state, routes: state.routes.map(r => r.id === route.id ? { ...r, pickupReleasedAt: null } : r) };
   }
   if (command.type === "release") {
     const route = state.routes.find(r => r.id === command.routeId);

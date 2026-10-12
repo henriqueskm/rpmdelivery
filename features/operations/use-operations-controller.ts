@@ -89,6 +89,14 @@ export function useOperationsController(scenario: Scenario, seedTime: number) {
       : "Prazo prometido atualizado. Sequência preservada; isto não prevê a chegada.");
     return true;
   }
+  function revokeRelease(id: string) {
+    const command: Command = { type: "revoke-release", routeId: id };
+    if (operationsReducer(state, command) === state) {
+      setNotice("Não foi possível cancelar a liberação. A rota precisa estar em preparação e já liberada."); return;
+    }
+    dispatch(command);
+    setNotice("Liberação cancelada. Aguardando liberação; início do motoboy bloqueado. Pedidos, sequência e reserva preservados.");
+  }
   function courierCommand(command: Command) {
     if (operationsReducer(state, command) === state) {
       setNotice("Ação bloqueada. Confira a liberação, a rota e o motoboy atribuído."); return;
@@ -110,5 +118,5 @@ export function useOperationsController(scenario: Scenario, seedTime: number) {
   return { state, selected, setSelected, editingId, courierId, setCourierId, activeTab, setActiveTab,
     notice, courierRouteId, setCourierRouteId, deadlineTarget, setDeadlineTarget,
     newDialog, courierDialog, deadlineDialog, tabRefs,
-    assign, edit, add, openNewOrder, cancel, release, saveDeadline, courierCommand, tabKey };
+    assign, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, tabKey };
 }
