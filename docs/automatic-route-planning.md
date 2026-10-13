@@ -49,9 +49,11 @@ Matriz fictícia é preparada somente após solicitar o cálculo, para origem e 
 
 ## Conferência e confirmação
 
-Cálculo não muda pedidos, motoboys ou rotas. As propostas mostram contagens, motoboy recomendado, prazos, riscos, duração/distância e motivo resumido. Pendências e entrada para seus motivos precedem os cards. Números têm texto/ícones e cores semânticas; cores não substituem explicação.
+Cálculo não muda pedidos, motoboys ou rotas. O resumo é explicitamente hipotético: **Se confirmar todas as propostas**. O rodapé mostra separadamente a seleção efetiva e quantos continuarão aguardando se ela for confirmada. Cards fechados identificam bairros, pedido de prazo prioritário, motoboy, estimativas e riscos. Números têm texto/ícones e cores semânticas; cores não substituem explicação. Zero entregas propostas permanece neutro.
 
-O operador pode conferir endereços, referências, observações e estimativas completas; ajustar uma sequência, retirar pedidos e adicionar um pendente com coordenadas do mesmo lote. Para substituir, retire e adicione. Ajustes são avaliados nas mesmas hipóteses antes de permitir confirmação; se não forem viáveis, a proposta anterior permanece e o erro é explícito. Dados/critério/horário relevante diferente invalida a resposta antiga.
+Riscos essenciais ficam visíveis no resumo compacto; explicações completas e motivos ficam na lista progressiva de pendentes. Sem motoboys, a causa e a próxima ação aparecem diretamente, sem exigir abrir a lista. Conferir uma rota traz o início dos pedidos para a área de rolagem, mantendo identificação da rota e motoboy. O rodapé permanece acessível. Nenhuma informação de endereço, referência ou observação foi truncada.
+
+O operador pode conferir endereços, referências, observações e estimativas completas; ajustar uma sequência, retirar pedidos e adicionar um pendente com coordenadas do mesmo lote. Para substituir, retire e adicione. Ajustes são avaliados nas mesmas hipóteses antes de permitir confirmação; se não forem viáveis, a proposta anterior permanece e o erro é explícito. Motivos intrínsecos de pendência (sem percurso ou duração excedida) são preservados após editar outros grupos, em vez de virarem uma remoção manual inexistente. Dados/critério/horário relevante diferente invalida a resposta antiga.
 
 Uma confirmação individual cria apenas aquela rota. Em lote, a seleção é explícita. Não confirmados continuam WAITING; a confirmação informa quantos continuam aguardando. Não se aplica qualquer proposta antes da ação humana.
 

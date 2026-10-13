@@ -62,6 +62,9 @@ test("sem coordenadas/percurso e limite de duração não inventam trajetos",()=
   for(const grid of [data.matrix.durations,data.matrix.distances])for(let i=0;i<grid.length;i++){if(i!==1){grid[1][i]=null;grid[i][1]=null;}}
   const plan=planRoutes(data);assert.equal(plan.pending.find(p=>p.id==="o0")?.reason,"coordinates");
   assert.equal(plan.pending.find(p=>p.id==="o1")?.reason,"no-route");
+  const edited=reviewGroups(data,plan.routes.map(r=>({courierId:r.courierId,ids:[...r.ids].reverse()})),plan.pending);
+  assert.equal(edited.pending.find(p=>p.id==="o1")?.reason,"no-route");
+  assert.equal(edited.pending.find(p=>p.id==="o0")?.reason,"coordinates");
   const long=input(1);long.maxRouteSeconds=60;assert.equal(planRoutes(long).pending[0].reason,"long-route");
 });
 test("1.000 pedidos: lote explícito, limites determinísticos, nenhuma omissão ou duplicação",()=>{

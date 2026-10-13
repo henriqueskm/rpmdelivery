@@ -26,7 +26,7 @@ export function useAutomaticProposal(currentKey:string) {
       };
       active.onerror=()=>fail("unavailable");
       timer.current=setTimeout(()=>fail("budget"),PLANNING_TIMEOUT_MS);
-      active.postMessage({input,groups});
+      active.postMessage({input,groups,previousPending:groups?job?.result?.pending:undefined});
     } catch {stop();setJob({key,status:"error",error:"unavailable"});}
   }
   function cancel() {stop();setJob(undefined);}

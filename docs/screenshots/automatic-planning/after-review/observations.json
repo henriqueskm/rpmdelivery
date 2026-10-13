@@ -1,0 +1,1046 @@
+[
+  {
+    "name": "urgent-320",
+    "scenario": "opt-urgent",
+    "elapsedMs": 144,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n2\nrotas propostas\n6\nentregas propostas\n0\nfora das propostas\n\n⚠ Propostas: 0 atrasos previstos · 1 margem <5 min.\n\nLote: 6 de 6 analisados · sugestão limitada.\n\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,5 km (com retorno)\n\n⚠ Margem inferior a 1 min\n\nCentro · Vila Mariana · Jardim Paulista\n\nPrazo prioritário: #1047 · 15:17.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n2 entregas · 27 min · 8,8 km (com retorno)\n\nSem atraso previsto sob estas hipóteses\n\nCentro · Bela Vista\n\nPrazo prioritário: #1043 · 15:50.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        320,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "2",
+        "6",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "busy-320",
+    "scenario": "busy",
+    "elapsedMs": 162,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n3\nrotas propostas\n9\nentregas propostas\n991\nfora das propostas\n\n⚠ Propostas: 9 atrasos previstos · 0 margens <5 min.\n\n⚠ Fora: 376 com prazo vencido na saída · 44 próximos do limite. 15 sem margem até no trajeto direto estimado.\n\nLote: 24 de 1000 analisados · sugestão limitada.\n\nVer 991 pedidos pendentes e motivos\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,4 km (com retorno)\n\n⚠ 4 atrasos previstos\n\nVila Mariana\n\nPrazo prioritário: #2808 · 14:32.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 19 min · 7,5 km (com retorno)\n\n⚠ 1 atraso previsto\n\nCentro\n\nPrazo prioritário: #2359 · 14:31.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 3 · Bianca Souza\n\n4 entregas · 29 min · 8,4 km (com retorno)\n\n⚠ 4 atrasos previstos\n\nVila Mariana\n\nPrazo prioritário: #2088 · 14:32.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        320,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "3",
+        "9",
+        "991"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "urgent-375",
+    "scenario": "opt-urgent",
+    "elapsedMs": 95,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n2\nrotas propostas\n6\nentregas propostas\n0\nfora das propostas\n\n⚠ Propostas: 0 atrasos previstos · 1 margem <5 min.\n\nLote: 6 de 6 analisados · sugestão limitada.\n\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,5 km (com retorno)\n\n⚠ Margem inferior a 1 min\n\nCentro · Vila Mariana · Jardim Paulista\n\nPrazo prioritário: #1047 · 15:17.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n2 entregas · 27 min · 8,8 km (com retorno)\n\nSem atraso previsto sob estas hipóteses\n\nCentro · Bela Vista\n\nPrazo prioritário: #1043 · 15:50.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        375,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "2",
+        "6",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 1,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "busy-375",
+    "scenario": "busy",
+    "elapsedMs": 142,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n3\nrotas propostas\n9\nentregas propostas\n991\nfora das propostas\n\n⚠ Propostas: 9 atrasos previstos · 0 margens <5 min.\n\n⚠ Fora: 376 com prazo vencido na saída · 44 próximos do limite. 15 sem margem até no trajeto direto estimado.\n\nLote: 24 de 1000 analisados · sugestão limitada.\n\nVer 991 pedidos pendentes e motivos\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,4 km (com retorno)\n\n⚠ 4 atrasos previstos\n\nVila Mariana\n\nPrazo prioritário: #2808 · 14:32.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 19 min · 7,5 km (com retorno)\n\n⚠ 1 atraso previsto\n\nCentro\n\nPrazo prioritário: #2359 · 14:31.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 3 · Bianca Souza\n\n4 entregas · 29 min · 8,4 km (com retorno)\n\n⚠ 4 atrasos previstos\n\nVila Mariana\n\nPrazo prioritário: #2088 · 14:32.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        375,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "3",
+        "9",
+        "991"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "urgent-390",
+    "scenario": "opt-urgent",
+    "elapsedMs": 93,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n2\nrotas propostas\n6\nentregas propostas\n0\nfora das propostas\n\n⚠ Propostas: 0 atrasos previstos · 1 margem <5 min.\n\nLote: 6 de 6 analisados · sugestão limitada.\n\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,5 km (com retorno)\n\n⚠ Margem inferior a 1 min\n\nCentro · Vila Mariana · Jardim Paulista\n\nPrazo prioritário: #1047 · 15:17.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n2 entregas · 27 min · 8,8 km (com retorno)\n\nSem atraso previsto sob estas hipóteses\n\nCentro · Bela Vista\n\nPrazo prioritário: #1043 · 15:50.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "2",
+        "6",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 1,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "busy-390",
+    "scenario": "busy",
+    "elapsedMs": 147,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n3\nrotas propostas\n9\nentregas propostas\n991\nfora das propostas\n\n⚠ Propostas: 9 atrasos previstos · 0 margens <5 min.\n\n⚠ Fora: 376 com prazo vencido na saída · 44 próximos do limite. 15 sem margem até no trajeto direto estimado.\n\nLote: 24 de 1000 analisados · sugestão limitada.\n\nVer 991 pedidos pendentes e motivos\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,4 km (com retorno)\n\n⚠ 4 atrasos previstos\n\nVila Mariana\n\nPrazo prioritário: #2808 · 14:32.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 19 min · 7,5 km (com retorno)\n\n⚠ 1 atraso previsto\n\nCentro\n\nPrazo prioritário: #2359 · 14:31.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 3 · Bianca Souza\n\n4 entregas · 29 min · 8,4 km (com retorno)\n\n⚠ 4 atrasos previstos\n\nVila Mariana\n\nPrazo prioritário: #2088 · 14:32.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "3",
+        "9",
+        "991"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "urgent-1280",
+    "scenario": "opt-urgent",
+    "elapsedMs": 90,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n2\nrotas propostas\n6\nentregas propostas\n0\nfora das propostas\n\n⚠ Propostas: 0 atrasos previstos · 1 margem <5 min.\n\nLote: 6 de 6 analisados · sugestão limitada.\n\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,5 km (com retorno)\n\n⚠ Margem inferior a 1 min\n\nCentro · Vila Mariana · Jardim Paulista\n\nPrazo prioritário: #1047 · 15:17.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n2 entregas · 27 min · 8,8 km (com retorno)\n\nSem atraso previsto sob estas hipóteses\n\nCentro · Bela Vista\n\nPrazo prioritário: #1043 · 15:50.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        1280,
+        800
+      ],
+      "overflow": false,
+      "counts": [
+        "2",
+        "6",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 2,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 44,
+          "bottom": 748.796875
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 44,
+          "bottom": 748.796875
+        }
+      ],
+      "tones": [
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "busy-1280",
+    "scenario": "busy",
+    "elapsedMs": 130,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n3\nrotas propostas\n9\nentregas propostas\n991\nfora das propostas\n\n⚠ Propostas: 9 atrasos previstos · 0 margens <5 min.\n\n⚠ Fora: 376 com prazo vencido na saída · 44 próximos do limite. 15 sem margem até no trajeto direto estimado.\n\nLote: 24 de 1000 analisados · sugestão limitada.\n\nVer 991 pedidos pendentes e motivos\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,4 km (com retorno)\n\n⚠ 4 atrasos previstos\n\nVila Mariana\n\nPrazo prioritário: #2808 · 14:32.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 19 min · 7,5 km (com retorno)\n\n⚠ 1 atraso previsto\n\nCentro\n\nPrazo prioritário: #2359 · 14:31.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 3 · Bianca Souza\n\n4 entregas · 29 min · 8,4 km (com retorno)\n\n⚠ 4 atrasos previstos\n\nVila Mariana\n\nPrazo prioritário: #2088 · 14:32.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        1280,
+        800
+      ],
+      "overflow": false,
+      "counts": [
+        "3",
+        "9",
+        "991"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 44,
+          "bottom": 763
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 44,
+          "bottom": 763
+        }
+      ],
+      "tones": [
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "urgent-1440",
+    "scenario": "opt-urgent",
+    "elapsedMs": 102,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n2\nrotas propostas\n6\nentregas propostas\n0\nfora das propostas\n\n⚠ Propostas: 0 atrasos previstos · 1 margem <5 min.\n\nLote: 6 de 6 analisados · sugestão limitada.\n\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,5 km (com retorno)\n\n⚠ Margem inferior a 1 min\n\nCentro · Vila Mariana · Jardim Paulista\n\nPrazo prioritário: #1047 · 15:17.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n2 entregas · 27 min · 8,8 km (com retorno)\n\nSem atraso previsto sob estas hipóteses\n\nCentro · Bela Vista\n\nPrazo prioritário: #1043 · 15:50.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        1440,
+        900
+      ],
+      "overflow": false,
+      "counts": [
+        "2",
+        "6",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 2,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 44,
+          "bottom": 798.796875
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 44,
+          "bottom": 798.796875
+        }
+      ],
+      "tones": [
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "busy-1440",
+    "scenario": "busy",
+    "elapsedMs": 176,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n3\nrotas propostas\n9\nentregas propostas\n991\nfora das propostas\n\n⚠ Propostas: 9 atrasos previstos · 0 margens <5 min.\n\n⚠ Fora: 376 com prazo vencido na saída · 44 próximos do limite. 15 sem margem até no trajeto direto estimado.\n\nLote: 24 de 1000 analisados · sugestão limitada.\n\nVer 991 pedidos pendentes e motivos\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,4 km (com retorno)\n\n⚠ 4 atrasos previstos\n\nVila Mariana\n\nPrazo prioritário: #2808 · 14:32.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 19 min · 7,5 km (com retorno)\n\n⚠ 1 atraso previsto\n\nCentro\n\nPrazo prioritário: #2359 · 14:31.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 3 · Bianca Souza\n\n4 entregas · 29 min · 8,4 km (com retorno)\n\n⚠ 4 atrasos previstos\n\nVila Mariana\n\nPrazo prioritário: #2088 · 14:32.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        1440,
+        900
+      ],
+      "overflow": false,
+      "counts": [
+        "3",
+        "9",
+        "991"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 2,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 44,
+          "bottom": 863
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 44,
+          "bottom": 863
+        }
+      ],
+      "tones": [
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "impossible-390",
+    "scenario": "opt-impossible",
+    "elapsedMs": 93,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n3\nrotas propostas\n6\nentregas propostas\n0\nfora das propostas\n\n⚠ Propostas: 6 atrasos previstos · 0 margens <5 min.\n\nLote: 6 de 6 analisados · sugestão limitada.\n\nRota 1 · João Martins\n\n1 entrega · 19 min · 7,5 km (com retorno)\n\n⚠ 1 atraso previsto\n\nCentro\n\nPrazo prioritário: #1047 · 15:01.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 14 min · 4,6 km (com retorno)\n\n⚠ 1 atraso previsto\n\nCentro\n\nPrazo prioritário: #1043 · 15:01.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 3 · Bianca Souza\n\n4 entregas · 23 min · 5,7 km (com retorno)\n\n⚠ 4 atrasos previstos\n\nVila Mariana · Jardim Paulista · Bela Vista\n\nPrazo prioritário: #1048 · 15:01.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "3",
+        "6",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 1,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "long-320",
+    "scenario": "worst",
+    "elapsedMs": 127,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n3\nrotas propostas\n6\nentregas propostas\n0\nfora das propostas\n\n⚠ Propostas: 3 atrasos previstos · 1 margem <5 min.\n\nLote: 6 de 6 analisados · sugestão limitada.\n\nRota 1 · João Antônio de Oliveira e Albuquerque\n\n4 entregas · 38 min · 11,4 km (com retorno)\n\n⚠ 1 atraso previsto\n\nResidencial Parque dos Girassóis — Setor Norte · Centro · Vila Mariana · Bela Vista\n\nPrazo prioritário: #1048 · 11/10, 18:36.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 12 min · 3,6 km (com retorno)\n\n⚠ 1 atraso previsto\n\nJardim Paulista\n\nPrazo prioritário: #1046 · 14:52.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 3 · Bianca Souza\n\n1 entrega · 19 min · 7,5 km (com retorno)\n\n⚠ 1 atraso previsto\n\nCentro\n\nPrazo prioritário: #WHATSAPP-20261011-PEDIDO-ALMOCO-1284 · 15:08.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        320,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "3",
+        "6",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "missing-390",
+    "scenario": "opt-missing",
+    "elapsedMs": 94,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n2\nrotas propostas\n5\nentregas propostas\n1\nfora das propostas\n\nLote: 6 de 6 analisados · sugestão limitada.\n\nVer 1 pedido pendente e motivos\nRota 1 · João Martins\n\n4 entregas · 30 min · 8,3 km (com retorno)\n\nSem atraso previsto sob estas hipóteses\n\nCentro · Jardim Paulista · Vila Mariana\n\nPrazo prioritário: #1043 · 15:50.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 13 min · 4,2 km (com retorno)\n\nSem atraso previsto sob estas hipóteses\n\nBela Vista\n\nPrazo prioritário: #1044 · 15:50.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "2",
+        "5",
+        "1"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 1,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "no-route-390",
+    "scenario": "opt-no-route",
+    "elapsedMs": 81,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n2\nrotas propostas\n5\nentregas propostas\n1\nfora das propostas\n\nLote: 6 de 6 analisados · sugestão limitada.\n\nVer 1 pedido pendente e motivos\nRota 1 · João Martins\n\n4 entregas · 30 min · 8,3 km (com retorno)\n\nSem atraso previsto sob estas hipóteses\n\nCentro · Jardim Paulista · Vila Mariana\n\nPrazo prioritário: #1043 · 15:50.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 13 min · 4,2 km (com retorno)\n\nSem atraso previsto sob estas hipóteses\n\nBela Vista\n\nPrazo prioritário: #1044 · 15:50.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "2",
+        "5",
+        "1"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 1,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "empty-390",
+    "scenario": "empty",
+    "elapsedMs": 84,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nNenhuma rota proposta\n0\nrotas propostas\n0\nentregas propostas\n0\nfora das propostas\n\nNão há pedidos aguardando despacho.\n\nLote: 0 de 0 analisados · sugestão limitada.\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "0",
+        "0",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 659.1875
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 659.1875
+        }
+      ],
+      "tones": [
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "one-390",
+    "scenario": "one",
+    "elapsedMs": 83,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n1\nrota proposta\n1\nentrega proposta\n0\nfora das propostas\n\nLote: 1 de 1 analisados · sugestão limitada.\n\nRota 1 · João Martins\n\n1 entrega · 8 min · 2,3 km (com retorno)\n\nSem atraso previsto sob estas hipóteses\n\nVila Mariana\n\nPrazo prioritário: #1048 · 15:54.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "1",
+        "1",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 1,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 773.34375
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 773.34375
+        }
+      ],
+      "tones": [
+        {
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "no-couriers-390",
+    "scenario": "auto-no-couriers",
+    "elapsedMs": 87,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nNenhuma rota proposta\n0\nrotas propostas\n0\nentregas propostas\n6\nfora das propostas\n\nNenhum motoboy disponível. Os 6 pedidos seguem aguardando; aguarde disponibilidade.\n\n⚠ Fora: 1 com prazo vencido na saída · 1 próximos do limite. 2 sem margem até no trajeto direto estimado.\n\nLote: 6 de 6 analisados · sugestão limitada.\n\nVer 6 pedidos pendentes e motivos\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "0",
+        "0",
+        "6"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 733.703125
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 733.703125
+        }
+      ],
+      "tones": [
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "scarce-390",
+    "scenario": "auto-scarce",
+    "elapsedMs": 97,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n1\nrota proposta\n1\nentrega proposta\n5\nfora das propostas\n\n⚠ Propostas: 1 atraso previsto · 0 margens <5 min.\n\n⚠ Fora: 0 com prazo vencido na saída · 1 próximos do limite. 1 sem margem até no trajeto direto estimado.\n\nLote: 6 de 6 analisados · sugestão limitada.\n\nVer 5 pedidos pendentes e motivos\nRota 1 · João Martins\n\n1 entrega · 12 min · 3,6 km (com retorno)\n\n⚠ 1 atraso previsto\n\nJardim Paulista\n\nPrazo prioritário: #1046 · 14:52.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "1",
+        "1",
+        "5"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "near-390",
+    "scenario": "opt-near",
+    "elapsedMs": 154,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nSe confirmar todas as propostas\n2\nrotas propostas\n6\nentregas propostas\n0\nfora das propostas\n\nLote: 6 de 6 analisados · sugestão limitada.\n\nRota 1 · João Martins\n\n4 entregas · 16 min · 2,8 km (com retorno)\n\nSem atraso previsto sob estas hipóteses\n\nCentro · Vila Mariana\n\nPrazo prioritário: #1043 · 15:50.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n2 entregas · 9 min · 1,9 km (com retorno)\n\nSem atraso previsto sob estas hipóteses\n\nJardim Paulista · Bela Vista\n\nPrazo prioritário: #1046 · 15:50.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nNada atribuído. Marque rotas ou confirme uma individualmente. Loja libera a retirada; motoboy inicia.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "2",
+        "6",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 1,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    }
+  }
+]

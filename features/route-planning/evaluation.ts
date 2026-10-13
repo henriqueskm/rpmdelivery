@@ -1,7 +1,7 @@
 import { estimateSequence } from "../route-optimization/optimize.ts";
 import { isConfirmed } from "../route-optimization/types.ts";
 import { planningBatch, planningCouriers, routeInput, validatePlanning } from "./input.ts";
-import { parametersOf, PlanningError, type Plan, type PlannedGroup, type PlannedRoute, type PlanningInput, type PendingReason } from "./types.ts";
+import { parametersOf, PlanningError, type Plan, type PlannedGroup, type PlannedRoute, type PlanningInput, type PendingReason, type PendingOrder } from "./types.ts";
 
 export function pendingRisk(input: PlanningInput, routes: PlannedRoute[]) {
   const used=new Set(routes.flatMap(r=>r.ids)), waiting=input.orders.filter(o=>o.delivery==="WAITING"&&!used.has(o.id));
@@ -42,7 +42,7 @@ export function summarize(input: PlanningInput, routes: PlannedRoute[], reasons:
     pendingOverdue:risk.overdue,pendingTight:risk.tight,pendingLowerBoundLate:risk.lowerBoundLate,pendingUnestimated:risk.unestimated,
     ...stats,parameters:parametersOf(input)};
 }
-export function reviewGroups(input: PlanningInput, groups: PlannedGroup[]) {
+export function reviewGroups(input: PlanningInput, groups: PlannedGroup[], previousPending: PendingOrder[] = []) {
   validatePlanning(input);
   const batch=new Set(planningBatch(input.orders).map(o=>o.id)), couriers=new Set(planningCouriers(input).map(c=>c.id));
   const ids=groups.flatMap(g=>g.ids);
@@ -54,5 +54,6 @@ export function reviewGroups(input: PlanningInput, groups: PlannedGroup[]) {
     if(!estimate||estimate.durationSeconds>input.maxRouteSeconds) throw new PlanningError("invalid");
     return {...g,ids:[...g.ids],estimate};
   });
-  return summarize(input,routes,new Map(planningBatch(input.orders).map(o=>[o.id,"adjusted"])));
+  const intrinsic=new Map(previousPending.filter(p=>p.reason==="no-route"||p.reason==="long-route").map(p=>[p.id,p.reason]));
+  return summarize(input,routes,new Map(planningBatch(input.orders).map(o=>[o.id,intrinsic.get(o.id)??"adjusted"])));
 }

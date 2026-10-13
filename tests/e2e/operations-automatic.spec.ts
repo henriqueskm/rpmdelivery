@@ -45,6 +45,10 @@ test("calcular não atribui; lote reserva FIFO em PREPARING, só loja libera e s
 });
 test("um pedido permite confirmação individual sem aplicar outras propostas",async({page})=>{
   await open(page,"one");await calculate(page);
+  await expect(dialog(page).getByRole("heading",{name:"Se confirmar todas as propostas",exact:true})).toBeVisible();
+  await expect(dialog(page).locator(".ops-auto-metrics")).toContainText("rota proposta");
+  await expect(dialog(page).locator(".ops-auto-metrics")).toContainText("entrega proposta");
+  await expect(dialog(page).locator(".ops-auto-selection")).toContainText("Nada atribuído");
   await expect(dialog(page).getByRole("article",{name:"Proposta 1",exact:true})).toContainText("1 entrega");
   await dialog(page).getByRole("button",{name:"Confirmar esta rota (demo)",exact:true}).click();
   await expect(page.getByRole("article",{name:"Rota R-43",exact:true})).toContainText("Aguardando liberação");
@@ -67,14 +71,14 @@ test("ajustar ordem e retirar pedido recalcula sem persistir; critérios antigos
   await dialog(page).getByRole("button",{name:"Editar critérios",exact:true}).click();
   await dialog(page).getByLabel("Atendimento por parada (min)",{exact:true}).fill("3");
   await expect(dialog(page).getByRole("alert")).toContainText("recalcule");
-  await expect(dialog(page).getByRole("button",{name:/^Confirmar \d+ rotas/})).toBeDisabled();
+  await expect(dialog(page).getByRole("button",{name:/^Confirmar \d+ rotas?/})).toBeDisabled();
   await calculate(page);
   card=dialog(page).getByRole("article",{name:"Proposta 1",exact:true});
   await expect(card).toBeVisible();
   await page.clock.setFixedTime(new Date(epoch.getTime()+600000));
   await expect(dialog(page).getByRole("alert")).toContainText("saída estimada ficou no passado");
   await expect(dialog(page).getByRole("button",{name:"Gerar propostas (demo)",exact:true})).toBeDisabled();
-  await expect(dialog(page).getByRole("button",{name:/^Confirmar \d+ rotas/})).toBeDisabled();
+  await expect(dialog(page).getByRole("button",{name:/^Confirmar \d+ rotas?/})).toBeDisabled();
   await dialog(page).getByLabel("Saída estimada",{exact:true}).fill("2026-10-12T15:15");
   await calculate(page);
   await page.keyboard.press("Escape");
@@ -83,7 +87,8 @@ test("ajustar ordem e retirar pedido recalcula sem persistir; critérios antigos
 });
 test("pico explicita lote, pendências e motivos sem travar; interface em 320/375/390/1280/1440",async({page})=>{
   await open(page,"busy");await calculate(page);
-  await expect(dialog(page)).toContainText("24 de 1000 pedidos aguardando analisados");
+  await expect(dialog(page)).toContainText("24 de 1000 analisados");
+  await expect(dialog(page).locator(".ops-auto-risk-summary")).toContainText("sem margem até no trajeto direto estimado");
   const counts=await page.locator(".ops-auto-metrics strong").allTextContents();
   expect(Number(counts[0])).toBeLessThanOrEqual(3);expect(Number(counts[1])).toBeLessThanOrEqual(12);
   expect(Number(counts[1])+Number(counts[2])).toBe(1000);
@@ -92,23 +97,46 @@ test("pico explicita lote, pendências e motivos sem travar; interface em 320/37
   await expect(pending.locator("li")).toHaveCount(20);
   await pending.getByRole("button",{name:"Próximos pendentes",exact:true}).click();
   await expect(pending).toContainText("Fora do lote de 24");
+  await pending.getByText(new RegExp(`Ver ${counts[2]} pedidos pendentes e motivos`)).click();
   for(const width of [320,375,390,1280,1440]) {
     const height=width===1280?800:width===1440?900:844;
     await page.setViewportSize({width,height});
+    await dialog(page).locator(".ops-opt-scroll").evaluate(el=>{el.scrollTop=0;});
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    const courier=dialog(page).getByRole("checkbox",{name:"Selecionar proposta 1",exact:true});
+    const courierRect=(await courier.boundingBox())!;
+    const scrollRect=(await dialog(page).locator(".ops-opt-scroll").boundingBox())!;
+    expect(courierRect.y).toBeGreaterThanOrEqual(scrollRect.y);
+    expect(courierRect.y+courierRect.height).toBeLessThanOrEqual(scrollRect.y+scrollRect.height);
     for(const label of ["Voltar sem atribuir","Confirmar 0 rotas (demo)"]) {
       const r=await dialog(page).getByRole("button",{name:label,exact:true}).boundingBox();
       expect(r!.height).toBeGreaterThanOrEqual(44);expect(r!.y+r!.height).toBeLessThanOrEqual(height);
     }
   }
+  await dialog(page).getByRole("checkbox",{name:"Selecionar proposta 1",exact:true}).check();
+  await expect(dialog(page).locator(".ops-auto-selection")).toContainText("Selecionadas: 1 rota");
+  const first=dialog(page).getByRole("article",{name:"Proposta 1",exact:true});
+  const deliveryCount=Number((await first.locator(".ops-auto-route-summary").innerText()).match(/^\d+/)![0]);
+  await expect(dialog(page).locator(".ops-auto-selection")).toContainText(`${1000-deliveryCount} seguem aguardando`);
+  await expect(dialog(page).getByRole("button",{name:"Confirmar 1 rota (demo)",exact:true})).toBeEnabled();
+  await page.setViewportSize({width:320,height:844});
+  await first.getByText("Conferir e ajustar pedidos",{exact:true}).click();
+  const firstStop=(await first.locator("li").first().boundingBox())!;
+  const scrollRect=(await dialog(page).locator(".ops-opt-scroll").boundingBox())!;
+  expect(firstStop.y).toBeGreaterThanOrEqual(scrollRect.y);
+  expect(firstStop.y+firstStop.height).toBeLessThanOrEqual(scrollRect.y+scrollRect.height);
 });
 for(const [scenario,expected] of [
   ["auto-no-couriers","Sem motoboy disponível"],["opt-missing","Sem coordenadas confirmadas"],
-  ["opt-no-route","Sem percurso encontrado neste lote"],["auto-scarce","continuam aguardando"],
+  ["opt-no-route","Sem percurso encontrado neste lote"],["auto-scarce","fora das propostas"],
 ] as const)test(`pendência ${scenario} mantém montagem manual e não esconde pedidos`,async({page})=>{
   await open(page,scenario,"1");await calculate(page);
+  if(scenario==="auto-no-couriers") {
+    await expect(dialog(page).locator(".ops-auto-cause")).toContainText("Nenhum motoboy disponível");
+    await expect(dialog(page).locator('.ops-auto-metrics [data-tone="gain"]')).toHaveCount(0);
+  }
   const pending=dialog(page).getByRole("region",{name:"Pedidos que continuam aguardando",exact:true});
-  await pending.getByText(/Ver \d+ pedidos pendentes e motivos/).click();
+  await pending.getByText(/Ver \d+ pedidos? pendentes? e motivos/).click();
   await expect(dialog(page)).toContainText(expected);
   await dialog(page).getByRole("button",{name:"Voltar sem atribuir",exact:true}).click();
   await expect(page.getByRole("article",{name:"Rota R-43",exact:true})).toHaveCount(0);
@@ -117,14 +145,14 @@ test("impossíveis, margem apertada, textos longos e vazio continuam explícitos
   for(const scenario of ["opt-impossible","opt-tight","worst","empty"]) {
     await page.setViewportSize({width:320,height:844});await open(page,scenario);await calculate(page);
     if(scenario==="opt-impossible") {
-      await expect(dialog(page).locator('.ops-opt-risk[data-tone="danger"]')).toContainText("6 entregas com atraso previsto");
+      await expect(dialog(page).locator('.ops-opt-risk[data-tone="danger"]')).toContainText("6 atrasos previstos");
       await expect(dialog(page).locator(".ops-auto-metrics strong").nth(1)).toHaveText("6");
     }
     if(scenario==="worst") {
       for(const summary of await dialog(page).getByText("Conferir e ajustar pedidos",{exact:true}).all())await summary.click();
       await expect(dialog(page)).toContainText("Alergia alimentar: conferir etiqueta.");
     }
-    if(scenario==="empty")await expect(dialog(page)).toContainText("Nenhuma rota sugerida");
+    if(scenario==="empty")await expect(dialog(page)).toContainText("Nenhuma rota proposta");
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     await page.keyboard.press("Escape");
   }
@@ -132,8 +160,8 @@ test("impossíveis, margem apertada, textos longos e vazio continuam explícitos
 test("limite de duração/critério inválido explica impedimento, sem atribuição",async({page})=>{
   await open(page,"opt-short");await dialog(page).getByText("Limite de duração",{exact:true}).click();
   await dialog(page).getByLabel("Duração máxima da rota (min)",{exact:true}).fill("1");await calculate(page);
-  await expect(dialog(page)).toContainText("Nenhuma rota sugerida");
-  await dialog(page).getByRole("region",{name:"Pedidos que continuam aguardando",exact:true}).getByText(/Ver \d+ pedidos pendentes/).click();
+  await expect(dialog(page)).toContainText("Nenhuma rota proposta");
+  await dialog(page).getByRole("region",{name:"Pedidos que continuam aguardando",exact:true}).getByText(/Ver \d+ pedidos? pendentes?/).click();
   await expect(dialog(page)).toContainText("Trajeto excede a duração máxima");
   await dialog(page).getByRole("button",{name:"Editar critérios",exact:true}).click();
   await dialog(page).getByLabel("Atendimento por parada (min)",{exact:true}).fill("-1");
@@ -156,7 +184,7 @@ test("worker sem resposta mantém UI responsiva, cancela, expira em 5s e permite
   await expect(page.getByRole("article",{name:"Rota R-43",exact:true})).toHaveCount(0);
   await page.unroute(workerPattern);
   await calculate(page);
-  await expect(dialog(page)).toContainText("24 de 1000 pedidos aguardando analisados");
+  await expect(dialog(page)).toContainText("24 de 1000 analisados");
 });
 test("ajuste sem percurso preserva a proposta anterior e permite continuar a conferência",async({page})=>{
   await open(page,"opt-no-route","8");await calculate(page);

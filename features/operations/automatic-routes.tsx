@@ -1,49 +1,42 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { isConfirmed } from "../route-optimization/types";
 import type { Plan, PlannedGroup } from "../route-planning/types";
 import type { DemoState } from "./model";
 import { estimateTime, minutes, distance, stopRisk } from "./optimization-presentation";
-import { AutomaticPending } from "./automatic-pending";
+import { AutomaticOverview } from "./automatic-overview";
 
 export function AutomaticRoutes({plan,state,now,selected,onSelect,onEdit,onAccept,disabled}:{
   plan:Plan;state:DemoState;now:number;selected:string[];onSelect:(ids:string[])=>void;
   onEdit:(groups:PlannedGroup[])=>void;onAccept:(ids:string[])=>void;disabled:boolean;
 }) {
-  const heading=useRef<HTMLHeadingElement>(null);
   const [additions,setAdditions]=useState<Record<string,string>>({});
   const orders=useMemo(()=>new Map(state.orders.map(o=>[o.id,o])),[state.orders]), analyzed=new Set(plan.analyzedIds);
   const addable=plan.pending.filter(p=>analyzed.has(p.id)).map(p=>orders.get(p.id)!).filter(o=>isConfirmed(o.location));
-  useEffect(()=>{heading.current?.focus();},[]);
   function edit(routeIndex:number,ids:string[]) {
     onEdit(plan.routes.map((r,i)=>({courierId:r.courierId,ids:i===routeIndex?ids:r.ids})).filter(r=>r.ids.length));
   }
   return <section aria-label="Rotas propostas">
-    <h3 ref={heading} tabIndex={-1}>{plan.routes.length ? "Confira antes de confirmar" : "Nenhuma rota sugerida"}</h3>
-    <p className="ops-auto-context">Planejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.</p>
-    <div className="ops-auto-metrics">
-      <div><strong>{plan.routes.length}</strong><span>rotas sugeridas</span></div>
-      <div data-tone={plan.lateCount?"danger":plan.tightCount?"attention":"gain"}><strong>{plan.assignedCount}</strong><span>entregas agrupadas</span></div>
-      <div data-tone={plan.pendingOverdue||plan.pendingLowerBoundLate?"danger":plan.pending.length?"attention":"stable"}><strong>{plan.pending.length}</strong><span>continuam aguardando</span></div>
-    </div>
-    {(plan.lateCount>0||plan.tightCount>0) && <p className="ops-opt-risk" data-tone={plan.lateCount?"danger":"attention"}>
-      ⚠ {plan.lateCount} {plan.lateCount===1?"entrega":"entregas"} com atraso previsto · {plan.tightCount} com margem inferior a 5 min. Saída e trânsito podem mudar o resultado.
-    </p>}
-    <p className="ops-auto-context">Lote: {plan.analyzedIds.length} de {plan.waitingCount} pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.</p>
-    {plan.budgetLimited && <p className="ops-opt-risk" data-tone="attention">Limite de busca atingido. Nem todas as combinações foram avaliadas; confira as propostas.</p>}
-    <AutomaticPending plan={plan} state={state}/>
+    <AutomaticOverview plan={plan} state={state}/>
     <div className="ops-auto-cards">{plan.routes.map((route,index)=>{
       const courier=state.couriers.find(c=>c.id===route.courierId)!;
       const urgent=route.estimate.stops.reduce((a,b)=>a.deadlineAt<=b.deadlineAt?a:b);
       const urgentOrder=orders.get(urgent.id)!;
+      const destinations=[...new Set(route.ids.map(id=>orders.get(id)!.neighborhood))].join(" · ");
       const tone=route.estimate.lateCount?"danger":route.estimate.stops.some(s=>s.deadlineAt-s.completedAt<300000)?"attention":"stable";
       return <article key={route.courierId} className="ops-auto-card" aria-label={`Proposta ${index+1}`}>
         <header><label><input type="checkbox" aria-label={`Selecionar proposta ${index+1}`} checked={selected.includes(route.courierId)} disabled={disabled}
           onChange={()=>onSelect(selected.includes(route.courierId)?selected.filter(id=>id!==route.courierId):[...selected,route.courierId])}/><strong>Rota {index+1} · {courier.name}</strong></label></header>
-        <p className="ops-auto-route-summary">{route.ids.length} {route.ids.length===1?"entrega":"entregas"} · {minutes(route.estimate.durationSeconds)} · {distance(route.estimate.distanceMeters)}, incluindo retorno</p>
+        <p className="ops-auto-route-summary">{route.ids.length} {route.ids.length===1?"entrega":"entregas"} · {minutes(route.estimate.durationSeconds)} · {distance(route.estimate.distanceMeters)} (com retorno)</p>
         <p className="ops-auto-route-risk" data-tone={tone}>{tone==="danger"?`⚠ ${route.estimate.lateCount} ${route.estimate.lateCount===1?"atraso previsto":"atrasos previstos"}`:tone==="attention"?
           route.estimate.stops.some(s=>s.deadlineAt-s.completedAt<60000)?"⚠ Margem inferior a 1 min":"⚠ Prazo apertado":"Sem atraso previsto sob estas hipóteses"}</p>
-        <small>Menor prazo: #{urgentOrder.reference} · {estimateTime(urgent.deadlineAt,plan.parameters.departureAt)}. Agrupado por prazos e deslocamento.</small>
-        <details><summary>Conferir e ajustar pedidos</summary>
+        <p className="ops-auto-destinations">{destinations}</p>
+        <small>Prazo prioritário: #{urgentOrder.reference} · {estimateTime(urgent.deadlineAt,plan.parameters.departureAt)}.</small>
+        <details onToggle={e=>{
+          if(!e.currentTarget.open)return;
+          const target=e.currentTarget,scroll=target.closest(".ops-opt-scroll");
+          if(scroll)scroll.scrollTop+=target.getBoundingClientRect().top-scroll.getBoundingClientRect().top;
+        }}><summary>Conferir e ajustar pedidos</summary>
+          <p className="ops-auto-context">Rota {index+1} · {courier.name} · retorno {estimateTime(route.estimate.returnAt,plan.parameters.departureAt)}.</p>
           <ol>{route.estimate.stops.map((stop,i)=>{
             const o=orders.get(stop.id)!,risk=stopRisk(stop,now);
             return <li key={o.id}><strong>{i+1}. #{o.reference} · {o.neighborhood}</strong>

@@ -14,12 +14,9 @@ export function AutomaticPending({plan,state}:{plan:Plan;state:DemoState}) {
   const pending=useMemo(()=>[...plan.pending].sort((a,b)=>deadlineAt(orders.get(a.id)!)-deadlineAt(orders.get(b.id)!)),[plan.pending,orders]);
   if(!pending.length)return null;
   return <section aria-label="Pedidos que continuam aguardando" className="ops-auto-pending">
-    <p className="ops-opt-risk" data-tone={plan.pendingOverdue||plan.pendingLowerBoundLate?"danger":"attention"}>
-      ⚠ Pendentes: {plan.pendingOverdue} com prazo vencido na saída estimada · {plan.pendingTight} com menos de 5 min até o limite.
-      {plan.pendingLowerBoundLate>0&&<> Dentre eles, {plan.pendingLowerBoundLate} não cumpririam o prazo nem no cenário otimista de saída/retorno usado.</>}
-    </p>
-    <p className="ops-auto-context">Sem rota nem chegada prevista. Essas pendências exigem conferência da loja.</p>
-    <details><summary>Ver {plan.pending.length} pedidos pendentes e motivos</summary>
+    <details><summary>Ver {plan.pending.length} {plan.pending.length===1?"pedido pendente":"pedidos pendentes"} e motivos</summary>
+      <p className="ops-auto-context">Sem rota nem chegada prevista. {plan.pendingOverdue} com prazo vencido na saída estimada · {plan.pendingTight} com menos de 5 min até o limite.
+        {plan.pendingLowerBoundLate>0&&<> Dentre os pendentes, {plan.pendingLowerBoundLate} não cumpririam o prazo nem no cenário otimista de saída/retorno usado.</>}</p>
       <p className="ops-auto-context">{plan.pendingUnestimated} sem estimativa de trajeto neste lote.
         A avaliação considera seus prazos; confirmar rotas não resolve essas pendências. Retorno usado como limite otimista exige confirmação real do motoboy.</p>
       <ul>{pending.slice(current*20,(current+1)*20).map(p=>{

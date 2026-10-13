@@ -27,6 +27,7 @@ export function AutomaticDialog({state,scenario,now,onClose,onAccept}:{
   const selectedIds=new Set(plan?.routes.filter(r=>selected.includes(r.courierId)).flatMap(r=>r.ids)??[]);
   const stillWaiting=state.orders.filter(o=>o.delivery==="WAITING"&&!selectedIds.has(o.id));
   const waitingOverdue=stillWaiting.filter(o=>deadlineAt(o)<=parameters.departureAt).length;
+  const selectedCount=plan?.routes.filter(r=>selected.includes(r.courierId)).length??0;
   useEffect(()=>{dialog.current?.showModal();dialog.current?.querySelector<HTMLInputElement>("input")?.focus();},[]);
   function request(groups?:PlannedGroup[]) {
     setEditing(false);calculate(key,()=>automaticInput(state,scenario,parameters),groups);
@@ -39,7 +40,7 @@ export function AutomaticDialog({state,scenario,now,onClose,onAccept}:{
   }
   return <dialog ref={dialog} className="ops-dialog ops-optimization-dialog ops-automatic-dialog" aria-label="Montagem automática" onClose={()=>onClose(accepted.current)}>
     <div className="ops-dialog-heading"><h2>Montagem automática</h2><button aria-label="Fechar montagem automática" onClick={()=>dialog.current?.close()}>×</button></div>
-    <p className="ops-dialog-notice">Demonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.</p>
+    <p className="ops-dialog-notice">Demonstração · dados e trajetos fictícios. Sem Mapbox real, persistência ou garantia de chegada.</p>
     {plan&&!editing?<div className="ops-opt-hypotheses-summary"><span>Saída {calendarTime(parameters.departureAt)} · até {capacity}/rota · {service} min/parada · máx. {duration} min/rota</span><button onClick={()=>setEditing(true)}>Editar critérios</button></div>:
       <div className="ops-auto-controls">
         <label>Saída estimada<input type="datetime-local" value={departure} onChange={e=>setDeparture(e.target.value)}/></label>
@@ -58,11 +59,11 @@ export function AutomaticDialog({state,scenario,now,onClose,onAccept}:{
         "Não foi possível gerar propostas com esses dados ou critérios. Confira coordenadas, horários e limites; a montagem manual continua disponível."}</p>}
       {plan&&<AutomaticRoutes plan={plan} state={state} now={now} selected={selected} onSelect={setSelected} onEdit={request} onAccept={accept} disabled={!ready}/>}
     </div>
-    <p className="ops-auto-context">Rotas ficam em preparação; loja libera retirada e só o motoboy inicia.
-      {selected.length>0?<> {stillWaiting.length} pedidos ficam aguardando; <strong>{waitingOverdue} com prazo vencido na saída.</strong></>:
-        <> Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.</>}</p>
+    <p className="ops-auto-selection" data-tone={waitingOverdue&&selectedCount?"danger":"stable"}>
+      {selectedCount?<>Selecionadas: {selectedCount} {selectedCount===1?"rota":"rotas"} · {selectedIds.size} {selectedIds.size===1?"entrega":"entregas"}. {stillWaiting.length} seguem aguardando ({waitingOverdue} com prazo vencido na saída).</>:
+        <>Nada atribuído. Marque rotas ou confirme uma individualmente.</>} <span>Loja libera a retirada; motoboy inicia.</span></p>
     <div className="ops-opt-footer"><button onClick={()=>dialog.current?.close()}>Voltar sem atribuir</button>
       <button className="ops-primary" disabled={!ready||!selected.some(id=>plan?.routes.some(r=>r.courierId===id))} onClick={()=>accept(selected)}>
-        Confirmar {selected.filter(id=>plan?.routes.some(r=>r.courierId===id)).length} rotas (demo)</button></div>
+        Confirmar {selectedCount} {selectedCount===1?"rota":"rotas"} (demo)</button></div>
   </dialog>;
 }
