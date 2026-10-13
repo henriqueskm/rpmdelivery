@@ -2,6 +2,10 @@ import { validOrderTime, validPromise } from "./deadlines.ts";
 import type { ConfirmedCoordinate } from "../route-optimization/types.ts";
 import { validAutomaticAssignment, type AssignmentProposal } from "./automatic-assignment.ts";
 import type { PlannedGroup, PlanningParameters } from "../route-planning/types.ts";
+import type { AlertReceipt, DeliveryStatus, DemoEvent, DemoIssue, IssueCommand } from "./issue-types.ts";
+import { deliveryFinal } from "./issue-types.ts";
+import { issueReducer } from "./issue-reducer.ts";
+import { executeRoute } from "./route-execution.ts";
 
 export type RouteStatus = "PREPARING" | "ON_ROUTE" | "RETURNING" | "COMPLETED";
 export type ShiftStatus = "AVAILABLE" | "ON_ROUTE" | "RETURNING" | "PENDING";
@@ -18,10 +22,9 @@ export type DemoOrder = {
   orderedAt: number;
   createdAt: number;
   promisedMinutes: number;
-  status: "OPEN" | "DELIVERING" | "DELIVERED";
-  delivery:
-    "WAITING" | "ASSIGNED" | "ON_ROUTE" | "ATTEMPT_FAILED" | "DELIVERED";
-  issue?: string;
+  status: "OPEN" | "DELIVERING" | "DELIVERED" | "CANCELLED";
+  delivery: DeliveryStatus;
+  attemptNumber?: number;
 };
 export type DemoCourier = {
   id: string;
@@ -39,8 +42,14 @@ export type DemoRoute = {
   orderIds: string[];
   status: RouteStatus;
   pickupReleasedAt: number | null;
+  retryOrderIds?: string[];
 };
 export type DemoState = {
+  issueTimeoutMinutes: number;
+  issues: DemoIssue[];
+  events: DemoEvent[];
+  commandIds: string[];
+  alertReceipts: Record<string, AlertReceipt>;
   restaurantLocation?: ConfirmedCoordinate;
   defaultPromiseMinutes: number;
   orders: DemoOrder[];
@@ -63,6 +72,7 @@ export type NewOrder = Pick<
   | "promisedMinutes"
 >;
 export type Command =
+  | IssueCommand
   | { type: "batch-assign"; proposal: AssignmentProposal; groups: PlannedGroup[]; parameters: PlanningParameters; now: number }
   | { type: "add"; order: NewOrder; now: number }
   | { type: "default-promise"; minutes: number }
@@ -70,7 +80,7 @@ export type Command =
   | { type: "release"; routeId: string; expectedOrderIds: string[]; now: number }
   | { type: "revoke-release"; routeId: string }
   | { type: "assign"; ids: string[]; courierId: string; editingId?: string }
-  | { type: "start" | "finish" | "arrive"; routeId: string; actorId: string };
+  | { type: "start" | "finish" | "arrive"; routeId: string; actorId: string; now?: number };
 
 export function activeRoute(state: DemoState, courierId: string) {
   return state.routes.find(
@@ -119,6 +129,8 @@ export function operationsReducer(
   state: DemoState,
   command: Command,
 ): DemoState {
+  if (["delivery-complete", "delivery-failure", "issue-decide", "delivery-cancel", "issue-timeout-config", "alert-view", "alert-dismiss", "issues-tick"].includes(command.type))
+    return issueReducer(state, command as IssueCommand);
   if (command.type === "batch-assign") {
     if (!validAutomaticAssignment(state, command.proposal, command.groups, command.parameters, command.now, availableCouriers(state).map(c=>c.id))) return state;
     let next = state;
@@ -133,7 +145,7 @@ export function operationsReducer(
     return validPromise(command.minutes) ? { ...state, defaultPromiseMinutes: command.minutes } : state;
   }
   if (command.type === "deadline") {
-    const order = state.orders.find(o => o.id === command.orderId && o.delivery !== "DELIVERED");
+    const order = state.orders.find(o => o.id === command.orderId && !deliveryFinal(o.delivery));
     if (!order || !validPromise(command.minutes) || !validOrderTime(command.orderedAt, order.createdAt)) return state;
     return { ...state, orders: state.orders.map(o => o.id === order.id
       ? { ...o, orderedAt: command.orderedAt, promisedMinutes: command.minutes } : o) };
@@ -228,61 +240,5 @@ export function operationsReducer(
       ),
     };
   }
-  const route = state.routes.find((r) => r.id === command.routeId);
-  const courier = state.couriers.find(
-    (c) => c.id === command.actorId && c.activeLink,
-  );
-  if (!route || !courier || route.courierId !== courier.id) return state;
-  let status: RouteStatus;
-  let shift: ShiftStatus;
-  if (command.type === "start") {
-    if (
-      route.status !== "PREPARING" ||
-      courier.shift !== "AVAILABLE" ||
-      !validOrderTime(route.pickupReleasedAt ?? NaN, route.pickupReleasedAt ?? NaN) || !route.orderIds.length ||
-      !route.orderIds.every(id => state.orders.some(o => o.id === id && o.delivery === "ASSIGNED"))
-    )
-      return state;
-    status = "ON_ROUTE";
-    shift = "ON_ROUTE";
-  } else if (command.type === "finish") {
-    if (
-      route.status !== "ON_ROUTE" ||
-      courier.shift !== "ON_ROUTE" ||
-      state.orders.some(
-        (o) => route.orderIds.includes(o.id) && o.delivery === "ATTEMPT_FAILED",
-      )
-    )
-      return state;
-    status = "RETURNING";
-    shift = "RETURNING";
-  } else {
-    if (route.status !== "RETURNING" || courier.shift !== "RETURNING")
-      return state;
-    status = "COMPLETED";
-    shift = "AVAILABLE";
-  }
-  return {
-    ...state,
-    nextQueue: state.nextQueue + (command.type === "arrive" ? 1 : 0),
-    routes: state.routes.map((r) => (r.id === route.id ? { ...r, status } : r)),
-    couriers: state.couriers.map((c) =>
-      c.id === courier.id
-        ? {
-            ...c,
-            shift,
-            ...(command.type === "arrive"
-              ? { queueOrder: state.nextQueue, availableMinutes: 0 }
-              : {}),
-          }
-        : c,
-    ),
-    orders: state.orders.map((o) =>
-      !route.orderIds.includes(o.id) || command.type === "arrive"
-        ? o
-        : command.type === "start"
-          ? { ...o, status: "DELIVERING", delivery: "ON_ROUTE" }
-          : { ...o, status: "DELIVERED", delivery: "DELIVERED" },
-    ),
-  };
+  return executeRoute(state, command as Extract<Command, {type: "start" | "finish" | "arrive"}>);
 }

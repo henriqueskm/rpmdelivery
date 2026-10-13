@@ -1,4 +1,6 @@
 import type { DemoState, DemoOrder } from "./model";
+import { issueFixture, issueScenarios } from "./issue-fixtures.ts";
+export { issueScenarios };
 import { DEFAULT_PROMISE_MINUTES, DEMO_EPOCH, MINUTE } from "./deadlines.ts";
 import { fixtureCoordinate } from "../route-optimization/fixtures.ts";
 
@@ -11,7 +13,7 @@ export const optimizationScenarios = [
 export const automaticScenarios = [
   ["auto-no-couriers","Automática · sem motoboys"],["auto-scarce","Automática · um motoboy"],
 ] as const;
-export type Scenario = "demo" | "worst" | "empty" | "one" | "busy" | (typeof optimizationScenarios)[number][0] | (typeof automaticScenarios)[number][0];
+export type Scenario = "demo" | "worst" | "empty" | "one" | "busy" | (typeof optimizationScenarios)[number][0] | (typeof automaticScenarios)[number][0] | (typeof issueScenarios)[number][0];
 const waiting = [
   [
     "1048",
@@ -77,8 +79,11 @@ function order(
 }
 export function createDemoState(scenario: Scenario = "demo", now = DEMO_EPOCH): DemoState {
   function anchored(value: DemoState): DemoState {
+    value = issueFixture(value, scenario);
     const offset = now - DEMO_EPOCH;
     return { ...value,
+      issues: value.issues.map(i => ({...i, reportedAt: i.reportedAt + offset, decisionDeadline: i.decisionDeadline + offset, ...(i.closedAt === undefined ? {} : {closedAt: i.closedAt + offset})})),
+      events: value.events.map(e => ({...e, at: e.at + offset})),
       orders: value.orders.map(o => ({ ...o, orderedAt: o.orderedAt + offset, createdAt: o.createdAt + offset })),
       routes: value.routes.map(r => ({ ...r, pickupReleasedAt: r.pickupReleasedAt === null ? null : r.pickupReleasedAt + offset })),
     };
@@ -106,14 +111,13 @@ export function createDemoState(scenario: Scenario = "demo", now = DEMO_EPOCH): 
         "Rua dos Jacarandás, 72",
       ),
       status: "DELIVERING",
-      delivery: "ON_ROUTE",
+      delivery: "NEXT",
     },
     {
       ...order("1039", "Felipe Barros", "Centro", "Rua das Camélias, 290"),
       status: "DELIVERING",
       delivery: "ATTEMPT_FAILED",
-      issue:
-        "Cliente não localizado. Interfone sem resposta. A loja precisa decidir entre nova tentativa e retorno do pedido.",
+
     },
     {
       ...order("1038", "Carla Nunes", "Bela Vista", "Rua dos Hibiscos, 19"),
@@ -127,6 +131,9 @@ export function createDemoState(scenario: Scenario = "demo", now = DEMO_EPOCH): 
     },
   );
   const state: DemoState = {
+    issueTimeoutMinutes: 10, commandIds: [], alertReceipts: {},
+    issues: [{id: "issue:demo-order-1039:1", orderId: "demo-order-1039", routeId: "route-41", courierId: "rafa", attempt: 1, reason: "CUSTOMER_NOT_FOUND", description: "Interfone sem resposta. Conferir referência com o cliente.", reportedAt: DEMO_EPOCH-2*MINUTE, decisionDeadline: DEMO_EPOCH+8*MINUTE, status: "PENDING"}],
+    events: [{id: "fixture:failure:1039", type: "DELIVERY_ATTEMPT_FAILED", at: DEMO_EPOCH-2*MINUTE, actorId: "rafa", actorType: "COURIER", routeId: "route-41", orderId: "demo-order-1039", issueId: "issue:demo-order-1039:1", detail: "CUSTOMER_NOT_FOUND"}],
     restaurantLocation: fixtureCoordinate(0),
     defaultPromiseMinutes: DEFAULT_PROMISE_MINUTES,
     orders,
@@ -234,10 +241,11 @@ export function createDemoState(scenario: Scenario = "demo", now = DEMO_EPOCH): 
     ],
   };
   if (scenario === "empty")
-    return anchored({ ...state, orders: [], couriers: [], routes: [] });
+    return anchored({ ...state, orders: [], couriers: [], routes: [], issues: [], events: [] });
   if (scenario === "one")
     return anchored({
       ...state,
+      issues: [], events: [],
       orders: [orders[0]],
       couriers: [state.couriers[0]],
       routes: [],
@@ -273,7 +281,7 @@ export function createDemoState(scenario: Scenario = "demo", now = DEMO_EPOCH): 
       name: "João Antônio de Oliveira e Albuquerque",
     };
   }
-  if (scenario === "busy") {
+  if (scenario === "busy" || scenario === "issues-busy") {
     const many = Array.from({ length: 1000 }, (_, i) =>
       order(
         String(2000 + i),

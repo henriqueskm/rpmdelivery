@@ -171,7 +171,8 @@ test("motoboy confere PREPARING bloqueado, liberação única, ordem preservada 
   await route(page).getByRole("button", { name: "Visão do motoboy (demo)" }).click();
   await start.click();
   await expect(driver).toContainText("Em rota");
-  await expect(driver.locator(".ops-courier-deliveries li > strong")).toHaveText(["#1041 · André Mendes", "#1048 · Mariana Costa"]);
+  await driver.getByText("Ver sequência completa · 2 entregas",{exact:true}).click();
+  await expect(driver.locator(".ops-courier-deliveries li > strong")).toHaveText(["1. #1041 · André Mendes", "2. #1048 · Mariana Costa"]);
   await page.keyboard.press("Escape");
   await expect(route(page).getByRole("button", { name: "Editar montagem" })).toHaveCount(0);
   await expect(route(page).getByRole("button", { name: "Liberar retirada" })).toHaveCount(0);

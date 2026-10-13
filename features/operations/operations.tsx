@@ -3,7 +3,13 @@
 import { useRef, useState, type ReactNode, type RefObject } from "react";
 import dynamic from "next/dynamic";
 import { Brand } from "@/components/brand";
-import { optimizationScenarios, automaticScenarios, type Scenario } from "./fixtures";
+import { optimizationScenarios, automaticScenarios, issueScenarios, type Scenario } from "./fixtures";
+import { AlertsToolbar } from "./alerts-toolbar";
+import { NewIssueBanner } from "./new-issue-banner";
+import { IssueCenter } from "./issue-center";
+import { IssueDemoControls } from "./issue-demo-controls";
+import { useIssueAlerts } from "./use-issue-alerts";
+import { pendingIssues } from "./issue-presentation";
 import { BuilderPanel } from "./builder-panel";
 import { CouriersPanel } from "./couriers-panel";
 import { OrdersPanel } from "./orders-panel";
@@ -17,6 +23,7 @@ import { Icon } from "./ui";
 import "./operations.css";
 import "./operations-deadlines.css";
 import "./automatic.css";
+import "./issues.css";
 const AutomaticDialog = dynamic(() => import("./automatic-dialog").then(m=>m.AutomaticDialog), {
   loading: () => <p role="status">Abrindo montagem automática…</p>,
 });
@@ -87,18 +94,32 @@ function OperationsWorkspace({
   const {
     state, selected, setSelected, editingId, courierId, setCourierId, activeTab, setActiveTab,
     notice, courierRouteId, setCourierRouteId, deadlineTarget, setDeadlineTarget,
-    newDialog, courierDialog, deadlineDialog, tabRefs,
-    assign, acceptAutomatic, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, tabKey,
+    newDialog, courierDialog, deadlineDialog, issueDialog, tabRefs,
+    assign, acceptAutomatic, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, issueCommand, viewedAlerts, dismissAlerts, tabKey,
   } = useOperationsController(scenario, now);
   const [suggesting, setSuggesting] = useState(false);
   const [automatic,setAutomatic]=useState(false);
   const automaticTrigger=useRef<HTMLButtonElement>(null);
   const routesTarget=useRef<HTMLElement>(null);
+  const [highlightedRoute,setHighlightedRoute]=useState<string>();
+  const alerts=useIssueAlerts(state,viewedAlerts);
+  const pending=pendingIssues(state);
+  function followRoute(id?:string) {
+    setActiveTab("routes");setHighlightedRoute(id);
+    window.requestAnimationFrame(()=>{
+      const target=id?document.getElementById(`ops-route-${id}`):routesTarget.current;
+      target?.scrollIntoView({block:"start",behavior:"instant"});
+      (window.matchMedia("(max-width: 1099px)").matches?target:routesTarget.current)?.focus({preventScroll:true});
+    });
+  }
+  function openIssues(){issueDialog.current?.showModal();}
   return (
     <main className="operations">
       <header className="ops-header">
         <Brand />
         <span className="ops-header-section">Central de despacho</span>
+        <AlertsToolbar count={pending.length} onOpen={openIssues} onFollow={()=>followRoute(pending[0]?.routeId)}
+          enabled={alerts.enabled} activating={alerts.activating} onSound={alerts.toggleSound} message={alerts.message}/>
         <div className="ops-account">
           <div>
             <strong>{restaurantName}</strong>
@@ -127,8 +148,8 @@ function OperationsWorkspace({
         </div>
         <div className="ops-demo-banner">
           <span>
-            <strong>Demonstração com dados fictícios.</strong> Ações locais, sem
-            persistência. Recarregar restaura o exemplo.
+            <strong>Demonstração com dados fictícios.</strong><span className="ops-demo-explanation"> Ações locais, sem
+            persistência. Recarregar restaura o exemplo.</span>
           </span>
           {preview && (
             <label>
@@ -145,10 +166,15 @@ function OperationsWorkspace({
                 <option value="busy">Pico · 1.000 pedidos</option>
                 {optimizationScenarios.map(([value,label]) => <option key={value} value={value}>{label}</option>)}
                 {automaticScenarios.map(([value,label]) => <option key={value} value={value}>{label}</option>)}
+                {issueScenarios.map(([value,label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
           )}
         </div>
+        {preview&&scenario.startsWith("issues-")&&<IssueDemoControls state={state} onCommand={courierCommand}/>}
+        <NewIssueBanner issues={alerts.alerts} state={state} now={now} onDismiss={ids=>{
+          dismissAlerts(ids);window.requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(".ops-alert-count")?.focus());
+        }} onOpen={openIssues} onFollow={followRoute}/>
         <div
           className={`ops-notice ${notice ? "has-notice" : ""}`}
           role="status"
@@ -237,6 +263,9 @@ function OperationsWorkspace({
           <RoutesPanel
             state={state}
             now={now}
+            highlightedRoute={highlightedRoute}
+            onIssues={openIssues}
+            onCommand={issueCommand}
             onDeadline={setDeadlineTarget}
             onRelease={release}
             onRevokeRelease={revokeRelease}
@@ -264,7 +293,9 @@ function OperationsWorkspace({
         state={state}
         routeId={courierRouteId}
         onCommand={courierCommand}
+        onCompletedClose={followRoute}
       />
+      <IssueCenter dialogRef={issueDialog} state={state} now={now} onCommand={issueCommand} onFollow={followRoute}/>
     </main>
   );
 }

@@ -1,4 +1,5 @@
 import type { DemoOrder, DemoRoute, DemoState } from "./model";
+import { deliveryFinal } from "./issue-types.ts";
 
 export const MINUTE = 60_000;
 export const DEFAULT_PROMISE_MINUTES = 60;
@@ -32,7 +33,7 @@ export function deadlineInfo(order: DemoOrder, now: number) {
   return { dueAt, status, minutes, label, tone, remaining };
 }
 export function mostUrgentOrder(state: DemoState, route: DemoRoute) {
-  return state.orders.filter(o => route.orderIds.includes(o.id) && o.delivery !== "DELIVERED")
+  return state.orders.filter(o => route.orderIds.includes(o.id) && !deliveryFinal(o.delivery))
     .reduce<DemoOrder | undefined>((urgent, order) =>
       !urgent || deadlineAt(order) < deadlineAt(urgent) ? order : urgent, undefined);
 }
