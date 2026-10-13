@@ -19,13 +19,13 @@ export function AutomaticOverview({plan,state}:{plan:Plan;state:DemoState}) {
       <div data-tone={plan.pendingOverdue||plan.pendingLowerBoundLate?"danger":plan.pending.length?"attention":"stable"}><strong>{plan.pending.length}</strong><span>fora das propostas</span></div>
     </div>
     {!plan.routes.length&&<p className="ops-auto-cause" role="status">{!plan.waitingCount?"Não há pedidos aguardando despacho.":
-      noCouriers?`Nenhum motoboy disponível. Os ${plan.waitingCount} pedidos seguem aguardando; aguarde disponibilidade.`:
+      noCouriers?`Nenhum motoboy disponível. ${plan.waitingCount} ${plan.waitingCount===1?"pedido segue aguardando":"pedidos seguem aguardando"}; aguarde disponibilidade.`:
         [...reasons].map(([reason,count])=>`${count} · ${pendingLabels[reason as keyof typeof pendingLabels]}`).join("; ")+". Confira esses pedidos e os critérios."}</p>}
     {(danger||warning)&&<div className="ops-opt-risk ops-auto-risk-summary" data-tone={danger?"danger":"attention"}>
       {(plan.lateCount>0||plan.tightCount>0)&&<p>⚠ Propostas: {plan.lateCount} {plan.lateCount===1?"atraso previsto":"atrasos previstos"} · {plan.tightCount} {plan.tightCount===1?"margem":"margens"} &lt;5 min.</p>}
-      {plan.pending.length>0&&<p>⚠ Fora: {plan.pendingOverdue} com prazo vencido na saída · {plan.pendingTight} próximos do limite.{plan.pendingLowerBoundLate>0&&<> {plan.pendingLowerBoundLate} sem margem até no trajeto direto estimado.</>}</p>}
+      {plan.pending.length>0&&<p>⚠ Fora: {plan.pendingOverdue} com prazo vencido na saída · {plan.pendingTight} {plan.pendingTight===1?"próximo":"próximos"} do limite.{plan.pendingLowerBoundLate>0&&<> {plan.pendingLowerBoundLate} {plan.pendingLowerBoundLate===1?"não cumpriria":"não cumpririam"} o prazo nem na estimativa otimista.</>}</p>}
     </div>}
-    <p className="ops-auto-batch">Lote: {plan.analyzedIds.length} de {plan.waitingCount} analisados · sugestão limitada{plan.budgetLimited?" · limite de busca atingido":""}.</p>
+    <p className="ops-auto-batch">Lote: {plan.analyzedIds.length} de {plan.waitingCount} {plan.analyzedIds.length===1?"pedido analisado":"pedidos analisados"} · sugestão limitada{plan.budgetLimited?" · limite de busca atingido":""}.</p>
     <AutomaticPending plan={plan} state={state}/>
   </>;
 }

@@ -62,7 +62,7 @@ export function AutomaticRoutes({plan,state,now,selected,onSelect,onEdit,onAccep
           </div>}
           <p className="ops-auto-context">Ajustes recalculam prazos sem atribuir. Para substituir, retire um pedido e escolha outro pendente deste lote.</p>
         </details>
-        <button disabled={disabled} onClick={()=>onAccept([route.courierId])}>Confirmar esta rota (demo)</button>
+        <button aria-label={`Confirmar rota ${index+1} de ${courier.name} (demo)`} disabled={disabled} onClick={()=>onAccept([route.courierId])}>Confirmar rota {index+1} (demo)</button>
       </article>;
     })}</div>
   </section>;

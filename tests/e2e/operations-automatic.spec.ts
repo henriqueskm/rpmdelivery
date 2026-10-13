@@ -49,8 +49,9 @@ test("um pedido permite confirmação individual sem aplicar outras propostas",a
   await expect(dialog(page).locator(".ops-auto-metrics")).toContainText("rota proposta");
   await expect(dialog(page).locator(".ops-auto-metrics")).toContainText("entrega proposta");
   await expect(dialog(page).locator(".ops-auto-selection")).toContainText("Nada atribuído");
+  await expect(dialog(page).locator(".ops-auto-batch")).toContainText("1 de 1 pedido analisado");
   await expect(dialog(page).getByRole("article",{name:"Proposta 1",exact:true})).toContainText("1 entrega");
-  await dialog(page).getByRole("button",{name:"Confirmar esta rota (demo)",exact:true}).click();
+  await dialog(page).getByRole("button",{name:"Confirmar rota 1 de João Martins (demo)",exact:true}).click();
   await expect(page.getByRole("article",{name:"Rota R-43",exact:true})).toContainText("Aguardando liberação");
   await expect(page.getByRole("article",{name:"Rota R-44",exact:true})).toHaveCount(0);
 });
@@ -87,8 +88,8 @@ test("ajustar ordem e retirar pedido recalcula sem persistir; critérios antigos
 });
 test("pico explicita lote, pendências e motivos sem travar; interface em 320/375/390/1280/1440",async({page})=>{
   await open(page,"busy");await calculate(page);
-  await expect(dialog(page)).toContainText("24 de 1000 analisados");
-  await expect(dialog(page).locator(".ops-auto-risk-summary")).toContainText("sem margem até no trajeto direto estimado");
+  await expect(dialog(page)).toContainText("24 de 1000 pedidos analisados");
+  await expect(dialog(page).locator(".ops-auto-risk-summary")).toContainText("não cumpririam o prazo nem na estimativa otimista");
   const counts=await page.locator(".ops-auto-metrics strong").allTextContents();
   expect(Number(counts[0])).toBeLessThanOrEqual(3);expect(Number(counts[1])).toBeLessThanOrEqual(12);
   expect(Number(counts[1])+Number(counts[2])).toBe(1000);
@@ -119,12 +120,16 @@ test("pico explicita lote, pendências e motivos sem travar; interface em 320/37
   const deliveryCount=Number((await first.locator(".ops-auto-route-summary").innerText()).match(/^\d+/)![0]);
   await expect(dialog(page).locator(".ops-auto-selection")).toContainText(`${1000-deliveryCount} seguem aguardando`);
   await expect(dialog(page).getByRole("button",{name:"Confirmar 1 rota (demo)",exact:true})).toBeEnabled();
-  await page.setViewportSize({width:320,height:844});
-  await first.getByText("Conferir e ajustar pedidos",{exact:true}).click();
-  const firstStop=(await first.locator("li").first().boundingBox())!;
-  const scrollRect=(await dialog(page).locator(".ops-opt-scroll").boundingBox())!;
-  expect(firstStop.y).toBeGreaterThanOrEqual(scrollRect.y);
-  expect(firstStop.y+firstStop.height).toBeLessThanOrEqual(scrollRect.y+scrollRect.height);
+  for(const width of [320,375,390,1280,1440]) {
+    await page.setViewportSize({width,height:width===1280?800:width===1440?900:844});
+    await first.getByText("Conferir e ajustar pedidos",{exact:true}).click();
+    await expect.poll(async()=>{
+      const stop=(await first.locator("li").first().boundingBox())!;
+      const area=(await dialog(page).locator(".ops-opt-scroll").boundingBox())!;
+      return stop.y>=area.y&&stop.y+stop.height<=area.y+area.height;
+    }).toBe(true);
+    await first.getByText("Conferir e ajustar pedidos",{exact:true}).click();
+  }
 });
 for(const [scenario,expected] of [
   ["auto-no-couriers","Sem motoboy disponível"],["opt-missing","Sem coordenadas confirmadas"],
@@ -184,7 +189,7 @@ test("worker sem resposta mantém UI responsiva, cancela, expira em 5s e permite
   await expect(page.getByRole("article",{name:"Rota R-43",exact:true})).toHaveCount(0);
   await page.unroute(workerPattern);
   await calculate(page);
-  await expect(dialog(page)).toContainText("24 de 1000 analisados");
+  await expect(dialog(page)).toContainText("24 de 1000 pedidos analisados");
 });
 test("ajuste sem percurso preserva a proposta anterior e permite continuar a conferência",async({page})=>{
   await open(page,"opt-no-route","8");await calculate(page);
@@ -195,6 +200,6 @@ test("ajuste sem percurso preserva a proposta anterior e permite continuar a con
   await card.getByRole("button",{name:"Adicionar pedido",exact:true}).click();
   await expect(dialog(page).getByRole("alert")).toContainText("proposta anterior foi preservada");
   await expect(card.locator("li > strong")).toHaveText(before);
-  await expect(card.getByRole("button",{name:"Confirmar esta rota (demo)",exact:true})).toBeEnabled();
+  await expect(card.getByRole("button",{name:"Confirmar rota 1 de João Martins (demo)",exact:true})).toBeEnabled();
   await expect(page.getByRole("article",{name:"Rota R-43",exact:true})).toHaveCount(0);
 });
