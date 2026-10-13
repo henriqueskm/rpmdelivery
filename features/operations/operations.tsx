@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useState, type ReactNode, type RefObject } from "react";
+import dynamic from "next/dynamic";
 import { Brand } from "@/components/brand";
-import { type Scenario } from "./fixtures";
+import { optimizationScenarios, type Scenario } from "./fixtures";
 import { BuilderPanel } from "./builder-panel";
 import { CouriersPanel } from "./couriers-panel";
 import { OrdersPanel } from "./orders-panel";
@@ -15,6 +16,9 @@ import { useOperationsClock } from "./use-operations-clock";
 import { Icon } from "./ui";
 import "./operations.css";
 import "./operations-deadlines.css";
+const OptimizationDialog = dynamic(() => import("./optimization-dialog").then(m=>m.OptimizationDialog), {
+  loading: () => <p role="status">Abrindo sugestão…</p>,
+});
 
 export function Operations({
   restaurantName,
@@ -82,6 +86,7 @@ function OperationsWorkspace({
     newDialog, courierDialog, deadlineDialog, tabRefs,
     assign, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, tabKey,
   } = useOperationsController(scenario, now);
+  const [suggesting, setSuggesting] = useState(false);
   return (
     <main className="operations">
       <header className="ops-header">
@@ -128,6 +133,7 @@ function OperationsWorkspace({
                 <option value="empty">Lista vazia</option>
                 <option value="one">Um pedido</option>
                 <option value="busy">Pico · 1.000 pedidos</option>
+                {optimizationScenarios.map(([value,label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
           )}
@@ -193,6 +199,7 @@ function OperationsWorkspace({
               selected={selected}
               editingId={editingId}
               courierId={courierId}
+              onSuggest={() => setSuggesting(true)}
               onCourier={setCourierId}
               onSelect={setSelected}
               onAssign={assign}
@@ -233,6 +240,8 @@ function OperationsWorkspace({
         </footer>
       </div>
       <NewOrderDialog dialogRef={newDialog} now={now} defaultPromiseMinutes={state.defaultPromiseMinutes} onAdd={add} />
+      {suggesting && <OptimizationDialog state={state} selected={selected} editingId={editingId} scenario={scenario}
+        now={now} onApply={setSelected} onClose={()=>setSuggesting(false)} />}
       <DeadlineDialog dialogRef={deadlineDialog} state={state} target={deadlineTarget} onSave={saveDeadline} onClose={() => setDeadlineTarget(undefined)} />
       <CourierDialog
         now={now}

@@ -1,4 +1,5 @@
 import { validOrderTime, validPromise } from "./deadlines.ts";
+import type { ConfirmedCoordinate } from "../route-optimization/types.ts";
 
 export type RouteStatus = "PREPARING" | "ON_ROUTE" | "RETURNING" | "COMPLETED";
 export type ShiftStatus = "AVAILABLE" | "ON_ROUTE" | "RETURNING" | "PENDING";
@@ -11,6 +12,7 @@ export type DemoOrder = {
   neighborhood: string;
   complement: string;
   notes: string;
+  location?: ConfirmedCoordinate;
   orderedAt: number;
   createdAt: number;
   promisedMinutes: number;
@@ -37,6 +39,7 @@ export type DemoRoute = {
   pickupReleasedAt: number | null;
 };
 export type DemoState = {
+  restaurantLocation?: ConfirmedCoordinate;
   defaultPromiseMinutes: number;
   orders: DemoOrder[];
   couriers: DemoCourier[];

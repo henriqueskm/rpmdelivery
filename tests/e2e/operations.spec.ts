@@ -73,6 +73,9 @@ test("conferência de pico amplia sequência e atribui somente PREPARING", async
 });
 
 test("pico preserva área útil no desktop e atribuição acessível no mobile", async ({ page }) => {
+  // Compare a mesma fixture diurna: a data explícita na virada do dia ocupa mais altura.
+  // setFixedTime estabiliza Date sem pausar timers de hidratação ou interação.
+  await page.clock.setFixedTime(new Date("2026-10-12T18:00:00Z"));
   for (const [width, height] of [[1280, 800], [1440, 900], [390, 844]]) {
     await page.setViewportSize({ width, height });
     await page.goto("/preview/operacao?scenario=busy");

@@ -1,0 +1,632 @@
+[
+  {
+    "name": "urgent-320",
+    "scenario": "opt-urgent",
+    "metrics": {
+      "viewport": [
+        320,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 523.4375,
+        "bottom": 739.40625
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 0
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 121.21875
+        }
+      ],
+      "footer": [
+        {
+          "label": "Descartar",
+          "height": 58.59375,
+          "bottom": 819
+        },
+        {
+          "label": "Aplicar sequência (demo)",
+          "height": 58.59375,
+          "bottom": 819
+        }
+      ],
+      "tones": []
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\n\nSem atraso previsto na sugestão sob estas hipóteses; a saída e o trânsito podem mudar.\n\nManual\n27 min · 8,4 km\n1 com atraso previsto\nAtraso total 2 min\nSugerida\n27 min · 8,5 km\n0 com atraso previsto\nAtraso total 0 min\nVer sugerida\nVer manual\nOrdem sugerida\n\n27 min · 8,5 km\n0 com atraso previsto · atraso total 0 min\nRetorno estimado 15:32 · inclui atendimento e volta\n\n#1047 · Pedro Almeida\nCentro · Rua das Acácias, 215\nChegada 15:15 · entrega 15:17\nLimite 15:17 · margem estimada <1 min\n#1048 · Mariana Costa\nVila Mariana · Rua dos Ipês, 82\nChegada 15:20 · entrega 15:22\nLimite 15:50 · margem estimada 28 min\n#1046 · Beatriz Santos\nJardim Paulista · Alameda dos Girassóis, 41\nChegada 15:24 · entrega 15:26\nLimite 15:50 · margem estimada 24 min\nDescartar\nAplicar sequência (demo)",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "eight-320",
+    "scenario": "busy",
+    "metrics": {
+      "viewport": [
+        320,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 523.4375,
+        "bottom": 739.40625
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 0
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 140.0625
+        }
+      ],
+      "footer": [
+        {
+          "label": "Descartar",
+          "height": 58.59375,
+          "bottom": 819
+        },
+        {
+          "label": "Aplicar sequência (demo)",
+          "height": 58.59375,
+          "bottom": 819
+        }
+      ],
+      "tones": []
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\n\nSem atraso previsto na sugestão sob estas hipóteses; a saída e o trânsito podem mudar.\n\nManual\n80 min · 25,3 km\n3 com atraso previsto\nAtraso total 44 min\nSugerida\n53 min · 14,4 km\n0 com atraso previsto\nAtraso total 0 min\nVer sugerida\nVer manual\nOrdem sugerida\n\n53 min · 14,4 km\n0 com atraso previsto · atraso total 0 min\nRetorno estimado 15:58 · inclui atendimento e volta\n\n#2003 · Cliente demonstrativo 4\nCentro · Rua das Flores, 4\nChegada 15:12 · entrega 15:14\nLimite 15:57 · margem estimada 43 min\n#2001 · Cliente demonstrativo 2\nCentro · Rua das Flores, 2\nChegada 15:16 · entrega 15:18\nLimite 15:59 · margem estimada 41 min\n#2002 · Cliente demonstrativo 3\nVila Mariana · Rua das Flores, 3\nChegada 15:27 · entrega 15:29\nLimite 15:58 · margem estimada 29 min\n#2007 · Cliente demonstrativo 8\nCentro · Rua das Flores, 8\nChegada 15:32 · entrega 15:34\nLimite 15:53 · margem estimada 19 min\n#2000 · Cliente demonstrativo 1\nVila Mariana · Rua das Flores, 1\nChegada 15:37 · entrega 15:39\nLimite 16:00 · margem estimada 21 min\n#2006 · Cliente demonstrativo 7\nVila Mariana · Rua das Flores, 7\nChegada 15:41 · entrega 15:43\nLimite 15:54 · margem estimada 11 min\n#2005 · Cliente demonstrativo 6\nCentro · Rua das Flores, 6\nChegada 15:46 · entrega 15:48\nLimite 15:55 · margem estimada 7 min\n#2004 · Cliente demonstrativo 5\nVila Mariana · Rua das Flores, 5\nChegada 15:51 · entrega 15:53\nLimite 15:56 · margem estimada 3 min\nDescartar\nAplicar sequência (demo)",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "urgent-375",
+    "scenario": "opt-urgent",
+    "metrics": {
+      "viewport": [
+        375,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 540.828125,
+        "bottom": 739.40625
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 1
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 102.375
+        }
+      ],
+      "footer": [
+        {
+          "label": "Descartar",
+          "height": 58.59375,
+          "bottom": 819
+        },
+        {
+          "label": "Aplicar sequência (demo)",
+          "height": 58.59375,
+          "bottom": 819
+        }
+      ],
+      "tones": []
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\n\nSem atraso previsto na sugestão sob estas hipóteses; a saída e o trânsito podem mudar.\n\nManual\n27 min · 8,4 km\n1 com atraso previsto\nAtraso total 2 min\nSugerida\n27 min · 8,5 km\n0 com atraso previsto\nAtraso total 0 min\nVer sugerida\nVer manual\nOrdem sugerida\n\n27 min · 8,5 km\n0 com atraso previsto · atraso total 0 min\nRetorno estimado 15:32 · inclui atendimento e volta\n\n#1047 · Pedro Almeida\nCentro · Rua das Acácias, 215\nChegada 15:15 · entrega 15:17\nLimite 15:17 · margem estimada <1 min\n#1048 · Mariana Costa\nVila Mariana · Rua dos Ipês, 82\nChegada 15:20 · entrega 15:22\nLimite 15:50 · margem estimada 28 min\n#1046 · Beatriz Santos\nJardim Paulista · Alameda dos Girassóis, 41\nChegada 15:24 · entrega 15:26\nLimite 15:50 · margem estimada 24 min\nDescartar\nAplicar sequência (demo)",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "eight-375",
+    "scenario": "busy",
+    "metrics": {
+      "viewport": [
+        375,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 540.828125,
+        "bottom": 739.40625
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 1
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 102.375
+        }
+      ],
+      "footer": [
+        {
+          "label": "Descartar",
+          "height": 58.59375,
+          "bottom": 819
+        },
+        {
+          "label": "Aplicar sequência (demo)",
+          "height": 58.59375,
+          "bottom": 819
+        }
+      ],
+      "tones": []
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\n\nSem atraso previsto na sugestão sob estas hipóteses; a saída e o trânsito podem mudar.\n\nManual\n80 min · 25,3 km\n3 com atraso previsto\nAtraso total 44 min\nSugerida\n53 min · 14,4 km\n0 com atraso previsto\nAtraso total 0 min\nVer sugerida\nVer manual\nOrdem sugerida\n\n53 min · 14,4 km\n0 com atraso previsto · atraso total 0 min\nRetorno estimado 15:58 · inclui atendimento e volta\n\n#2003 · Cliente demonstrativo 4\nCentro · Rua das Flores, 4\nChegada 15:12 · entrega 15:14\nLimite 15:57 · margem estimada 43 min\n#2001 · Cliente demonstrativo 2\nCentro · Rua das Flores, 2\nChegada 15:16 · entrega 15:18\nLimite 15:59 · margem estimada 41 min\n#2002 · Cliente demonstrativo 3\nVila Mariana · Rua das Flores, 3\nChegada 15:27 · entrega 15:29\nLimite 15:58 · margem estimada 29 min\n#2007 · Cliente demonstrativo 8\nCentro · Rua das Flores, 8\nChegada 15:32 · entrega 15:34\nLimite 15:53 · margem estimada 19 min\n#2000 · Cliente demonstrativo 1\nVila Mariana · Rua das Flores, 1\nChegada 15:37 · entrega 15:39\nLimite 16:00 · margem estimada 21 min\n#2006 · Cliente demonstrativo 7\nVila Mariana · Rua das Flores, 7\nChegada 15:41 · entrega 15:43\nLimite 15:54 · margem estimada 11 min\n#2005 · Cliente demonstrativo 6\nCentro · Rua das Flores, 6\nChegada 15:46 · entrega 15:48\nLimite 15:55 · margem estimada 7 min\n#2004 · Cliente demonstrativo 5\nVila Mariana · Rua das Flores, 5\nChegada 15:51 · entrega 15:53\nLimite 15:56 · margem estimada 3 min\nDescartar\nAplicar sequência (demo)",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "urgent-390",
+    "scenario": "opt-urgent",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 555.421875,
+        "bottom": 754
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 2
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 102.375
+        }
+      ],
+      "footer": [
+        {
+          "label": "Descartar",
+          "height": 44,
+          "bottom": 819
+        },
+        {
+          "label": "Aplicar sequência (demo)",
+          "height": 44,
+          "bottom": 819
+        }
+      ],
+      "tones": []
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\n\nSem atraso previsto na sugestão sob estas hipóteses; a saída e o trânsito podem mudar.\n\nManual\n27 min · 8,4 km\n1 com atraso previsto\nAtraso total 2 min\nSugerida\n27 min · 8,5 km\n0 com atraso previsto\nAtraso total 0 min\nVer sugerida\nVer manual\nOrdem sugerida\n\n27 min · 8,5 km\n0 com atraso previsto · atraso total 0 min\nRetorno estimado 15:32 · inclui atendimento e volta\n\n#1047 · Pedro Almeida\nCentro · Rua das Acácias, 215\nChegada 15:15 · entrega 15:17\nLimite 15:17 · margem estimada <1 min\n#1048 · Mariana Costa\nVila Mariana · Rua dos Ipês, 82\nChegada 15:20 · entrega 15:22\nLimite 15:50 · margem estimada 28 min\n#1046 · Beatriz Santos\nJardim Paulista · Alameda dos Girassóis, 41\nChegada 15:24 · entrega 15:26\nLimite 15:50 · margem estimada 24 min\nDescartar\nAplicar sequência (demo)",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "eight-390",
+    "scenario": "busy",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 555.421875,
+        "bottom": 754
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 2
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 102.375
+        }
+      ],
+      "footer": [
+        {
+          "label": "Descartar",
+          "height": 44,
+          "bottom": 819
+        },
+        {
+          "label": "Aplicar sequência (demo)",
+          "height": 44,
+          "bottom": 819
+        }
+      ],
+      "tones": []
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\n\nSem atraso previsto na sugestão sob estas hipóteses; a saída e o trânsito podem mudar.\n\nManual\n80 min · 25,3 km\n3 com atraso previsto\nAtraso total 44 min\nSugerida\n53 min · 14,4 km\n0 com atraso previsto\nAtraso total 0 min\nVer sugerida\nVer manual\nOrdem sugerida\n\n53 min · 14,4 km\n0 com atraso previsto · atraso total 0 min\nRetorno estimado 15:58 · inclui atendimento e volta\n\n#2003 · Cliente demonstrativo 4\nCentro · Rua das Flores, 4\nChegada 15:12 · entrega 15:14\nLimite 15:57 · margem estimada 43 min\n#2001 · Cliente demonstrativo 2\nCentro · Rua das Flores, 2\nChegada 15:16 · entrega 15:18\nLimite 15:59 · margem estimada 41 min\n#2002 · Cliente demonstrativo 3\nVila Mariana · Rua das Flores, 3\nChegada 15:27 · entrega 15:29\nLimite 15:58 · margem estimada 29 min\n#2007 · Cliente demonstrativo 8\nCentro · Rua das Flores, 8\nChegada 15:32 · entrega 15:34\nLimite 15:53 · margem estimada 19 min\n#2000 · Cliente demonstrativo 1\nVila Mariana · Rua das Flores, 1\nChegada 15:37 · entrega 15:39\nLimite 16:00 · margem estimada 21 min\n#2006 · Cliente demonstrativo 7\nVila Mariana · Rua das Flores, 7\nChegada 15:41 · entrega 15:43\nLimite 15:54 · margem estimada 11 min\n#2005 · Cliente demonstrativo 6\nCentro · Rua das Flores, 6\nChegada 15:46 · entrega 15:48\nLimite 15:55 · margem estimada 7 min\n#2004 · Cliente demonstrativo 5\nVila Mariana · Rua das Flores, 5\nChegada 15:51 · entrega 15:53\nLimite 15:56 · margem estimada 3 min\nDescartar\nAplicar sequência (demo)",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "urgent-1280",
+    "scenario": "opt-urgent",
+    "metrics": {
+      "viewport": [
+        1280,
+        800
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 475.6875,
+        "bottom": 692.71875
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 3
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 3
+        }
+      ],
+      "metrics": [
+        {
+          "complete": false,
+          "height": 0
+        }
+      ],
+      "footer": [
+        {
+          "label": "Descartar",
+          "height": 44,
+          "bottom": 757.71875
+        },
+        {
+          "label": "Aplicar sequência (demo)",
+          "height": 44,
+          "bottom": 757.71875
+        }
+      ],
+      "tones": []
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída estimada\nAtendimento por parada (min)\nCalcular sugestão (demo)\n\nSem atraso previsto na sugestão sob estas hipóteses; a saída e o trânsito podem mudar.\n\nOrdem manual\n\n27 min · 8,4 km\n1 com atraso previsto · atraso total 2 min\nRetorno estimado 15:32 · inclui atendimento e volta\n\n#1048 · Mariana Costa\nVila Mariana · Rua dos Ipês, 82\nChegada 15:07 · entrega 15:09\nLimite 15:50 · margem estimada 41 min\n#1047 · Pedro Almeida\nCentro · Rua das Acácias, 215\nChegada 15:17 · entrega 15:19\nLimite 15:17 · atraso estimado 2 min\n#1046 · Beatriz Santos\nJardim Paulista · Alameda dos Girassóis, 41\nChegada 15:24 · entrega 15:26\nLimite 15:50 · margem estimada 24 min\nOrdem sugerida\n\n27 min · 8,5 km\n0 com atraso previsto · atraso total 0 min\nRetorno estimado 15:32 · inclui atendimento e volta\n\n#1047 · Pedro Almeida\nCentro · Rua das Acácias, 215\nChegada 15:15 · entrega 15:17\nLimite 15:17 · margem estimada <1 min\n#1048 · Mariana Costa\nVila Mariana · Rua dos Ipês, 82\nChegada 15:20 · entrega 15:22\nLimite 15:50 · margem estimada 28 min\n#1046 · Beatriz Santos\nJardim Paulista · Alameda dos Girassóis, 41\nChegada 15:24 · entrega 15:26\nLimite 15:50 · margem estimada 24 min\nDescartar\nAplicar sequência (demo)",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "eight-1280",
+    "scenario": "busy",
+    "metrics": {
+      "viewport": [
+        1280,
+        800
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 486.234375,
+        "bottom": 698
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 3
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 3
+        }
+      ],
+      "metrics": [
+        {
+          "complete": false,
+          "height": 0
+        }
+      ],
+      "footer": [
+        {
+          "label": "Descartar",
+          "height": 44,
+          "bottom": 763
+        },
+        {
+          "label": "Aplicar sequência (demo)",
+          "height": 44,
+          "bottom": 763
+        }
+      ],
+      "tones": []
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída estimada\nAtendimento por parada (min)\nCalcular sugestão (demo)\n\nSem atraso previsto na sugestão sob estas hipóteses; a saída e o trânsito podem mudar.\n\nOrdem manual\n\n80 min · 25,3 km\n3 com atraso previsto · atraso total 44 min\nRetorno estimado 16:25 · inclui atendimento e volta\n\n#2000 · Cliente demonstrativo 1\nVila Mariana · Rua das Flores, 1\nChegada 15:07 · entrega 15:09\nLimite 16:00 · margem estimada 51 min\n#2001 · Cliente demonstrativo 2\nCentro · Rua das Flores, 2\nChegada 15:22 · entrega 15:24\nLimite 15:59 · margem estimada 35 min\n#2002 · Cliente demonstrativo 3\nVila Mariana · Rua das Flores, 3\nChegada 15:33 · entrega 15:35\nLimite 15:58 · margem estimada 23 min\n#2003 · Cliente demonstrativo 4\nCentro · Rua das Flores, 4\nChegada 15:41 · entrega 15:43\nLimite 15:57 · margem estimada 14 min\n#2004 · Cliente demonstrativo 5\nVila Mariana · Rua das Flores, 5\nChegada 15:54 · entrega 15:56\nLimite 15:56 · margem estimada <1 min\n#2005 · Cliente demonstrativo 6\nCentro · Rua das Flores, 6\nChegada 16:00 · entrega 16:02\nLimite 15:55 · atraso estimado 7 min\n#2006 · Cliente demonstrativo 7\nVila Mariana · Rua das Flores, 7\nChegada 16:04 · entrega 16:06\nLimite 15:54 · atraso estimado 12 min\n#2007 · Cliente demonstrativo 8\nCentro · Rua das Flores, 8\nChegada 16:16 · entrega 16:18\nLimite 15:53 · atraso estimado 25 min\nOrdem sugerida\n\n53 min · 14,4 km\n0 com atraso previsto · atraso total 0 min\nRetorno estimado 15:58 · inclui atendimento e volta\n\n#2003 · Cliente demonstrativo 4\nCentro · Rua das Flores, 4\nChegada 15:12 · entrega 15:14\nLimite 15:57 · margem estimada 43 min\n#2001 · Cliente demonstrativo 2\nCentro · Rua das Flores, 2\nChegada 15:16 · entrega 15:18\nLimite 15:59 · margem estimada 41 min\n#2002 · Cliente demonstrativo 3\nVila Mariana · Rua das Flores, 3\nChegada 15:27 · entrega 15:29\nLimite 15:58 · margem estimada 29 min\n#2007 · Cliente demonstrativo 8\nCentro · Rua das Flores, 8\nChegada 15:32 · entrega 15:34\nLimite 15:53 · margem estimada 19 min\n#2000 · Cliente demonstrativo 1\nVila Mariana · Rua das Flores, 1\nChegada 15:37 · entrega 15:39\nLimite 16:00 · margem estimada 21 min\n#2006 · Cliente demonstrativo 7\nVila Mariana · Rua das Flores, 7\nChegada 15:41 · entrega 15:43\nLimite 15:54 · margem estimada 11 min\n#2005 · Cliente demonstrativo 6\nCentro · Rua das Flores, 6\nChegada 15:46 · entrega 15:48\nLimite 15:55 · margem estimada 7 min\n#2004 · Cliente demonstrativo 5\nVila Mariana · Rua das Flores, 5\nChegada 15:51 · entrega 15:53\nLimite 15:56 · margem estimada 3 min\nDescartar\nAplicar sequência (demo)",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "urgent-1440",
+    "scenario": "opt-urgent",
+    "metrics": {
+      "viewport": [
+        1440,
+        900
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 475.6875,
+        "bottom": 742.71875
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 3
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 3
+        }
+      ],
+      "metrics": [
+        {
+          "complete": false,
+          "height": 0
+        }
+      ],
+      "footer": [
+        {
+          "label": "Descartar",
+          "height": 44,
+          "bottom": 807.71875
+        },
+        {
+          "label": "Aplicar sequência (demo)",
+          "height": 44,
+          "bottom": 807.71875
+        }
+      ],
+      "tones": []
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída estimada\nAtendimento por parada (min)\nCalcular sugestão (demo)\n\nSem atraso previsto na sugestão sob estas hipóteses; a saída e o trânsito podem mudar.\n\nOrdem manual\n\n27 min · 8,4 km\n1 com atraso previsto · atraso total 2 min\nRetorno estimado 15:32 · inclui atendimento e volta\n\n#1048 · Mariana Costa\nVila Mariana · Rua dos Ipês, 82\nChegada 15:07 · entrega 15:09\nLimite 15:50 · margem estimada 41 min\n#1047 · Pedro Almeida\nCentro · Rua das Acácias, 215\nChegada 15:17 · entrega 15:19\nLimite 15:17 · atraso estimado 2 min\n#1046 · Beatriz Santos\nJardim Paulista · Alameda dos Girassóis, 41\nChegada 15:24 · entrega 15:26\nLimite 15:50 · margem estimada 24 min\nOrdem sugerida\n\n27 min · 8,5 km\n0 com atraso previsto · atraso total 0 min\nRetorno estimado 15:32 · inclui atendimento e volta\n\n#1047 · Pedro Almeida\nCentro · Rua das Acácias, 215\nChegada 15:15 · entrega 15:17\nLimite 15:17 · margem estimada <1 min\n#1048 · Mariana Costa\nVila Mariana · Rua dos Ipês, 82\nChegada 15:20 · entrega 15:22\nLimite 15:50 · margem estimada 28 min\n#1046 · Beatriz Santos\nJardim Paulista · Alameda dos Girassóis, 41\nChegada 15:24 · entrega 15:26\nLimite 15:50 · margem estimada 24 min\nDescartar\nAplicar sequência (demo)",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "eight-1440",
+    "scenario": "busy",
+    "metrics": {
+      "viewport": [
+        1440,
+        900
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 586.234375,
+        "bottom": 798
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 4
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 4
+        }
+      ],
+      "metrics": [
+        {
+          "complete": false,
+          "height": 0
+        }
+      ],
+      "footer": [
+        {
+          "label": "Descartar",
+          "height": 44,
+          "bottom": 863
+        },
+        {
+          "label": "Aplicar sequência (demo)",
+          "height": 44,
+          "bottom": 863
+        }
+      ],
+      "tones": []
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída estimada\nAtendimento por parada (min)\nCalcular sugestão (demo)\n\nSem atraso previsto na sugestão sob estas hipóteses; a saída e o trânsito podem mudar.\n\nOrdem manual\n\n80 min · 25,3 km\n3 com atraso previsto · atraso total 44 min\nRetorno estimado 16:25 · inclui atendimento e volta\n\n#2000 · Cliente demonstrativo 1\nVila Mariana · Rua das Flores, 1\nChegada 15:07 · entrega 15:09\nLimite 16:00 · margem estimada 51 min\n#2001 · Cliente demonstrativo 2\nCentro · Rua das Flores, 2\nChegada 15:22 · entrega 15:24\nLimite 15:59 · margem estimada 35 min\n#2002 · Cliente demonstrativo 3\nVila Mariana · Rua das Flores, 3\nChegada 15:33 · entrega 15:35\nLimite 15:58 · margem estimada 23 min\n#2003 · Cliente demonstrativo 4\nCentro · Rua das Flores, 4\nChegada 15:41 · entrega 15:43\nLimite 15:57 · margem estimada 14 min\n#2004 · Cliente demonstrativo 5\nVila Mariana · Rua das Flores, 5\nChegada 15:54 · entrega 15:56\nLimite 15:56 · margem estimada <1 min\n#2005 · Cliente demonstrativo 6\nCentro · Rua das Flores, 6\nChegada 16:00 · entrega 16:02\nLimite 15:55 · atraso estimado 7 min\n#2006 · Cliente demonstrativo 7\nVila Mariana · Rua das Flores, 7\nChegada 16:04 · entrega 16:06\nLimite 15:54 · atraso estimado 12 min\n#2007 · Cliente demonstrativo 8\nCentro · Rua das Flores, 8\nChegada 16:16 · entrega 16:18\nLimite 15:53 · atraso estimado 25 min\nOrdem sugerida\n\n53 min · 14,4 km\n0 com atraso previsto · atraso total 0 min\nRetorno estimado 15:58 · inclui atendimento e volta\n\n#2003 · Cliente demonstrativo 4\nCentro · Rua das Flores, 4\nChegada 15:12 · entrega 15:14\nLimite 15:57 · margem estimada 43 min\n#2001 · Cliente demonstrativo 2\nCentro · Rua das Flores, 2\nChegada 15:16 · entrega 15:18\nLimite 15:59 · margem estimada 41 min\n#2002 · Cliente demonstrativo 3\nVila Mariana · Rua das Flores, 3\nChegada 15:27 · entrega 15:29\nLimite 15:58 · margem estimada 29 min\n#2007 · Cliente demonstrativo 8\nCentro · Rua das Flores, 8\nChegada 15:32 · entrega 15:34\nLimite 15:53 · margem estimada 19 min\n#2000 · Cliente demonstrativo 1\nVila Mariana · Rua das Flores, 1\nChegada 15:37 · entrega 15:39\nLimite 16:00 · margem estimada 21 min\n#2006 · Cliente demonstrativo 7\nVila Mariana · Rua das Flores, 7\nChegada 15:41 · entrega 15:43\nLimite 15:54 · margem estimada 11 min\n#2005 · Cliente demonstrativo 6\nCentro · Rua das Flores, 6\nChegada 15:46 · entrega 15:48\nLimite 15:55 · margem estimada 7 min\n#2004 · Cliente demonstrativo 5\nVila Mariana · Rua das Flores, 5\nChegada 15:51 · entrega 15:53\nLimite 15:56 · margem estimada 3 min\nDescartar\nAplicar sequência (demo)",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "long-320",
+    "scenario": "worst",
+    "metrics": {
+      "viewport": [
+        320,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 523.4375,
+        "bottom": 739.40625
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 0
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 140.0625
+        }
+      ],
+      "footer": [
+        {
+          "label": "Descartar",
+          "height": 58.59375,
+          "bottom": 819
+        },
+        {
+          "label": "Aplicar sequência (demo)",
+          "height": 58.59375,
+          "bottom": 819
+        }
+      ],
+      "tones": []
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\n\nNenhuma sequência cumpre todos os prazos sob estas hipóteses. Há risco de atraso.\n\nManual\n27 min · 8,4 km\n3 com atraso previsto\nAtraso total 1278 min\nSugerida\n27 min · 8,4 km\n3 com atraso previsto\nAtraso total 1271 min\nVer sugerida\nVer manual\nOrdem sugerida\n\n27 min · 8,4 km\n3 com atraso previsto · atraso total 1271 min\nRetorno estimado 15:32 · inclui atendimento e volta\n\n#1048 · Maria Aparecida de Albuquerque e Vasconcelos\nResidencial Parque dos Girassóis — Setor Norte · Avenida Doutor Antônio de Oliveira e Silva, 1284, condomínio Residencial das Araucárias\nChegada 15:07 · entrega 15:09\nLimite 11/10, 18:36 · atraso estimado 1233 min\n#1046 · Jo\nJardim Paulista · Alameda dos Girassóis, 41\nChegada 15:11 · entrega 15:13\nLimite 14:52 · atraso estimado 21 min\n#WHATSAPP-20261011-PEDIDO-ALMOCO-1284 · 王秀英\nCentro · Rua das Acácias, 215\nChegada 15:23 · entrega 15:25\nLimite 15:08 · atraso estimado 17 min\nDescartar\nAplicar sequência (demo)",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "impossible-390",
+    "scenario": "opt-impossible",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 555.421875,
+        "bottom": 754
+      },
+      "initialCompleteStops": [
+        {
+          "label": "Ordem manual",
+          "count": 0
+        },
+        {
+          "label": "Ordem sugerida",
+          "count": 2
+        }
+      ],
+      "metrics": [
+        {
+          "complete": true,
+          "height": 102.375
+        }
+      ],
+      "footer": [
+        {
+          "label": "Descartar",
+          "height": 44,
+          "bottom": 819
+        },
+        {
+          "label": "Aplicar sequência (demo)",
+          "height": 44,
+          "bottom": 819
+        }
+      ],
+      "tones": []
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída 12/10, 15:05 · 2 min/parada\nEditar hipóteses\n\nNenhuma sequência cumpre todos os prazos sob estas hipóteses. Há risco de atraso.\n\nManual\n27 min · 8,4 km\n3 com atraso previsto\nAtraso total 51 min\nSugerida\n27 min · 8,4 km\n3 com atraso previsto\nAtraso total 44 min\nVer sugerida\nVer manual\nOrdem sugerida\n\n27 min · 8,4 km\n3 com atraso previsto · atraso total 44 min\nRetorno estimado 15:32 · inclui atendimento e volta\n\n#1048 · Mariana Costa\nVila Mariana · Rua dos Ipês, 82\nChegada 15:07 · entrega 15:09\nLimite 15:01 · atraso estimado 8 min\n#1046 · Beatriz Santos\nJardim Paulista · Alameda dos Girassóis, 41\nChegada 15:11 · entrega 15:13\nLimite 15:01 · atraso estimado 12 min\n#1047 · Pedro Almeida\nCentro · Rua das Acácias, 215\nChegada 15:23 · entrega 15:25\nLimite 15:01 · atraso estimado 24 min\nDescartar\nAplicar sequência (demo)",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "missing-390",
+    "scenario": "opt-missing",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 80,
+        "bottom": 586.859375
+      },
+      "initialCompleteStops": [],
+      "metrics": [],
+      "footer": [
+        {
+          "label": "Descartar",
+          "height": 44,
+          "bottom": 651.859375
+        },
+        {
+          "label": "Aplicar sequência (demo)",
+          "height": 44,
+          "bottom": 651.859375
+        }
+      ],
+      "tones": []
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída estimada\nAtendimento por parada (min)\nCalcular sugestão (demo)\n\nFaltam coordenadas confirmadas. A montagem manual continua disponível; o cadastro demonstrativo não geocodifica endereços.\n\nDescartar\nAplicar sequência (demo)",
+    "issues": [],
+    "external": []
+  },
+  {
+    "name": "no-route-390",
+    "scenario": "opt-no-route",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "scroll": {
+        "height": 80,
+        "bottom": 586.859375
+      },
+      "initialCompleteStops": [],
+      "metrics": [],
+      "footer": [
+        {
+          "label": "Descartar",
+          "height": 44,
+          "bottom": 651.859375
+        },
+        {
+          "label": "Aplicar sequência (demo)",
+          "height": 44,
+          "bottom": 651.859375
+        }
+      ],
+      "tones": []
+    },
+    "text": "Sugerir sequência\n×\n\nDemonstração · matriz e coordenadas simuladas. Sem Mapbox real, trânsito ou garantia de prazo.\n\nSaída estimada\nAtendimento por parada (min)\nCalcular sugestão (demo)\n\nNão existe percurso completo com retorno à loja nesta matriz. Confira os destinos; não foi removido nenhum pedido.\n\nDescartar\nAplicar sequência (demo)",
+    "issues": [],
+    "external": []
+  }
+]
