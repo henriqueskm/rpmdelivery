@@ -138,7 +138,7 @@ test("aplicar reordenação em PREPARING preserva liberação e bloqueia otimiza
   await expect(card).toContainText("Pronto para retirada");
   await card.getByRole("button",{name:"Visão do motoboy (demo)"}).click();
   const driver=page.getByRole("dialog",{name:"Aplicativo do motoboy"});
-  await expect(driver.locator(".ops-courier-deliveries li > strong")).toHaveText(expected);
+  await expect(driver.locator(".ops-courier-deliveries li > strong")).toHaveText(expected.map((text,index)=>`${index+1}. ${text}`));
   await driver.getByRole("button",{name:"Recolhi os pedidos · Iniciar rota"}).click();
   await expect(driver).toContainText("Em rota");
   await page.keyboard.press("Escape");

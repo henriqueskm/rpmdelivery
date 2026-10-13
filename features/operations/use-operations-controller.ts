@@ -1,9 +1,11 @@
-import { useReducer, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useReducer, useRef, useState, type KeyboardEvent } from "react";
 import { createDemoState, type Scenario } from "./fixtures";
 import { availableCouriers, operationsReducer, type Command, type NewOrder } from "./model";
 import { localDateTime } from "./deadlines";
 import type { AssignmentProposal } from "./automatic-assignment";
 import type { PlannedGroup, PlanningParameters } from "../route-planning/types";
+import { DEMO_STORE_ACTOR } from "./issue-types";
+import { RESOLUTIONS } from "./issue-presentation";
 
 export const tabs = [
   { id: "orders", label: "Pedidos" }, { id: "builder", label: "Montagem" },
@@ -17,13 +19,21 @@ export function useOperationsController(scenario: Scenario, seedTime: number) {
   const [editingId, setEditingId] = useState<string>();
   const [courierId, setCourierId] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("orders");
-  const [notice, setNotice] = useState("");
+  const [feedback, setFeedback] = useState({text:"",cursor:0});
+  const setNotice = (text: string) => setFeedback({text,cursor:state.events.length});
+  const lastAutomatic = state.events.findLastIndex(e => e.type === "ISSUE_AUTO_RETURNED");
+  const automaticEvent = state.events[lastAutomatic];
+  const notice = lastAutomatic >= feedback.cursor && automaticEvent
+    ? `Pedido #${state.orders.find(o => o.id === automaticEvent.orderId)?.reference}: ${RESOLUTIONS[automaticEvent.detail as keyof typeof RESOLUTIONS]}. Retorno definido pelo sistema demonstrativo.` : feedback.text;
+  const uiCommand = useRef(0);
   const [courierRouteId, setCourierRouteId] = useState<string>();
   const [deadlineTarget, setDeadlineTarget] = useState<string>();
   const newDialog = useRef<HTMLDialogElement>(null);
   const courierDialog = useRef<HTMLDialogElement>(null);
   const deadlineDialog = useRef<HTMLDialogElement>(null);
+  const issueDialog = useRef<HTMLDialogElement>(null);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  useEffect(() => {dispatch({type:"issues-tick",now:seedTime});},[seedTime]);
   function showArea(tab: Tab) {
     setActiveTab(tab);
     if (window.matchMedia("(max-width: 1099px)").matches)
@@ -113,14 +123,37 @@ export function useOperationsController(scenario: Scenario, seedTime: number) {
   }
   function courierCommand(command: Command) {
     if (operationsReducer(state, command) === state) {
-      setNotice("Ação bloqueada. Confira a liberação, a rota e o motoboy atribuído."); return;
+      setNotice("Ação bloqueada. Confira a liberação, a próxima entrega e o motoboy atribuído."); return false;
     }
     dispatch(command);
     setNotice(command.type === "start"
       ? "Início manual simulado pelo motoboy após recolher os pedidos. ON_ROUTE; sequência bloqueada. Tracking e notificações não foram ativados."
-      : command.type === "finish" ? "Entregas concluídas na simulação. Motoboy retornando, ainda fora da fila."
+      : command.type === "delivery-failure" ? "Falha registrada na demonstração. A ocorrência está na Central; siga as demais entregas."
+        : command.type === "delivery-complete" ? "Entrega concluída na demonstração. Confira a próxima parada ou confirme o retorno."
+        : command.type === "finish" ? "Entregas concluídas na simulação. Motoboy retornando, ainda fora da fila."
         : "Retorno confirmado na simulação. Motoboy no final da fila de disponíveis.");
     if (command.type === "start" && command.routeId === editingId) cancel();
+    return true;
+  }
+  function issueCommand(command: Command) {
+    const next = operationsReducer(state,command);
+    if(next===state){setNotice("A ocorrência ou a rota mudou. Confira o estado atual na Central.");return false;}
+    dispatch(command);
+    if(command.type==="issue-decide") {
+      const issue=next.issues.find(i=>i.id===command.issueId)!;
+      setNotice(`${RESOLUTIONS[issue.resolution!]}. Visão do motoboy atualizada na demonstração.`);
+      return issue.resolution===command.decision;
+    }
+    if(command.type==="alert-dismiss")setNotice("Aviso fechado. Decisões e histórico permanecem na Central.");
+    if(command.type==="issue-timeout-config")setNotice("Tempo de resposta atualizado para novas ocorrências demonstrativas.");
+    if(command.type==="delivery-cancel")setNotice("Entrega cancelada pela loja. Pedido visível como cancelado; sequência original preservada.");
+    return true;
+  }
+  function viewedAlerts(ids: string[]) {
+    dispatch({type:"alert-view",issueIds:ids,actorId:DEMO_STORE_ACTOR,now:Date.now(),commandId:`ui:view:${uiCommand.current++}`});
+  }
+  function dismissAlerts(ids: string[]) {
+    issueCommand({type:"alert-dismiss",issueIds:ids,actorId:DEMO_STORE_ACTOR,now:Date.now(),commandId:`ui:dismiss:${uiCommand.current++}`});
   }
   function tabKey(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return;
@@ -131,6 +164,6 @@ export function useOperationsController(scenario: Scenario, seedTime: number) {
   }
   return { state, selected, setSelected, editingId, courierId, setCourierId, activeTab, setActiveTab,
     notice, courierRouteId, setCourierRouteId, deadlineTarget, setDeadlineTarget,
-    newDialog, courierDialog, deadlineDialog, tabRefs,
-    assign, acceptAutomatic, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, tabKey };
+    newDialog, courierDialog, deadlineDialog, issueDialog, tabRefs,
+    assign, acceptAutomatic, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, issueCommand, viewedAlerts, dismissAlerts, tabKey };
 }

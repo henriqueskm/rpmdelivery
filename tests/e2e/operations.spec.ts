@@ -208,14 +208,13 @@ test("cadastro e despacho locais: reserva, início pelo motoboy, bloqueio e reto
     .click();
   await expect(driver).toContainText("Em rota");
   await expect(
-    driver.getByRole("button", { name: "Simular entregas concluídas" }),
+    driver.getByRole("heading", { name: /#1048/ }),
   ).toBeFocused();
   await expect(
     created.getByRole("button", { name: "Editar montagem" }),
   ).toHaveCount(0);
-  await driver
-    .getByRole("button", { name: "Simular entregas concluídas" })
-    .click();
+  await driver.getByRole("button", { name: "Entregue", exact:true }).click();
+  await driver.getByRole("button", { name: "Entregue", exact:true }).click();
   await expect(driver).toContainText("Retornando");
   await expect(
     driver.getByRole("button", { name: "Confirmar retorno — simulação" }),
@@ -275,16 +274,15 @@ test("PREPARING pode ajustar composição; ocorrência em ON_ROUTE exige decisã
   await expect(
     route(page, "R-41").getByRole("button", { name: "Editar montagem" }),
   ).toHaveCount(0);
-  await page.getByText("Ocorrência · #1039", { exact: true }).click();
-  await expect(
-    page.getByText("A decisão da loja será implementada", { exact: false }),
-  ).toBeVisible();
+  await page.getByRole("button",{name:"Abrir Central de ocorrências"}).click();
+  await expect(page.getByRole("dialog",{name:"Central de ocorrências"})).toContainText("Cliente não localizado");
+  await page.keyboard.press("Escape");
   await route(page, "R-41")
     .getByRole("button", { name: "Visão do motoboy (demo)" })
     .click();
   await expect(
-    page.getByRole("button", { name: "Simular entregas concluídas" }),
-  ).toBeDisabled();
+    page.getByRole("button", { name: "Entregue",exact:true }),
+  ).toBeEnabled();
   await page.keyboard.press("Escape");
   await area(page, "Pedidos");
   await expect(

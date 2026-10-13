@@ -1,0 +1,45 @@
+{
+  "metrics": [
+    {
+      "width": 1280,
+      "height": 800,
+      "orders": 6,
+      "stops": 3,
+      "assignBottom": 771.59375,
+      "horizontalOverflow": false
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "orders": 8,
+      "stops": 6,
+      "assignBottom": 871.59375,
+      "horizontalOverflow": false
+    },
+    {
+      "width": 320,
+      "height": 844,
+      "orders": 4,
+      "stops": 1,
+      "assignBottom": 833.96875,
+      "horizontalOverflow": false
+    },
+    {
+      "width": 375,
+      "height": 844,
+      "orders": 4,
+      "stops": 3,
+      "assignBottom": 831.359375,
+      "horizontalOverflow": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "orders": 4,
+      "stops": 3,
+      "assignBottom": 826.578125,
+      "horizontalOverflow": false
+    }
+  ],
+  "errors": []
+}

@@ -128,12 +128,16 @@ test("somente o ator da rota inicia; retorno confirmado devolve ao fim da fila",
   assert.ok(
     state.orders
       .filter((o) => state.routes[0].orderIds.includes(o.id))
-      .every((o) => o.delivery === "ON_ROUTE"),
+      .every((o) => o.delivery === "ON_ROUTE" || o.delivery === "NEXT"),
   );
-  state = operationsReducer(state, {
+  assert.equal(operationsReducer(state, {
     type: "finish",
     routeId: "route-42",
     actorId: "marcos",
+  }),state);
+  for(const orderId of state.routes[0].orderIds) state=operationsReducer(state,{
+    type:"delivery-complete",routeId:"route-42",orderId,actorId:"marcos",now:DEMO_EPOCH,
+    commandId:`complete:${orderId}`,expectedAttempt:1,
   });
   assert.equal(state.routes[0].status, "RETURNING");
   assert.ok(!availableCouriers(state).some((c) => c.id === "marcos"));
@@ -154,7 +158,7 @@ test("somente o ator da rota inicia; retorno confirmado devolve ao fim da fila",
   );
 });
 
-test("ocorrência pendente impede conclusão e pedido inválido não é cadastrado", () => {
+test("comando legado não pula entregas ou falhas; pedido inválido não é cadastrado", () => {
   const state = createDemoState();
   assert.equal(
     operationsReducer(state, {

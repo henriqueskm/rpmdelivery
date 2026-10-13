@@ -1,4 +1,6 @@
-import { plural, type DemoState } from "./model";
+import { plural, type DemoState, type Command } from "./model";
+import { pendingIssues, deliveryLabels } from "./issue-presentation";
+import { DEMO_STORE_ACTOR, deliveryEligible } from "./issue-types";
 import { Badge, Empty, Icon, RouteBadge } from "./ui";
 import { DeadlineButton } from "./deadline-view";
 
@@ -10,6 +12,7 @@ export function RoutesPanel({
   onRevokeRelease,
   onDeadline,
   now,
+  onIssues, onCommand, highlightedRoute,
 }: {
   state: DemoState;
   onEdit: (id: string) => void;
@@ -18,8 +21,9 @@ export function RoutesPanel({
   onRevokeRelease: (id: string) => void;
   onDeadline: (id: string) => void;
   now: number;
+  onIssues: () => void; onCommand: (command: Command) => boolean; highlightedRoute?: string;
 }) {
-  const issues = state.orders.filter((o) => o.delivery === "ATTEMPT_FAILED");
+  const issues = pendingIssues(state);
   return (
     <>
       <div className="ops-routes-heading">
@@ -28,28 +32,7 @@ export function RoutesPanel({
         </h2>
         <span>Preparação, saída e retorno em um só lugar</span>
       </div>
-      {issues.map((o) => (
-        <details className="ops-issue" key={o.id}>
-          <summary>
-            <span className="ops-issue-icon" aria-hidden="true">
-              !
-            </span>
-            <strong>Ocorrência · #{o.reference}</strong>
-            <span>{o.customer} · Cliente não localizado</span>
-            <span className="ops-issue-action">Ver detalhes ↓</span>
-          </summary>
-          <div>
-            <p>{o.issue}</p>
-            <p>
-              <strong>Destino:</strong> {o.address} · {o.neighborhood}
-            </p>
-            <p>
-              A decisão da loja será implementada com validação no backend. Este
-              exemplo não envia mensagens nem altera a entrega.
-            </p>
-          </div>
-        </details>
-      ))}
+      {issues.length>0&&<div className="ops-route-pending"><strong>! {plural(issues.length,"ocorrência aguardando decisão","ocorrências aguardando decisão")}</strong><button onClick={onIssues}>Abrir Central de ocorrências</button></div>}
       {!state.routes.length ? (
         <Empty title="Nenhuma rota neste momento">
           Atribua pedidos a um motoboy disponível para criar uma rota em
@@ -65,7 +48,8 @@ export function RoutesPanel({
             ).length;
             return (
               <article
-                className="ops-route-card"
+                className={`ops-route-card ${highlightedRoute===r.id?"is-highlighted":""}`}
+                id={`ops-route-${r.id}`} tabIndex={-1}
                 key={r.id}
                 aria-label={`Rota ${r.reference}`}
               >
@@ -82,14 +66,18 @@ export function RoutesPanel({
                   {r.orderIds.map((id) => {
                     const o = state.orders.find((o) => o.id === id)!;
                     return (
-                      <li key={id}>
+                      <li key={id} data-delivery={o.delivery}>
                         <span className="ops-route-destination">
                           #{o.reference} · {o.neighborhood}
                         </span>
                         <DeadlineButton order={o} now={now} onEdit={() => onDeadline(o.id)} />
                         {o.delivery === "ATTEMPT_FAILED" && (
-                          <Badge tone="red">Ocorrência</Badge>
+                          <button className="ops-route-issue-link" onClick={onIssues}>! Decisão pendente</button>
                         )}
+                        {o.delivery!=="ATTEMPT_FAILED"&&o.delivery!=="ASSIGNED"&&o.delivery!=="ON_ROUTE"&&o.delivery!=="NEXT"&&<Badge tone={o.delivery==="DELIVERED"?"green":"neutral"}>{deliveryLabels[o.delivery]}</Badge>}
+                        {r.status==="ON_ROUTE"&&deliveryEligible(o.delivery)&&<details className="ops-route-cancel"><summary>Mais ações · #{o.reference}</summary><button onClick={()=>{
+                          onCommand({type:"delivery-cancel",routeId:r.id,orderId:o.id,actorId:DEMO_STORE_ACTOR,now:Date.now(),commandId:`store:${o.id}:cancel`});
+                        }}>Cancelar entrega #{o.reference} — simulação</button></details>}
                       </li>
                     );
                   })}
