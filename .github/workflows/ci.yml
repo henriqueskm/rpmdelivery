@@ -14,6 +14,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  postgres-privileges:
+    name: PostgreSQL 17 privilege hardening
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: rpmdelivery_privileges_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d rpmdelivery_privileges_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      RPMDELIVERY_DISPOSABLE_POSTGRES: "1"
+      PGHOST: "127.0.0.1"
+      PGPORT: "5432"
+      PGDATABASE: rpmdelivery_privileges_test
+      PGUSER: postgres
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y postgresql-client
+
+      - name: Test privileges on disposable PostgreSQL
+        shell: bash
+        run: |
+          mkdir -p test-results
+          bash tests/sql/run-postgres-privileges.sh 2>&1 | tee test-results/postgres-privileges.txt
+
+      - name: Upload synthetic privilege evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: postgres-privileges-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/postgres-privileges.txt
+          if-no-files-found: ignore
+          retention-days: 7
+
   validate:
     name: Verify and Playwright
     runs-on: ubuntu-24.04
