@@ -2,6 +2,8 @@ import { useReducer, useRef, useState, type KeyboardEvent } from "react";
 import { createDemoState, type Scenario } from "./fixtures";
 import { availableCouriers, operationsReducer, type Command, type NewOrder } from "./model";
 import { localDateTime } from "./deadlines";
+import type { AssignmentProposal } from "./automatic-assignment";
+import type { PlannedGroup, PlanningParameters } from "../route-planning/types";
 
 export const tabs = [
   { id: "orders", label: "Pedidos" }, { id: "builder", label: "Montagem" },
@@ -48,6 +50,18 @@ export function useOperationsController(scenario: Scenario, seedTime: number) {
           : "Montagem atualizada. Aguardando liberação da loja e início manual pelo motoboy."
       : "Rota em PREPARING. Motoboy reservado; aguardando liberação da loja. Nada foi enviado.");
     cancel(); showArea("routes");
+  }
+  function acceptAutomatic(proposal:AssignmentProposal,groups:PlannedGroup[],parameters:PlanningParameters) {
+    const command:Command={type:"batch-assign",proposal,groups,parameters,now:Date.now()};
+    if(operationsReducer(state,command)===state) {
+      setNotice("A operação mudou. Nenhuma rota foi atribuída; recalcule as propostas.");return false;
+    }
+    dispatch(command);
+    const assignedIds=new Set(groups.flatMap(g=>g.ids));
+    setSelected(ids=>ids.filter(id=>!assignedIds.has(id)));setCourierId("");showArea("routes");
+    const remaining=state.orders.filter(o=>o.delivery==="WAITING").length-groups.reduce((n,g)=>n+g.ids.length,0);
+    setNotice(`${groups.length} rota(s) demonstrativas em preparação. ${remaining} pedidos seguem aguardando. Motoboys reservados; a loja libera e só eles iniciam. Nenhum tracking ou notificação.`);
+    return true;
   }
   function edit(id: string) {
     const route = state.routes.find(r => r.id === id && r.status === "PREPARING");
@@ -118,5 +132,5 @@ export function useOperationsController(scenario: Scenario, seedTime: number) {
   return { state, selected, setSelected, editingId, courierId, setCourierId, activeTab, setActiveTab,
     notice, courierRouteId, setCourierRouteId, deadlineTarget, setDeadlineTarget,
     newDialog, courierDialog, deadlineDialog, tabRefs,
-    assign, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, tabKey };
+    assign, acceptAutomatic, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, tabKey };
 }

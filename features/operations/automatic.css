@@ -1,0 +1,50 @@
+.ops-page-actions {display:flex;align-items:center;gap:8px;}
+.ops-automatic-dialog[open] {width:min(980px,calc(100% - 24px));}
+.ops-automatic-dialog button {min-height:44px;}
+.ops-auto-controls {display:flex;gap:8px;flex-wrap:wrap;align-items:end;font-size:12px;}
+.ops-auto-controls label {display:flex;flex-direction:column;gap:3px;min-width:120px;flex:1;}
+.ops-auto-controls input,.ops-auto-controls select {width:100%;min-height:44px;padding:8px;border:1px solid var(--line);border-radius:6px;font-size:16px;}
+.ops-auto-controls details {flex-basis:100%;}
+.ops-auto-controls summary,.ops-auto-card summary,.ops-auto-pending summary {min-height:44px;cursor:pointer;padding:12px 0;font-weight:600;}
+.ops-auto-controls details label {max-width:280px;}
+.ops-auto-context {font-size:12px;color:var(--muted);margin:6px 0;overflow-wrap:anywhere;}
+.ops-auto-heading {font-size:16px;font-weight:600;margin:0 0 8px;}
+.ops-auto-metrics {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0;}
+.ops-auto-metrics>div {padding:10px;border-radius:8px;background:#f1f3ef;display:flex;flex-direction:column;gap:4px;}
+.ops-auto-metrics strong {font-size:28px;line-height:1.1;}
+.ops-auto-metrics span {font-size:12px;}
+.ops-auto-cards {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px;}
+.ops-auto-card {border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0;overflow-wrap:anywhere;}
+.ops-auto-card header label {display:flex;gap:8px;align-items:center;min-height:44px;cursor:pointer;}
+.ops-auto-card header input {min-width:18px;}
+.ops-auto-route-summary {margin:4px 0;}
+.ops-auto-route-risk,.ops-auto-stop-risk {padding:4px 7px;border-radius:5px;font-size:12px;margin:4px 0;}
+.ops-auto-destinations {font-size:12px;margin:4px 0;overflow-wrap:anywhere;}
+.ops-auto-card>small {display:block;color:var(--muted);margin:6px 0;}
+.ops-auto-card details {border-top:1px solid var(--line);}
+.ops-auto-card ol,.ops-auto-pending ul {list-style:none;padding:0;margin:0;}
+.ops-auto-card li,.ops-auto-pending li {display:flex;flex-direction:column;gap:4px;padding:8px 0;border-top:1px solid var(--line);overflow-wrap:anywhere;}
+.ops-auto-card li p {margin:0;}
+.ops-auto-edit,.ops-auto-pagination {display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.ops-auto-edit button {min-width:44px;min-height:44px;}
+.ops-auto-add {display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-top:8px;}
+.ops-auto-add label {flex:1;min-width:0;display:flex;flex-direction:column;}
+.ops-auto-add select {width:100%;min-height:44px;font-size:16px;border:1px solid var(--line);border-radius:6px;}
+.ops-auto-pending {margin-top:2px;}
+.ops-auto-batch,.ops-auto-cause {font-size:12px;margin:6px 0;overflow-wrap:anywhere;}
+.ops-auto-risk-summary {margin:6px 0;padding:6px 8px;}
+.ops-auto-risk-summary p {margin:0;line-height:1.35;}
+.ops-auto-selection {font-size:12px;margin:4px 0 8px;padding:5px 7px;border-radius:5px;overflow-wrap:anywhere;}
+.ops-auto-pagination {justify-content:space-between;margin-top:8px;}
+.ops-auto-pagination button {min-width:44px;min-height:44px;}
+@media(max-width:600px) {
+ .ops-page-actions {gap:6px;flex:0 0 176px;}
+ .operations .ops-page-actions button {flex:1;min-width:0;padding:8px;font-size:12px;line-height:1.3;}
+ .ops-auto-cards {grid-template-columns:1fr;}
+ .ops-auto-controls label {min-width:100%;}
+ .ops-auto-metrics>div {padding:8px 6px;}
+ .ops-auto-metrics strong {font-size:24px;}
+ .ops-auto-metrics span {font-size:11px;}
+ .ops-automatic-dialog .ops-dialog-heading h2 {font-size:19px;}
+ .ops-automatic-dialog .ops-opt-footer button {font-size:12px;}
+}

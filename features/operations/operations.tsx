@@ -3,7 +3,7 @@
 import { useRef, useState, type ReactNode, type RefObject } from "react";
 import dynamic from "next/dynamic";
 import { Brand } from "@/components/brand";
-import { optimizationScenarios, type Scenario } from "./fixtures";
+import { optimizationScenarios, automaticScenarios, type Scenario } from "./fixtures";
 import { BuilderPanel } from "./builder-panel";
 import { CouriersPanel } from "./couriers-panel";
 import { OrdersPanel } from "./orders-panel";
@@ -16,6 +16,10 @@ import { useOperationsClock } from "./use-operations-clock";
 import { Icon } from "./ui";
 import "./operations.css";
 import "./operations-deadlines.css";
+import "./automatic.css";
+const AutomaticDialog = dynamic(() => import("./automatic-dialog").then(m=>m.AutomaticDialog), {
+  loading: () => <p role="status">Abrindo montagem automática…</p>,
+});
 const OptimizationDialog = dynamic(() => import("./optimization-dialog").then(m=>m.OptimizationDialog), {
   loading: () => <p role="status">Abrindo sugestão…</p>,
 });
@@ -84,9 +88,12 @@ function OperationsWorkspace({
     state, selected, setSelected, editingId, courierId, setCourierId, activeTab, setActiveTab,
     notice, courierRouteId, setCourierRouteId, deadlineTarget, setDeadlineTarget,
     newDialog, courierDialog, deadlineDialog, tabRefs,
-    assign, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, tabKey,
+    assign, acceptAutomatic, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, tabKey,
   } = useOperationsController(scenario, now);
   const [suggesting, setSuggesting] = useState(false);
+  const [automatic,setAutomatic]=useState(false);
+  const automaticTrigger=useRef<HTMLButtonElement>(null);
+  const routesTarget=useRef<HTMLElement>(null);
   return (
     <main className="operations">
       <header className="ops-header">
@@ -108,12 +115,15 @@ function OperationsWorkspace({
             <h1>Central de operações</h1>
             <p>Organize o despacho. Acompanhe cada saída.</p>
           </div>
+          <div className="ops-page-actions"><button ref={automaticTrigger} disabled={!!editingId}
+            title={editingId?"Conclua ou cancele a edição da rota atual antes de usar a montagem automática.":undefined}
+            onClick={()=>setAutomatic(true)}>Montagem automática</button>
           <button
             className="ops-primary"
             onClick={openNewOrder}
           >
             <Icon name="plus" /> Novo pedido
-          </button>
+          </button></div>
         </div>
         <div className="ops-demo-banner">
           <span>
@@ -134,6 +144,7 @@ function OperationsWorkspace({
                 <option value="one">Um pedido</option>
                 <option value="busy">Pico · 1.000 pedidos</option>
                 {optimizationScenarios.map(([value,label]) => <option key={value} value={value}>{label}</option>)}
+                {automaticScenarios.map(([value,label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
           )}
@@ -216,6 +227,8 @@ function OperationsWorkspace({
           </section>
         </div>
         <section
+          ref={routesTarget}
+          tabIndex={-1}
           id="ops-panel-routes"
           role="tabpanel"
           className={`ops-routes ${activeTab === "routes" ? "is-active" : ""}`}
@@ -240,6 +253,8 @@ function OperationsWorkspace({
         </footer>
       </div>
       <NewOrderDialog dialogRef={newDialog} now={now} defaultPromiseMinutes={state.defaultPromiseMinutes} onAdd={add} />
+      {automatic&&<AutomaticDialog state={state} scenario={scenario} now={now} onAccept={acceptAutomatic}
+        onClose={accepted=>{setAutomatic(false);if(accepted)routesTarget.current?.focus();else automaticTrigger.current?.focus();}}/>}
       {suggesting && <OptimizationDialog state={state} selected={selected} editingId={editingId} scenario={scenario}
         now={now} onApply={setSelected} onClose={()=>setSuggesting(false)} />}
       <DeadlineDialog dialogRef={deadlineDialog} state={state} target={deadlineTarget} onSave={saveDeadline} onClose={() => setDeadlineTarget(undefined)} />
