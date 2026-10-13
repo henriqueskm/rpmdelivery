@@ -59,3 +59,9 @@ A rechecagem do Builder encontrou ainda a Central reabrindo no histórico após 
 As sete capturas citadas nos P2 iniciais foram preservadas em [before-review](screenshots/delivery-occurrences/before-review/). As capturas na raiz são da versão corrigida. O relatório inicial corresponde ao commit `0e5fe18`; ele não deve ser interpretado como revisão dessas imagens novas.
 
 O relatório independente final e o resultado do CI são vinculados na PR; suas observações não são substituídas por este relatório do Builder. O revisor inicial não teve acesso ao IAB e não contornou a recusa do Chrome; usou screenshots e código. Nenhuma aprovação automática foi dada.
+
+[Rechecagem final integral](delivery-occurrences-visual-review-final.md): commit de produto `97c8cddae34c45c27c9d20cd6b990e1adc609629`, coordenador `01a13578-0144-75e1-93df-5f537bdf5c6b`, filho nativo `01a13578-62d3-7480-8c72-5746bd82ed7c`, role `rpmdelivery_visual_critic`, sandbox read-only/approval never. Foram examinadas 17 capturas atuais e sete anteriores, mais código. Nenhum novo achado comprovado; três P2 corrigidos nas evidências. Sem IAB e sem interação independente.
+
+O coordenador atingiu limite de uso depois da conclusão do filho. O relatório integral foi recuperado do evento `task_complete` da sessão nativa do filho, sem executar outra revisão ou fabricar um resultado. O Builder confirmou interativamente em 375px o relato antes da decisão e a reabertura em Pendentes; os E2E cobrem o fluxo, foco/rolagem e contraste nos cinco viewports. Isso complementa, sem substituir, os limites declarados pelo Critic.
+
+[Lista completa de arquivos da PR](delivery-occurrences-files.md). O commit posterior ao `97c8cdd` adiciona somente relatórios/documentação; nenhum código do produto revisado ou testado foi modificado depois dele.
