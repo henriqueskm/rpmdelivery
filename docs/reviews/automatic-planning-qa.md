@@ -27,6 +27,8 @@ A segunda sessão nativa (`/root/automatic_planning_visual_recheck`, filho `01a1
 
 O Builder investigou: o reposicionamento já funcionava na interface e na geometria dos E2E, mas o script capturava imediatamente após clicar, antes do evento de expansão. A captura agora aguarda a condição observável de uma entrega integral dentro da área de conferência, sem espera fixa nem injeção de sucesso. As evidências estabilizadas ficam em [final-review](../screenshots/automatic-planning/final-review/observations.json), com imagens de detalhes 390/1280; teste de geometria cobre os cinco viewports. Botões individuais identificam o número da rota e seu nome acessível inclui o motoboy, mesmo quando o cabeçalho ficou acima da rolagem. O motor e as regras de atribuição permaneceram inalterados nessa etapa.
 
+A revisão final independente confirmou o candidato `ede65f58c6a1bd7883d1b3cdf4ae1213ee5688e3`, árvore limpa. Coordenador `01a134e0-9f09-7a11-b6ce-f99b93d27ebe`, filho `01a134e1-1ff1-73a2-9a94-5af829498742`, role nativa `rpmdelivery_visual_critic`, caminho `/root/automatic_planning_visual_recheck`, sandbox read-only/aprovação never. Efetivamente analisou 20 imagens finais e três anteriores. Encerrou os três achados remanescentes nas capturas e registrou **nenhum achado nos cenários inspecionados**. O [relatório integral](automatic-planning-critic-final.md) preserva limites de acesso interativo e não constitui aprovação automática. O commit posterior a esse candidato adiciona somente documentação/relatório, sem mudanças em produto ou testes.
+
 O Builder utilizou o navegador integrado em 320×844, 375×844, 390×844, 1280×800 e 1440×900. Verificou cálculo sem atribuição, seleção parcial, cancelamento/Escape e foco, conferência de instruções, atribuição individual, PREPARING, início bloqueado antes da liberação e início exclusivo do motoboy simulado após a loja liberar. O cálculo no pico mostra lote 24/1000 e todos os pedidos restantes, sem remoção silenciosa.
 
 Cards inteiramente contidos na área de rolagem, antes → depois, sem rolar e com os mesmos dados/hipóteses:
@@ -50,8 +52,8 @@ Na inspeção integrada das propostas corrigidas, o primeiro seletor de motoboy 
 - Unitários: 57 aprovados, zero falhas/skips. Cobrem domínio, assimetria/ciclos, limites, FIFO, riscos globais, individual/lote, conflitos, obsolescência e rollback integral.
 - SQL/PGlite: instalação local e suíte aprovadas. Nenhum banco remoto acessado.
 - `npm audit --omit=dev`: zero vulnerabilidades. Os cinco alertas altos de desenvolvimento preexistentes na main permanecem separados; nenhuma atualização/override/force foi usada para ocultá-los.
-- Playwright: desktop/mobile, suite completa e testes específicos de montagem; resultados finais e CI identificados na PR.
-- `git diff --check`: resultado final identificado na PR.
+- Playwright no candidato final `ede65f5`: 108 aprovados na suíte completa (`npm run test:e2e -- --workers=1 --retries=0`), 4,0min; 24 aprovados na suíte focal, 1,3min. Zero falhas, flaky ou retries. Inclui preservação de seleção manual e das regras de retirada/início, invalidade/rollback, geometrias nos cinco viewports e timeout/cancelamento/recuperação.
+- `git diff --check` e `git diff --cached --check`: aprovados; CI/HEAD da entrega identificados na PR.
 
 Cenário unitário de 1.000 pedidos com capacidade 8: 24 analisados, 51 chamadas exatas, 144.632 permutações, abaixo dos limites 80/160.000. Uma execução observou 199,9ms no domínio; é uma medição local, não garantia de latência. Worker sob demanda possui watchdog de 5s. A interface permanece utilizável quando o Worker não responde; cancelamento, timeout e recuperação foram testados com fixture explícita.
 
