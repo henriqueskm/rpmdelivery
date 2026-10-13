@@ -22,8 +22,12 @@ export function IssueCard({issue,state,now,onCommand,onFollow}:{
       <span>{issue.status === "PENDING" ? timing.remaining : RESOLUTIONS[issue.resolution!]}</span></div>
     <p className="ops-issue-who">{route.reference} · {courier.name} · {order.neighborhood}</p>
     <h3>{ISSUE_REASONS[issue.reason]}</h3>
-    {issue.reason === "OTHER" && <p>{Array.from(issue.description).slice(0,160).join("")}{issue.description.length>160?"…":""}</p>}
     <p className="ops-issue-time">{issue.status === "PENDING" ? timing.elapsed : `Encerrada ${calendarTime(issue.closedAt!)}`} · informada {calendarTime(issue.reportedAt)}</p>
+    <div className="ops-issue-context">
+      {order.complement&&<p><strong>Referência:</strong> {order.complement}</p>}
+      {order.notes&&<p><strong>Observação do pedido:</strong> {order.notes}</p>}
+      {issue.description&&<p><strong>Relato do motoboy:</strong> {issue.description}</p>}
+    </div>
     {issue.status === "PENDING" && <div className="ops-issue-decisions">
       {!confirmCancel ? <><button className="ops-primary" onClick={() => decide("RETRY")}>Tentar novamente</button>
         <button onClick={() => decide("RETURN")}>Retornar pedido à loja</button></>
@@ -32,8 +36,6 @@ export function IssueCard({issue,state,now,onCommand,onFollow}:{
     </div>}
     <details className="ops-issue-detail"><summary>Detalhes e histórico</summary>
       <p><strong>Destino:</strong> {order.address} · {order.neighborhood}</p>{order.complement&&<p>{order.complement}</p>}
-      {order.notes&&<p><strong>Observação do pedido:</strong> {order.notes}</p>}
-      {issue.description&&<p><strong>Relato completo:</strong> {issue.description}</p>}
       <p>Limite de resposta: {calendarTime(issue.decisionDeadline)}. Prazo fixado ao registrar a falha.</p>
       <ol>{history.map(event => <li key={event.id}>{calendarTime(event.at)} · {event.actorType === "SYSTEM" ? "Sistema demonstrativo" : event.actorType === "STORE" ? "Operador demonstrativo" : courier.name} · {
         event.type === "DELIVERY_ATTEMPT_FAILED" ? "Falha registrada" : event.detail && Object.hasOwn(RESOLUTIONS,event.detail) ? RESOLUTIONS[event.detail as keyof typeof RESOLUTIONS] : "Decisão registrada"

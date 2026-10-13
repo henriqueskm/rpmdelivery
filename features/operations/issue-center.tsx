@@ -15,7 +15,7 @@ export function IssueCenter({dialogRef,state,now,onCommand,onFollow}:{
   const issues = view === "pending" ? pending : closed;
   const last = Math.max(0,Math.ceil(issues.length/20)-1), current = Math.min(page,last);
   function switchView(next: "pending"|"history") {setView(next);setPage(0);}
-  return <dialog ref={dialogRef} className="ops-dialog ops-issue-center" aria-labelledby="ops-issue-center-title">
+  return <dialog ref={dialogRef} className="ops-dialog ops-issue-center" aria-labelledby="ops-issue-center-title" onClose={()=>{switchView("pending");setError("");}}>
     <div className="ops-dialog-heading"><h2 id="ops-issue-center-title">Central de ocorrências</h2><button aria-label="Fechar Central de ocorrências" onClick={() => dialogRef.current?.close()}>×</button></div>
     <p className="ops-dialog-notice">Demonstração em memória. Decisões atualizam apenas os dados fictícios desta página.</p>
     <div role="tablist" aria-label="Ocorrências">

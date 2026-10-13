@@ -12,7 +12,7 @@ export function CourierDelivery({order,route,courierId,now,onCommand,actionsRef,
   const heading = useRef<HTMLHeadingElement>(null), reasonRef = useRef<HTMLSelectElement>(null);
   const [failure,setFailure] = useState(false),[reason,setReason] = useState(""),[description,setDescription] = useState(""),[error,setError] = useState("");
   const attempt = order.attemptNumber ?? 1;
-  useEffect(() => {heading.current?.focus();},[]);
+  useEffect(() => {heading.current?.focus({preventScroll:true});},[]);
   function failed() {
     setError("");
     if(!Object.hasOwn(ISSUE_REASONS,reason)){setError("Selecione o motivo da falha.");reasonRef.current?.focus();return;}
@@ -21,9 +21,11 @@ export function CourierDelivery({order,route,courierId,now,onCommand,actionsRef,
       expectedAttempt:attempt,commandId:`courier:${order.id}:${attempt}:failure`,reason:reason as IssueReason,description}))setError("A rota mudou. Confira a próxima entrega antes de continuar.");
   }
   return <>
-    <section className="ops-driver-current" aria-label={`Próxima entrega ${order.reference}`}>
+    <header className="ops-driver-heading">
       <span className="ops-kicker">PRÓXIMA ENTREGA · {route.orderIds.indexOf(order.id)+1} NA SEQUÊNCIA ORIGINAL</span>
       <h3 ref={heading} tabIndex={-1}>#{order.reference} · {order.customer}</h3>
+    </header>
+    <section className="ops-driver-current" aria-label={`Próxima entrega ${order.reference}`}>
       <p>{order.address} · {order.neighborhood}</p>{order.complement&&<p>{order.complement}</p>}
       {order.notes&&<p className="ops-driver-notes"><strong>Observação:</strong> {order.notes}</p>}
       {(route.retryOrderIds??[]).includes(order.id)&&<p className="ops-driver-retry">Nova tentativa liberada pela loja.</p>}
@@ -40,7 +42,7 @@ export function CourierDelivery({order,route,courierId,now,onCommand,actionsRef,
       {children}
     </section>
     <div ref={actionsRef} className="ops-driver-actions">
-      {failure?<><button onClick={()=>{setFailure(false);setError("");heading.current?.focus();}}>Voltar à entrega</button><button className="ops-primary" type="submit" form="ops-failure-form">Registrar falha</button></>
+      {failure?<><button onClick={()=>{setFailure(false);setError("");heading.current?.focus({preventScroll:true});}}>Voltar à entrega</button><button className="ops-primary" type="submit" form="ops-failure-form">Registrar falha</button></>
         :<><button className="ops-primary" onClick={()=>{
           if(!onCommand({type:"delivery-complete",routeId:route.id,orderId:order.id,actorId:courierId,now:Date.now(),expectedAttempt:attempt,
             commandId:`courier:${order.id}:${attempt}:complete`}))setError("A rota mudou. Confira a próxima entrega antes de continuar.");

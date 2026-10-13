@@ -40,13 +40,13 @@ export function CourierDialog({dialogRef,state,routeId,onCommand,now,onCompleted
     onClose={()=>{if(route?.status==="COMPLETED")onCompletedClose(route.id);}}>
     <div className="ops-dialog-heading"><h2 id="ops-courier-view-title">Aplicativo do motoboy</h2><button ref={closeRef} aria-label="Fechar visão do motoboy" onClick={()=>dialogRef.current?.close()}>×</button></div>
     {route&&courier&&<>
-      <p className="ops-dialog-notice">Simulação local. Sem autenticação real, tracking ou notificações. Ações reais exigirão validação no backend.</p>
+      <p className="ops-dialog-notice">Demonstração · dados fictícios. Suas ações valem apenas nesta página.</p>
       <div className="ops-courier-route"><strong>{courier.name} · {route.reference}</strong><RouteBadge status={route.status}/></div>
       {route.status==="PREPARING"&&<p className={`ops-pickup ${route.pickupReleasedAt===null?"is-waiting":"is-released"}`}>
         <strong>{route.pickupReleasedAt===null?"Aguardando liberação":"Pronto para retirada"}</strong>
         <span>{route.pickupReleasedAt===null?"Você já pode conferir a rota. Aguarde a loja liberar todos os pedidos.":"Recolha todos os pedidos e confirme o início abaixo."}</span>
       </p>}
-      {urgent&&<div className="ops-urgent-deadline"><span>Prazo mais urgente · #{urgent.reference}</span><DeadlineText order={urgent} now={now}/></div>}
+      {urgent&&(!current||urgent.id!==current.id)&&<div className="ops-urgent-deadline"><span>Prazo mais urgente · #{urgent.reference}</span><DeadlineText order={urgent} now={now}/></div>}
       <p className="ops-deadline-help">Prazo prometido, sem previsão de trajeto ou garantia de chegada.</p>
       {current?<CourierDelivery key={`${current.id}:${current.attemptNumber??1}`} order={current} route={route} courierId={courier.id} now={now} onCommand={onCommand} actionsRef={actionsRef}>
         <details className="ops-driver-sequence"><summary>Ver sequência completa · {route.orderIds.length} entregas</summary>{sequence}</details>

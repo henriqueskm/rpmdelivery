@@ -5,8 +5,14 @@ import {operationsReducer as reduce, availableCouriers, type DemoState, type Com
 import {DEMO_EPOCH as T,MINUTE} from "../../features/operations/deadlines.ts";
 import {DEMO_STORE_ACTOR as STORE, type IssueDecision} from "../../features/operations/issue-types.ts";
 import {nextDelivery} from "../../features/operations/route-progress.ts";
+import {issueTiming} from "../../features/operations/issue-presentation.ts";
 
 const routeId="demo-route-43",actorId="joao";
+test("contagem do aviso nunca excede a janela de resposta quando o relógio compartilhado atrasa",()=>{
+  const state=active(),failed=reduce(state,action(state,"delivery-failure",T+500)),issue=failed.issues[0];
+  assert.equal(issueTiming(issue,T).remaining,"Decidir em 10 min");
+  assert.equal(issueTiming(issue,issue.decisionDeadline).remaining,"Prazo de resposta encerrado");
+});
 function active(count=3):DemoState {
   let state=createDemoState("issues-none");
   state=reduce(state,{type:"assign",ids:state.orders.slice(0,count).map(o=>o.id),courierId:actorId});
