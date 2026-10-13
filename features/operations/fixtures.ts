@@ -8,7 +8,10 @@ export const optimizationScenarios = [
   ["opt-impossible", "Otimização · prazos impossíveis"], ["opt-no-route", "Otimização · destino sem rota"],
   ["opt-unavailable", "Otimização · indisponível"], ["opt-missing", "Otimização · sem coordenadas"],
 ] as const;
-export type Scenario = "demo" | "worst" | "empty" | "one" | "busy" | (typeof optimizationScenarios)[number][0];
+export const automaticScenarios = [
+  ["auto-no-couriers","Automática · sem motoboys"],["auto-scarce","Automática · um motoboy"],
+] as const;
+export type Scenario = "demo" | "worst" | "empty" | "one" | "busy" | (typeof optimizationScenarios)[number][0] | (typeof automaticScenarios)[number][0];
 const waiting = [
   [
     "1048",
@@ -296,6 +299,10 @@ export function createDemoState(scenario: Scenario = "demo", now = DEMO_EPOCH): 
       state.orders = state.orders.filter((o,i) => i < 2 || o.delivery !== "WAITING");
       state.orders[1].location = fixtureCoordinate(3);
     }
+  }
+  if(scenario==="auto-no-couriers"||scenario==="auto-scarce") {
+    state.couriers=state.couriers.map(c=>["joao","livia","bianca"].includes(c.id)&&
+      (scenario==="auto-no-couriers"||c.id!=="joao")?{...c,shift:"PENDING"}:c);
   }
   return anchored(state);
 }

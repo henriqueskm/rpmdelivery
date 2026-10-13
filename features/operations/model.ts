@@ -1,5 +1,7 @@
 import { validOrderTime, validPromise } from "./deadlines.ts";
 import type { ConfirmedCoordinate } from "../route-optimization/types.ts";
+import { validAutomaticAssignment, type AssignmentProposal } from "./automatic-assignment.ts";
+import type { PlannedGroup, PlanningParameters } from "../route-planning/types.ts";
 
 export type RouteStatus = "PREPARING" | "ON_ROUTE" | "RETURNING" | "COMPLETED";
 export type ShiftStatus = "AVAILABLE" | "ON_ROUTE" | "RETURNING" | "PENDING";
@@ -61,6 +63,7 @@ export type NewOrder = Pick<
   | "promisedMinutes"
 >;
 export type Command =
+  | { type: "batch-assign"; proposal: AssignmentProposal; groups: PlannedGroup[]; parameters: PlanningParameters; now: number }
   | { type: "add"; order: NewOrder; now: number }
   | { type: "default-promise"; minutes: number }
   | { type: "deadline"; orderId: string; orderedAt: number; minutes: number }
@@ -116,6 +119,16 @@ export function operationsReducer(
   state: DemoState,
   command: Command,
 ): DemoState {
+  if (command.type === "batch-assign") {
+    if (!validAutomaticAssignment(state, command.proposal, command.groups, command.parameters, command.now, availableCouriers(state).map(c=>c.id))) return state;
+    let next = state;
+    for (const group of command.groups) {
+      const assigned = operationsReducer(next, { type: "assign", ids: group.ids, courierId: group.courierId });
+      if (assigned === next) return state; // Full rollback: all transitions are immutable.
+      next = assigned;
+    }
+    return next;
+  }
   if (command.type === "default-promise") {
     return validPromise(command.minutes) ? { ...state, defaultPromiseMinutes: command.minutes } : state;
   }

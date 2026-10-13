@@ -7,9 +7,9 @@ export function validatePoints(points: Point[]) {
     new Set(points.map(p => p.id)).size !== points.length) throw new OptimizationError("invalid");
   if (points.some(p => !isConfirmed(p.coordinate))) throw new OptimizationError("coordinates");
 }
-export function validateMatrix(matrix: TravelMatrix) {
+export function validateMatrix(matrix: TravelMatrix, maxPoints = MAX_POINTS) {
   const n = matrix.pointIds.length;
-  if (n < 2 || n > MAX_POINTS || new Set(matrix.pointIds).size !== n ||
+  if (n < 2 || n > maxPoints || new Set(matrix.pointIds).size !== n ||
     matrix.coordinates.length !== n || matrix.coordinates.some(c => !isCoordinate(c)) ||
     !["fixture", "mapbox"].includes(matrix.source)) throw new OptimizationError("matrix");
   for (const [grid, max] of [[matrix.durations, 604800], [matrix.distances, 100000000]] as const) {

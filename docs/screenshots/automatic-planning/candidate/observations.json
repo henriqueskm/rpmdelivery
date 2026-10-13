@@ -1,0 +1,1071 @@
+[
+  {
+    "name": "urgent-320",
+    "scenario": "opt-urgent",
+    "elapsedMs": 133,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n2\nrotas sugeridas\n6\nentregas agrupadas\n0\ncontinuam aguardando\n\n⚠ 0 entregas com atraso previsto · 1 com margem inferior a 5 min. Saída e trânsito podem mudar o resultado.\n\nLote: 6 de 6 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,5 km, incluindo retorno\n\n⚠ Margem inferior a 1 min\n\nMenor prazo: #1047 · 15:17. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n2 entregas · 27 min · 8,8 km, incluindo retorno\n\nSem atraso previsto sob estas hipóteses\n\nMenor prazo: #1043 · 15:50. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        320,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "2",
+        "6",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "busy-320",
+    "scenario": "busy",
+    "elapsedMs": 147,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n3\nrotas sugeridas\n9\nentregas agrupadas\n991\ncontinuam aguardando\n\n⚠ 9 entregas com atraso previsto · 0 com margem inferior a 5 min. Saída e trânsito podem mudar o resultado.\n\nLote: 24 de 1000 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\n⚠ Pendentes: 376 com prazo vencido na saída estimada · 44 com menos de 5 min até o limite. Dentre eles, 15 não cumpririam o prazo nem no cenário otimista de saída/retorno usado.\n\nSem rota nem chegada prevista. Essas pendências exigem conferência da loja.\n\nVer 991 pedidos pendentes e motivos\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,4 km, incluindo retorno\n\n⚠ 4 atrasos previstos\n\nMenor prazo: #2808 · 14:32. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 19 min · 7,5 km, incluindo retorno\n\n⚠ 1 atraso previsto\n\nMenor prazo: #2359 · 14:31. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 3 · Bianca Souza\n\n4 entregas · 29 min · 8,4 km, incluindo retorno\n\n⚠ 4 atrasos previstos\n\nMenor prazo: #2088 · 14:32. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        320,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "3",
+        "9",
+        "991"
+      ],
+      "summariesVisible": false,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "urgent-375",
+    "scenario": "opt-urgent",
+    "elapsedMs": 84,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n2\nrotas sugeridas\n6\nentregas agrupadas\n0\ncontinuam aguardando\n\n⚠ 0 entregas com atraso previsto · 1 com margem inferior a 5 min. Saída e trânsito podem mudar o resultado.\n\nLote: 6 de 6 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,5 km, incluindo retorno\n\n⚠ Margem inferior a 1 min\n\nMenor prazo: #1047 · 15:17. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n2 entregas · 27 min · 8,8 km, incluindo retorno\n\nSem atraso previsto sob estas hipóteses\n\nMenor prazo: #1043 · 15:50. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        375,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "2",
+        "6",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "busy-375",
+    "scenario": "busy",
+    "elapsedMs": 141,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n3\nrotas sugeridas\n9\nentregas agrupadas\n991\ncontinuam aguardando\n\n⚠ 9 entregas com atraso previsto · 0 com margem inferior a 5 min. Saída e trânsito podem mudar o resultado.\n\nLote: 24 de 1000 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\n⚠ Pendentes: 376 com prazo vencido na saída estimada · 44 com menos de 5 min até o limite. Dentre eles, 15 não cumpririam o prazo nem no cenário otimista de saída/retorno usado.\n\nSem rota nem chegada prevista. Essas pendências exigem conferência da loja.\n\nVer 991 pedidos pendentes e motivos\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,4 km, incluindo retorno\n\n⚠ 4 atrasos previstos\n\nMenor prazo: #2808 · 14:32. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 19 min · 7,5 km, incluindo retorno\n\n⚠ 1 atraso previsto\n\nMenor prazo: #2359 · 14:31. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 3 · Bianca Souza\n\n4 entregas · 29 min · 8,4 km, incluindo retorno\n\n⚠ 4 atrasos previstos\n\nMenor prazo: #2088 · 14:32. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        375,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "3",
+        "9",
+        "991"
+      ],
+      "summariesVisible": false,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "urgent-390",
+    "scenario": "opt-urgent",
+    "elapsedMs": 96,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n2\nrotas sugeridas\n6\nentregas agrupadas\n0\ncontinuam aguardando\n\n⚠ 0 entregas com atraso previsto · 1 com margem inferior a 5 min. Saída e trânsito podem mudar o resultado.\n\nLote: 6 de 6 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,5 km, incluindo retorno\n\n⚠ Margem inferior a 1 min\n\nMenor prazo: #1047 · 15:17. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n2 entregas · 27 min · 8,8 km, incluindo retorno\n\nSem atraso previsto sob estas hipóteses\n\nMenor prazo: #1043 · 15:50. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "2",
+        "6",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "busy-390",
+    "scenario": "busy",
+    "elapsedMs": 136,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n3\nrotas sugeridas\n9\nentregas agrupadas\n991\ncontinuam aguardando\n\n⚠ 9 entregas com atraso previsto · 0 com margem inferior a 5 min. Saída e trânsito podem mudar o resultado.\n\nLote: 24 de 1000 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\n⚠ Pendentes: 376 com prazo vencido na saída estimada · 44 com menos de 5 min até o limite. Dentre eles, 15 não cumpririam o prazo nem no cenário otimista de saída/retorno usado.\n\nSem rota nem chegada prevista. Essas pendências exigem conferência da loja.\n\nVer 991 pedidos pendentes e motivos\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,4 km, incluindo retorno\n\n⚠ 4 atrasos previstos\n\nMenor prazo: #2808 · 14:32. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 19 min · 7,5 km, incluindo retorno\n\n⚠ 1 atraso previsto\n\nMenor prazo: #2359 · 14:31. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 3 · Bianca Souza\n\n4 entregas · 29 min · 8,4 km, incluindo retorno\n\n⚠ 4 atrasos previstos\n\nMenor prazo: #2088 · 14:32. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "3",
+        "9",
+        "991"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "urgent-1280",
+    "scenario": "opt-urgent",
+    "elapsedMs": 82,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n2\nrotas sugeridas\n6\nentregas agrupadas\n0\ncontinuam aguardando\n\n⚠ 0 entregas com atraso previsto · 1 com margem inferior a 5 min. Saída e trânsito podem mudar o resultado.\n\nLote: 6 de 6 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,5 km, incluindo retorno\n\n⚠ Margem inferior a 1 min\n\nMenor prazo: #1047 · 15:17. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n2 entregas · 27 min · 8,8 km, incluindo retorno\n\nSem atraso previsto sob estas hipóteses\n\nMenor prazo: #1043 · 15:50. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        1280,
+        800
+      ],
+      "overflow": false,
+      "counts": [
+        "2",
+        "6",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 2,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 44,
+          "bottom": 754.46875
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 44,
+          "bottom": 754.46875
+        }
+      ],
+      "tones": [
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "busy-1280",
+    "scenario": "busy",
+    "elapsedMs": 114,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n3\nrotas sugeridas\n9\nentregas agrupadas\n991\ncontinuam aguardando\n\n⚠ 9 entregas com atraso previsto · 0 com margem inferior a 5 min. Saída e trânsito podem mudar o resultado.\n\nLote: 24 de 1000 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\n⚠ Pendentes: 376 com prazo vencido na saída estimada · 44 com menos de 5 min até o limite. Dentre eles, 15 não cumpririam o prazo nem no cenário otimista de saída/retorno usado.\n\nSem rota nem chegada prevista. Essas pendências exigem conferência da loja.\n\nVer 991 pedidos pendentes e motivos\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,4 km, incluindo retorno\n\n⚠ 4 atrasos previstos\n\nMenor prazo: #2808 · 14:32. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 19 min · 7,5 km, incluindo retorno\n\n⚠ 1 atraso previsto\n\nMenor prazo: #2359 · 14:31. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 3 · Bianca Souza\n\n4 entregas · 29 min · 8,4 km, incluindo retorno\n\n⚠ 4 atrasos previstos\n\nMenor prazo: #2088 · 14:32. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        1280,
+        800
+      ],
+      "overflow": false,
+      "counts": [
+        "3",
+        "9",
+        "991"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 44,
+          "bottom": 763
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 44,
+          "bottom": 763
+        }
+      ],
+      "tones": [
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "urgent-1440",
+    "scenario": "opt-urgent",
+    "elapsedMs": 97,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n2\nrotas sugeridas\n6\nentregas agrupadas\n0\ncontinuam aguardando\n\n⚠ 0 entregas com atraso previsto · 1 com margem inferior a 5 min. Saída e trânsito podem mudar o resultado.\n\nLote: 6 de 6 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,5 km, incluindo retorno\n\n⚠ Margem inferior a 1 min\n\nMenor prazo: #1047 · 15:17. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n2 entregas · 27 min · 8,8 km, incluindo retorno\n\nSem atraso previsto sob estas hipóteses\n\nMenor prazo: #1043 · 15:50. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        1440,
+        900
+      ],
+      "overflow": false,
+      "counts": [
+        "2",
+        "6",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 2,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 44,
+          "bottom": 804.46875
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 44,
+          "bottom": 804.46875
+        }
+      ],
+      "tones": [
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "busy-1440",
+    "scenario": "busy",
+    "elapsedMs": 143,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n3\nrotas sugeridas\n9\nentregas agrupadas\n991\ncontinuam aguardando\n\n⚠ 9 entregas com atraso previsto · 0 com margem inferior a 5 min. Saída e trânsito podem mudar o resultado.\n\nLote: 24 de 1000 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\n⚠ Pendentes: 376 com prazo vencido na saída estimada · 44 com menos de 5 min até o limite. Dentre eles, 15 não cumpririam o prazo nem no cenário otimista de saída/retorno usado.\n\nSem rota nem chegada prevista. Essas pendências exigem conferência da loja.\n\nVer 991 pedidos pendentes e motivos\nRota 1 · João Martins\n\n4 entregas · 29 min · 8,4 km, incluindo retorno\n\n⚠ 4 atrasos previstos\n\nMenor prazo: #2808 · 14:32. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 19 min · 7,5 km, incluindo retorno\n\n⚠ 1 atraso previsto\n\nMenor prazo: #2359 · 14:31. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 3 · Bianca Souza\n\n4 entregas · 29 min · 8,4 km, incluindo retorno\n\n⚠ 4 atrasos previstos\n\nMenor prazo: #2088 · 14:32. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        1440,
+        900
+      ],
+      "overflow": false,
+      "counts": [
+        "3",
+        "9",
+        "991"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 44,
+          "bottom": 863
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 44,
+          "bottom": 863
+        }
+      ],
+      "tones": [
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "impossible-390",
+    "scenario": "opt-impossible",
+    "elapsedMs": 98,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n3\nrotas sugeridas\n6\nentregas agrupadas\n0\ncontinuam aguardando\n\n⚠ 6 entregas com atraso previsto · 0 com margem inferior a 5 min. Saída e trânsito podem mudar o resultado.\n\nLote: 6 de 6 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\nRota 1 · João Martins\n\n1 entrega · 19 min · 7,5 km, incluindo retorno\n\n⚠ 1 atraso previsto\n\nMenor prazo: #1047 · 15:01. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 14 min · 4,6 km, incluindo retorno\n\n⚠ 1 atraso previsto\n\nMenor prazo: #1043 · 15:01. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 3 · Bianca Souza\n\n4 entregas · 23 min · 5,7 km, incluindo retorno\n\n⚠ 4 atrasos previstos\n\nMenor prazo: #1048 · 15:01. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "3",
+        "6",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "long-320",
+    "scenario": "worst",
+    "elapsedMs": 95,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n3\nrotas sugeridas\n6\nentregas agrupadas\n0\ncontinuam aguardando\n\n⚠ 3 entregas com atraso previsto · 1 com margem inferior a 5 min. Saída e trânsito podem mudar o resultado.\n\nLote: 6 de 6 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\nRota 1 · João Antônio de Oliveira e Albuquerque\n\n4 entregas · 38 min · 11,4 km, incluindo retorno\n\n⚠ 1 atraso previsto\n\nMenor prazo: #1048 · 11/10, 18:36. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 12 min · 3,6 km, incluindo retorno\n\n⚠ 1 atraso previsto\n\nMenor prazo: #1046 · 14:52. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 3 · Bianca Souza\n\n1 entrega · 19 min · 7,5 km, incluindo retorno\n\n⚠ 1 atraso previsto\n\nMenor prazo: #WHATSAPP-20261011-PEDIDO-ALMOCO-1284 · 15:08. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        320,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "3",
+        "6",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "missing-390",
+    "scenario": "opt-missing",
+    "elapsedMs": 103,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n2\nrotas sugeridas\n5\nentregas agrupadas\n1\ncontinuam aguardando\n\nLote: 6 de 6 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\n⚠ Pendentes: 0 com prazo vencido na saída estimada · 0 com menos de 5 min até o limite.\n\nSem rota nem chegada prevista. Essas pendências exigem conferência da loja.\n\nVer 1 pedidos pendentes e motivos\nRota 1 · João Martins\n\n4 entregas · 30 min · 8,3 km, incluindo retorno\n\nSem atraso previsto sob estas hipóteses\n\nMenor prazo: #1043 · 15:50. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 13 min · 4,2 km, incluindo retorno\n\nSem atraso previsto sob estas hipóteses\n\nMenor prazo: #1044 · 15:50. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "2",
+        "5",
+        "1"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "no-route-390",
+    "scenario": "opt-no-route",
+    "elapsedMs": 86,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n2\nrotas sugeridas\n5\nentregas agrupadas\n1\ncontinuam aguardando\n\nLote: 6 de 6 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\n⚠ Pendentes: 0 com prazo vencido na saída estimada · 0 com menos de 5 min até o limite.\n\nSem rota nem chegada prevista. Essas pendências exigem conferência da loja.\n\nVer 1 pedidos pendentes e motivos\nRota 1 · João Martins\n\n4 entregas · 30 min · 8,3 km, incluindo retorno\n\nSem atraso previsto sob estas hipóteses\n\nMenor prazo: #1043 · 15:50. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n1 entrega · 13 min · 4,2 km, incluindo retorno\n\nSem atraso previsto sob estas hipóteses\n\nMenor prazo: #1044 · 15:50. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "2",
+        "5",
+        "1"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "attention",
+          "color": "rgb(128, 80, 20)",
+          "background": "rgb(255, 243, 220)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "empty-390",
+    "scenario": "empty",
+    "elapsedMs": 67,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nNenhuma rota sugerida\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n0\nrotas sugeridas\n0\nentregas agrupadas\n0\ncontinuam aguardando\n\nLote: 0 de 0 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "0",
+        "0",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 680.09375
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 680.09375
+        }
+      ],
+      "tones": [
+        {
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "one-390",
+    "scenario": "one",
+    "elapsedMs": 80,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n1\nrotas sugeridas\n1\nentregas agrupadas\n0\ncontinuam aguardando\n\nLote: 1 de 1 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\nRota 1 · João Martins\n\n1 entrega · 8 min · 2,3 km, incluindo retorno\n\nSem atraso previsto sob estas hipóteses\n\nMenor prazo: #1048 · 15:54. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "1",
+        "1",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 1,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 805.796875
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 805.796875
+        }
+      ],
+      "tones": [
+        {
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "no-couriers-390",
+    "scenario": "auto-no-couriers",
+    "elapsedMs": 84,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nNenhuma rota sugerida\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n0\nrotas sugeridas\n0\nentregas agrupadas\n6\ncontinuam aguardando\n\nLote: 6 de 6 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\n⚠ Pendentes: 1 com prazo vencido na saída estimada · 1 com menos de 5 min até o limite. Dentre eles, 2 não cumpririam o prazo nem no cenário otimista de saída/retorno usado.\n\nSem rota nem chegada prevista. Essas pendências exigem conferência da loja.\n\nVer 6 pedidos pendentes e motivos\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "0",
+        "0",
+        "6"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 777.171875
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 777.171875
+        }
+      ],
+      "tones": [
+        {
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "scarce-390",
+    "scenario": "auto-scarce",
+    "elapsedMs": 88,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n1\nrotas sugeridas\n1\nentregas agrupadas\n5\ncontinuam aguardando\n\n⚠ 1 entrega com atraso previsto · 0 com margem inferior a 5 min. Saída e trânsito podem mudar o resultado.\n\nLote: 6 de 6 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\n⚠ Pendentes: 0 com prazo vencido na saída estimada · 1 com menos de 5 min até o limite. Dentre eles, 1 não cumpririam o prazo nem no cenário otimista de saída/retorno usado.\n\nSem rota nem chegada prevista. Essas pendências exigem conferência da loja.\n\nVer 5 pedidos pendentes e motivos\nRota 1 · João Martins\n\n1 entrega · 12 min · 3,6 km, incluindo retorno\n\n⚠ 1 atraso previsto\n\nMenor prazo: #1046 · 14:52. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "1",
+        "1",
+        "5"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 0,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        },
+        {
+          "tone": "danger",
+          "color": "rgb(150, 50, 29)",
+          "background": "rgb(255, 240, 235)"
+        }
+      ]
+    }
+  },
+  {
+    "name": "near-390",
+    "scenario": "opt-near",
+    "elapsedMs": 76,
+    "issues": [],
+    "external": [],
+    "text": "Montagem automática\n×\n\nDemonstração · pedidos, coordenadas e matriz fictícios. Sem Mapbox real, persistência ou garantia de chegada.\n\nSaída 12/10, 15:05 · até 4/rota · 2 min/parada · máx. 60 min/rota\nEditar critérios\nConfira antes de confirmar\n\nPlanejamento limitado a um lote. A loja decide; motoboys sugeridos pela ordem da fila.\n\n2\nrotas sugeridas\n6\nentregas agrupadas\n0\ncontinuam aguardando\n\nLote: 6 de 6 pedidos aguardando analisados · até 24 por cálculo e 6 motoboys. Nenhum pedido foi descartado.\n\nRota 1 · João Martins\n\n4 entregas · 16 min · 2,8 km, incluindo retorno\n\nSem atraso previsto sob estas hipóteses\n\nMenor prazo: #1043 · 15:50. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\nRota 2 · Lívia Oliveira\n\n2 entregas · 9 min · 1,9 km, incluindo retorno\n\nSem atraso previsto sob estas hipóteses\n\nMenor prazo: #1046 · 15:50. Agrupado por prazos e deslocamento.\nConferir e ajustar pedidos\nConfirmar esta rota (demo)\n\nRotas ficam em preparação; loja libera retirada e só o motoboy inicia. Selecione rotas ou confirme uma individualmente. As demais continuam aguardando.\n\nVoltar sem atribuir\nConfirmar 0 rotas (demo)",
+    "metrics": {
+      "viewport": [
+        390,
+        844
+      ],
+      "overflow": false,
+      "counts": [
+        "2",
+        "6",
+        "0"
+      ],
+      "summariesVisible": true,
+      "cardsComplete": 1,
+      "footer": [
+        {
+          "label": "Voltar sem atribuir",
+          "height": 52.78125,
+          "bottom": 819
+        },
+        {
+          "label": "Confirmar 0 rotas (demo)",
+          "height": 52.78125,
+          "bottom": 819
+        }
+      ],
+      "tones": [
+        {
+          "tone": "gain",
+          "color": "rgb(32, 88, 55)",
+          "background": "rgb(237, 246, 239)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        },
+        {
+          "tone": "stable",
+          "color": "rgb(83, 97, 90)",
+          "background": "rgb(241, 243, 239)"
+        }
+      ]
+    }
+  }
+]
