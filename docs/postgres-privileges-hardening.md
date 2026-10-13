@@ -7,7 +7,7 @@ remoto, db push/reset, credenciais reais ou dados de clientes.
 
 ## Migration proposta
 
-`20261013192536_postgres_public_default_privileges_hardening.sql` é forward-only.
+`20261013201124_postgres_public_default_privileges_hardening.sql` é forward-only.
 Altera exclusivamente defaults de objetos criados futuramente por **postgres**
 em **public**. Revoga ALL de tabelas, sequências e rotinas para PUBLIC, anon e
 authenticated. ALL inclui MAINTAIN em PostgreSQL17, além de TRUNCATE, REFERENCES
@@ -33,13 +33,18 @@ Se encontrar qualquer acesso incompatível, interrompe com
 **Não altera defaults globais para contornar o problema**, pois isso afetaria
 objetos futuros em outros schemas e excederia o escopo aprovado. Se o projeto
 remoto tiver globals inseguros, esta proposta fica bloqueada para aplicação:
-será necessária uma decisão do Lead e uma PR/autorização específica. O catálogo
-global remoto não foi certificado nesta tarefa; não presumimos que a migration
-poderá ser aplicada lá. O guard é uma precondição, não uma correção dos globals.
+será necessária uma decisão do Lead e uma PR/autorização específica. A revisão
+Lead confirmou PUBLIC EXECUTE implícito no remoto. A Draft PR18 propõe o
+[pré-requisito global](global-routine-execute-prerequisite.md), que depende de
+homologação hosted e autorização próprias. O guard continua intacto; não presume
+aplicabilidade remota somente porque testes descartáveis passaram.
 
-No cenário positivo dos testes, fechar o EXECUTE global é **setup exclusivo da
-fixture descartável**, explicitamente separado da migration. Também testamos o
-cenário normal do PostgreSQL que mantém o EXECUTE implícito e deve ser rejeitado.
+O cenário positivo agora aplica a **migration real do pré-requisito da PR18**;
+não fecha globals apenas na fixture. A versão anterior 20261013192536 era Draft
+não aplicada e foi renumerada para executar DEPOIS de 20261013201122, sem alterar
+seu SQL. A ordem é validada e a cadeia real é executada do zero em outro banco
+descartável. As sete migrations já existentes na main permanecem intactas.
+Também testamos o caso normal sem pré-requisito, que deve ser rejeitado.
 
 ## Avaliação separada de supabase_admin
 

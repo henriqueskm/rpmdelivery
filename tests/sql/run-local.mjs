@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import assert from "node:assert/strict";
 import { checkDefaultPrivileges } from "./run-default-privileges.mjs";
+import { checkGlobalRoutines } from "./run-global-routines.mjs";
 
 // Explicitly in-memory PostgreSQL. No connection string, remote Auth or database.
 const { PGlite } = await import(pathToFileURL(resolve(
@@ -35,6 +36,7 @@ try {
   assert.deepEqual({ ...after, latitude: Number(after.latitude) }, { ...before, latitude: Number(before.latitude) });
   await db.exec(readFileSync("tests/sql/restaurant-geocoding.sql", "utf8"));
   console.log("PASS: migrations, legacy preservation, RPC fields, validation, grants and RLS");
+  await checkGlobalRoutines(PGlite);
   await checkDefaultPrivileges(PGlite);
 } catch (error) {
   console.error(error.message);

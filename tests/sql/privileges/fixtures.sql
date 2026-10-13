@@ -1,7 +1,5 @@
--- Fixture prerequisite ONLY. Not part of the proposed production migration.
--- The negative test first proves that implicit global PUBLIC EXECUTE aborts
--- the migration atomically. This positive case starts with closed globals.
-alter default privileges for role postgres revoke execute on routines from public;
+-- The runner applies the ACTUAL global prerequisite migration before this
+-- fixture. No fixture-only statement closes global EXECUTE anymore.
 
 create schema privilege_outside;
 alter default privileges for role postgres in schema privilege_outside

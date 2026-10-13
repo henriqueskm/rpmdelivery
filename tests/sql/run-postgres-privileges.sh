@@ -23,10 +23,11 @@ psql=(psql -X --no-password --set ON_ERROR_STOP=1)
   end if;
 end; \$\$;"
 
-hardening=supabase/migrations/20261013192536_postgres_public_default_privileges_hardening.sql
+prerequisite=$(node tests/sql/security-migrations.ts --check-order)
+hardening=supabase/migrations/20261013201124_postgres_public_default_privileges_hardening.sql
 "${psql[@]}" -f tests/sql/privileges/bootstrap.sql
 for migration in supabase/migrations/*.sql; do
-  [[ "$migration" < "$hardening" ]] || continue
+  [[ "$migration" < "supabase/migrations/$prerequisite" ]] || continue
   "${psql[@]}" -f "$migration"
 done
 "${psql[@]}" -f tests/sql/restaurant-geocoding.sql
@@ -55,7 +56,7 @@ echo "PASS: $1 rejected with no default ACL change"
 
 # PostgreSQL's implicit global PUBLIC EXECUTE must never be silently ignored.
 assert_global_rejected 'implicit global PUBLIC EXECUTE'
-"${psql[@]}" -c 'alter default privileges for role postgres revoke execute on routines from public;'
+"${psql[@]}" -f "supabase/migrations/$prerequisite"
 for object_class in tables sequences routines; do
   "${psql[@]}" -c "alter default privileges for role postgres grant all on $object_class to authenticated;"
   assert_global_rejected "direct global $object_class grant"
@@ -66,8 +67,8 @@ done
 assert_global_rejected 'inherited global SELECT'
 "${psql[@]}" -c 'alter default privileges for role postgres revoke select on tables from privilege_inherited;'
 
-# This prerequisite is only fixture setup. Production needs separate review
-# if its global defaults are unsafe; this PR never changes them.
+# Globals were closed by the ACTUAL separately reviewed prerequisite, not by
+# fixture preparation. Attacking/restoring defaults above is test-only.
 "${psql[@]}" -f tests/sql/privileges/fixtures.sql
 "${psql[@]}" -f "$hardening"
 "${psql[@]}" -f tests/sql/privileges/assertions.sql
