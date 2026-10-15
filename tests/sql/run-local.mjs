@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import assert from "node:assert/strict";
+import { checkDefaultPrivileges } from "./run-default-privileges.mjs";
 import { checkGlobalRoutines } from "./run-global-routines.mjs";
 
 // Explicitly in-memory PostgreSQL. No connection string, remote Auth or database.
@@ -36,6 +37,7 @@ try {
   await db.exec(readFileSync("tests/sql/restaurant-geocoding.sql", "utf8"));
   console.log("PASS: migrations, legacy preservation, RPC fields, validation, grants and RLS");
   await checkGlobalRoutines(PGlite);
+  await checkDefaultPrivileges(PGlite);
 } catch (error) {
   console.error(error.message);
   process.exitCode = 1;
