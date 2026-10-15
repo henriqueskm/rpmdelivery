@@ -783,6 +783,18 @@ Ainda serão definidos separadamente:
 - push notifications;
 - geofence.
 
+## Migration proposta: convites de motoboys (RPM-ONBOARD-001)
+
+A proposta `20261015221053_courier_invitations_commands.sql`, ainda não aplicada
+remotamente, acrescenta `restaurant_couriers.reviewed_at/reviewed_by` e tabelas
+privadas `courier_invite_attempts` (limite por identidade) e
+`courier_invite_redemptions` (recibos idempotentes). Reutiliza os estados e a
+unicidade existentes, sem mudar políticas RLS ou escrita direta.
+
+As oito RPCs, locks, grants e limites de compatibilidade estão descritos em
+[Convites e vínculos](courier-invitations.md). Aprovação não concede acesso
+operacional sem as autorizações de rota/turno pertinentes.
+
 ## Evolução planejada: prazos e retirada
 
 O [protótipo de prazos e liberação](delivery-deadlines-pickup.md) documenta campos futuros de promessa/horário original do pedido e liberação/versão de composição da rota. Eles ainda não representam alteração do schema aplicado: nenhuma migration ou RPC é adicionada nesta PR. A integração exigirá revisão de RLS, identidade, fuso/relógio do servidor, auditoria e transações para liberação, edição e início concorrentes.

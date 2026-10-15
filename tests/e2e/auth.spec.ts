@@ -1,9 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mockSupabase, testRestaurant } from "./support/supabase";
 import { mockGeocoding, selectAddress, geoPayload } from "./support/geocoding";
+import { isCancelledAuthNavigation } from "./support/network";
 
-async function login(page: Page) {
-  await page.goto("/login");
+async function login(page: Page, navigate = true) {
+  if (navigate) await page.goto("/login");
   await page
     .getByLabel("E-mail", { exact: true })
     .fill("operador@example.test");
@@ -36,7 +37,9 @@ test("login → onboarding → RPC → dashboard → sair, sem erros inesperados
   page.on("console", (message) => {
     if (message.type() === "error") consoleErrors.push(message.text());
   });
-  page.on("requestfailed", (request) => failedRequests.push(request.url()));
+  page.on("requestfailed", (request) => {
+    if (!isCancelledAuthNavigation(request)) failedRequests.push(request.url());
+  });
   const calls = await mockSupabase(page, { slow: true });
   await mockGeocoding(page);
   await page.goto("/");
@@ -45,7 +48,9 @@ test("login → onboarding → RPC → dashboard → sair, sem erros inesperados
     page.getByRole("heading", { name: "Entre no ritmo." }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Entrar", exact: true }).click();
-  await login(page);
+  await expect(page).toHaveURL(/\/login$/);
+  // The link already navigated here; a second goto would abort its RSC request.
+  await login(page, false);
   await expect(page.getByRole("button", { name: "Entrando…" })).toBeDisabled();
   await expect(page).toHaveURL(/\/onboarding$/);
   await expect(

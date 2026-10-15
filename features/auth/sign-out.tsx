@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/client";
+import { forgetInvite } from "@/lib/invitations/context";
 
-export function SignOut() {
+export function SignOut({ courier = false }: { courier?: boolean }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -14,7 +15,8 @@ export function SignOut() {
     try {
       const result = await getSupabase().auth.signOut({ scope: "local" });
       if (result.error) throw result.error;
-      router.replace("/login");
+      forgetInvite();
+      router.replace(courier ? "/login?perfil=motoboy" : "/login");
     } catch {
       setError("Não foi possível sair. Tente novamente.");
     } finally {

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { isCancelledAuthNavigation } from "./support/network";
 
 test("smoke: a página inicial carrega sem erros críticos básicos", async ({
   page,
@@ -19,7 +20,7 @@ test("smoke: a página inicial carrega sem erros críticos básicos", async ({
     }
   });
   page.on("requestfailed", (request) => {
-    if (new URL(request.url()).origin === appOrigin) {
+    if (new URL(request.url()).origin === appOrigin && !isCancelledAuthNavigation(request)) {
       networkErrors.push(`${request.failure()?.errorText} ${request.url()}`);
     }
   });
