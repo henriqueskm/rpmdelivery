@@ -24,7 +24,7 @@ psql=(psql -X --no-password --set ON_ERROR_STOP=1)
 end; \$\$;"
 
 prerequisite=$(node tests/sql/security-migrations.ts --check-order)
-hardening=supabase/migrations/20261013201124_postgres_public_default_privileges_hardening.sql
+hardening=supabase/migrations/20261015013358_postgres_public_default_privileges_hardening.sql
 "${psql[@]}" -f tests/sql/privileges/bootstrap.sql
 for migration in supabase/migrations/*.sql; do
   [[ "$migration" < "supabase/migrations/$prerequisite" ]] || continue

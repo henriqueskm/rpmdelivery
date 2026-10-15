@@ -2,12 +2,14 @@
 
 Base: main `74891494ed5128ed87eae2d7bfae15098ee97890`. Referência de identidade
 para eventual aplicação: **RpmDelivery / yyfbpmppdszmvhcruoyb**, nunca EstoqueNK.
-Esta PR não consulta nem modifica o Supabase remoto. Não usa CLI administrativo
-remoto, db push/reset, credenciais reais ou dados de clientes.
+O desenvolvimento inicial não consultou nem modificou o Supabase remoto.
+A reconciliação posterior confirmou somente por leitura o histórico e o default
+global após a aplicação da PR18 pelo Lead. Não usa CLI administrativo remoto,
+db push/reset ou dados de clientes. Não aplica o hardening.
 
 ## Migration proposta
 
-`20261013201124_postgres_public_default_privileges_hardening.sql` é forward-only.
+`20261015013358_postgres_public_default_privileges_hardening.sql` é forward-only.
 Altera exclusivamente defaults de objetos criados futuramente por **postgres**
 em **public**. Revoga ALL de tabelas, sequências e rotinas para PUBLIC, anon e
 authenticated. ALL inclui MAINTAIN em PostgreSQL17, além de TRUNCATE, REFERENCES
@@ -34,17 +36,38 @@ Se encontrar qualquer acesso incompatível, interrompe com
 objetos futuros em outros schemas e excederia o escopo aprovado. Se o projeto
 remoto tiver globals inseguros, esta proposta fica bloqueada para aplicação:
 será necessária uma decisão do Lead e uma PR/autorização específica. A revisão
-Lead confirmou PUBLIC EXECUTE implícito no remoto. A Draft PR18 propõe o
-[pré-requisito global](global-routine-execute-prerequisite.md), que depende de
-homologação hosted e autorização próprias. O guard continua intacto; não presume
-aplicabilidade remota somente porque testes descartáveis passaram.
+Lead confirmou originalmente PUBLIC EXECUTE implícito no remoto, e posteriormente
+aplicou o SQL exato do [pré-requisito global](global-routine-execute-prerequisite.md).
+O conector registrou `20261015013357`; o catálogo read-only agora mostra
+`{postgres=X/postgres}`. O guard continua intacto: a precondição deve ser novamente
+conferida antes de qualquer aplicação, sem presumir autorização ou compatibilidade
+de toda a plataforma somente porque testes descartáveis passaram.
 
 O cenário positivo agora aplica a **migration real do pré-requisito da PR18**;
 não fecha globals apenas na fixture. A versão anterior 20261013192536 era Draft
-não aplicada e foi renumerada para executar DEPOIS de 20261013201122, sem alterar
+não aplicada e foi renumerada para executar DEPOIS de 20261015013357, sem alterar
 seu SQL. A ordem é validada e a cadeia real é executada do zero em outro banco
 descartável. As sete migrations já existentes na main permanecem intactas.
 Também testamos o caso normal sem pré-requisito, que deve ser rejeitado.
+
+## Histórico reconciliado, sem escrita remota
+
+O arquivo da PR18 foi alinhado ao timestamp remoto `20261015013357`, preservando
+seu SQL. O hardening não aplicado passou de `20261013201124` para `20261015013358`,
+para permanecer depois do pré-requisito. A versão Draft inicial `20261013192536`
+também continua ausente. Nenhuma versão aplicada é removida/reparada no remoto.
+
+Com oito versões aplicadas, a comparação offline deixa somente
+`20261015013358_postgres_public_default_privileges_hardening.sql` pendente nesta
+branch. O pré-requisito não é novamente agendado no modelo de comparação por
+timestamp do Supabase. Não foi executado db push/dry-run, migration repair ou
+apply_migration do conector. Um futuro push do banco aplicaria este hardening;
+isso exige autorização explícita separada, mesmo após eventual merge humano.
+
+SQL e guard permanecem byte-identical no Git (blob
+`2c4d4f2e2277794889235caa79827812f2b9b7b4`). Somente nomes, testes e documentação
+mudaram. A ordenação, rejeição de aliases/timestamps duplicados, instalação do
+zero e rollback em globals incompatíveis continuam gates do CI.
 
 ## Avaliação separada de supabase_admin
 
