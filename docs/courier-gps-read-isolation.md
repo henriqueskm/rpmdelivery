@@ -119,7 +119,9 @@ simula GoTrue/signup hospedado. Não é promessa de homologação completa do Su
 
 O workflow Courier GPS security reproduz esses testes em PostgreSQL 17
 descartável no CI, com privilégio contents:read, timeout, sem secrets nem banco
-remoto. O PostgREST oficial fica fixado por digest. Os artefatos contêm somente
+remoto. O binário PostgREST 16.1 vem da release oficial do GitHub e seu SHA-256
+é conferido antes da execução, evitando quotas do registro ECR compartilhado.
+Os artefatos contêm somente
 dados sintéticos e duram sete dias. Nenhuma dependência runtime foi adicionada.
 
 Validação local: npm ci; verify aprovado; 74 unitários; SQL/PGlite legado
