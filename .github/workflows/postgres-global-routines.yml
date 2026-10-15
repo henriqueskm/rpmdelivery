@@ -1,0 +1,59 @@
+name: PostgreSQL global routines
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: global-routines-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  global-routines:
+    name: PostgreSQL 17 global routine prerequisite
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: rpmdelivery_privileges_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d rpmdelivery_privileges_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      RPMDELIVERY_DISPOSABLE_POSTGRES: "1"
+      PGHOST: "127.0.0.1"
+      PGPORT: "5432"
+      PGDATABASE: rpmdelivery_privileges_test
+      PGUSER: postgres
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y postgresql-client
+      - name: Test global prerequisite on disposable PostgreSQL
+        shell: bash
+        run: |
+          mkdir -p test-results
+          bash tests/sql/run-global-routines.sh 2>&1 | tee test-results/global-routines.txt
+      - name: Upload synthetic global ACL evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: postgres-global-routines-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/global-routines.txt
+          if-no-files-found: ignore
+          retention-days: 7
