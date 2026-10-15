@@ -1,15 +1,17 @@
-# Pré-requisito global da PR17 — proposta para revisão Lead
+# Pré-requisito global da PR17 — histórico reconciliado para revisão Lead
 
 Base: main `74891494ed5128ed87eae2d7bfae15098ee97890`. A revisão Lead da PR17,
 HEAD `62fcc0392688d8cbd8ce70a592cc824ad73721ff`, confirmou por leitura remota que
 postgres não tem override global para rotinas: aplica-se PUBLIC EXECUTE implícito.
-Esse resultado é evidência **fornecida pelo Lead**, não uma nova inspeção remota
-do Builder. Nesta tarefa não usamos consultas/CLI remoto, credenciais, dados reais
-ou o EstoqueNK. Referência para eventual autorização: RpmDelivery `yyfbpmppdszmvhcruoyb`.
+Esse era o estado anterior à aplicação. O Lead aplicou o SQL exato da PR18 no
+RpmDelivery `yyfbpmppdszmvhcruoyb`; o conector registrou a versão `20261015013357`.
+A reconciliação confirmou somente por leitura o histórico e o default global
+`{postgres=X/postgres}`. Não executou DDL, reparo de histórico ou CLI remoto,
+não leu registros de clientes e não acessou EstoqueNK. A PR17 continua não aplicada.
 
 ## Proposta e alcance
 
-Migration forward-only `20261013201122_postgres_global_routine_execute_prerequisite.sql`:
+Migration forward-only `20261015013357_postgres_global_routine_execute_prerequisite.sql`:
 
 ```sql
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE EXECUTE ON ROUTINES FROM PUBLIC;
@@ -61,15 +63,15 @@ e [extensões](https://supabase.com/docs/guides/database/extensions).
 Event triggers/scripts de extensões podem conceder EXECUTE explicitamente e
 reabrir acesso; o default global não é proteção contra esses grants deliberados.
 
-**Avaliação:** mecanismo PostgreSQL adequado como candidato ao pré-requisito,
-com alcance mínimo para retirar PUBLIC. **Não recomendamos aplicação hosted
-somente com CI verde.** Há dependência de homologação/inventário e aprovação Lead
-sobre serviços e upgrades gerenciados. Não presumimos compatibilidade completa.
+**Estado atual:** o Lead aplicou o pré-requisito; esta atualização altera somente
+a identidade do arquivo no Git, testes e documentação. Não reaplica SQL.
+CI verde e aplicação bem-sucedida não certificam todos os serviços/upgrades
+gerenciados. O escopo e as garantias SQL permanecem iguais.
 
 ## Ordem obrigatória e coordenação com PR17
 
-1. `20261013201122_postgres_global_routine_execute_prerequisite.sql` — esta Draft.
-2. `20261013201124_postgres_public_default_privileges_hardening.sql` — PR17 renumerada.
+1. `20261015013357_postgres_global_routine_execute_prerequisite.sql` — já aplicada pelo Lead.
+2. `20261015013358_postgres_public_default_privileges_hardening.sql` — PR17 ainda não aplicada.
 
 A versão anterior `20261013192536` da PR17 deve ser substituída somente porque
 é Draft **não aplicada**, bloqueada segundo o Lead. O SQL/guard é preservado.
@@ -78,14 +80,40 @@ Se aparecer evidência de aplicação da versão antiga em qualquer ambiente, pa
 e planejar compatibilidade; não renomear histórico já aplicado.
 
 `tests/sql/security-migrations.ts` rejeita a versão antiga, ordem invertida ou
-duplicatas. A nova Draft é independente, baseada na main, sem incluir a migration
-de escopo public. A branch PR17 incorpora esta dependência por merge Git normal,
-sem force-push; esse merge de branches **não** é merge de PR/main.
+duplicatas. Rejeita também a antiga identidade do pré-requisito e timestamps
+iguais com nomes diferentes. A Draft é independente, baseada na main, sem incluir a migration
+de escopo public. A branch PR17 incorpora esta dependência sem reescrever
+histórico ou fazer force-push; as duas PRs continuam Draft, sem merge em main.
 
 Quando a PR17 estiver presente, os testes usam a migration real do pré-requisito,
 não um fechamento global escondido na fixture. O job nativo inicializa um segundo
 banco vazio e executa **todos os arquivos em ordem**, seguido de RPC/RLS. As PRs
 permanecem Draft, sem merge ou aplicação automática.
+
+## Reconciliação com o histórico aplicado
+
+O conector gravou `20261015013357 / postgres_global_routine_execute_prerequisite`,
+embora o arquivo Draft usasse `20261013201122`. Preservamos o registro remoto:
+o arquivo passa a usar a versão remota, com SQL byte-identical no Git. Não criamos
+uma segunda migration, alias ou reparo remoto para marcar a versão antiga.
+
+O hardening Draft da PR17 usava `20261013201124`, anterior ao registro aplicado.
+Como ainda não foi aplicado, passa a `20261015013358`, preservando SQL e guard.
+Essa renumeração não deve ser generalizada para migrations já aplicadas.
+
+O histórico read-only contém oito versões: as sete anteriores e o pré-requisito.
+A comparação offline dos timestamps encontra zero versões pendentes nesta PR,
+e somente o hardening na PR17. O teste unitário exercita esse mesmo conjunto,
+inclusive rejeitando versões antigas/duplicadas. Não é um dry-run de CLI remoto.
+
+O Supabase compara versões do arquivo com `supabase_migrations.schema_migrations`;
+com o arquivo alinhado, um futuro db push não agenda novamente o pré-requisito.
+[Referência oficial de histórico](https://supabase.com/docs/reference/cli/supabase-migration-list).
+Isso pressupõe um checkout reconciliado e o histórico intacto. Não executar
+db push, migration repair/fetch/pull, nem apply_migration do conector nesta tarefa.
+O conector atribuiria outro timestamp caso o SQL fosse submetido novamente.
+Quando a PR17 estiver no checkout, db push poderá agendar seu hardening: isso
+continua exigindo autorização separada. Merge não é autorização de aplicação.
 
 ## Evidências e reprodução
 
@@ -117,9 +145,10 @@ permanecem Draft, sem merge ou aplicação automática.
    instalação/upgrade das extensões relevantes. Essa homologação **não ocorreu**.
 4. Se houver dependência de PUBLIC, parar e revisar opt-ins específicos com Lead/
    suporte Supabase. Não conceder ALL/EXECUTE global em massa ou alterar supabase_admin.
-5. Somente após autorização explícita, aplicar o pré-requisito pelo procedimento
-   aprovado, comparar ACLs/corpos existentes e novos defaults; então executar o
-   hardening public da PR17, se o guard aceitar. Sem CLI que inicialize papéis remotos.
+5. O pré-requisito já aplicado não deve ser reenviado. Somente após autorização
+   explícita própria, avaliar/aplicar o hardening public da PR17, se o guard aceitar.
+   Conferir novamente histórico e ACLs antes de qualquer execução. Sem CLI que
+   inicialize papéis remotos.
 6. Pós-aplicação: verificação de catálogo e homologação funcional; nenhuma criação
    de conta/restaurante fictício em produção como teste. Nenhum rollback automático
    que reabra PUBLIC: correções forward-only específicas e revisadas.
