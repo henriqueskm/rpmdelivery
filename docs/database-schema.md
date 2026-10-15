@@ -1,5 +1,10 @@
 # RpmDelivery — Database Schema
 
+Proposta de segurança ainda não aplicada: [RPM-SEC-GPS-001](courier-gps-read-isolation.md)
+restringe a leitura geral de couriers a colunas cadastrais explícitas e mantém
+GPS operacional no caminho autorizado por rota. SELECT * deixa de ser compatível
+para os papéis da API; consulte a matriz de permissões e o plano de homologação.
+
 ## Objetivo
 
 Este documento define a estrutura inicial do banco de dados do RpmDelivery.
