@@ -18,6 +18,7 @@ export async function checkInvitations(PGlite) {
     await db.exec(readFileSync("tests/sql/courier-gps/fixtures.sql", "utf8"));
     await db.exec(readFileSync("tests/sql/invitations/fixtures.sql", "utf8"));
     await db.exec(readFileSync("tests/sql/invitations/contracts.sql", "utf8"));
+    await db.exec(readFileSync("tests/sql/invitations/registration.sql", "utf8"));
     console.log("PASS: supplementary PGlite invitation RPCs, roles, lifecycle, attempts and hardening");
   } finally { await db.close(); }
 }

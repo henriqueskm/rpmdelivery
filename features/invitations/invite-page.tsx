@@ -70,7 +70,7 @@ export function CourierInvitePage() {
         p_color: String(fields.get("color")).trim(),
       }).retry(false);
       if (error) throw error;
-      setInfo(current => current ? { ...current, registered: true } : current);
+      setInfo(null); setAttempt(n => n + 1);
     } catch (cause) { setError(invitationMessage(cause)); }
     finally { submitting.current = false; setPending(false); }
   }
@@ -83,6 +83,7 @@ export function CourierInvitePage() {
       if (!data.ok) {
         setError(resultMessage(data));
         setInfo(current => data.reason === "profile_required" && current ? { ...current, registered: false } : { ok: false });
+        if (data.reason === "profile_required") setAttempt(n => n + 1);
         return;
       }
       setOutcome(data.status === "ACTIVE" ? "Vínculo aprovado" : data.status === "REJECTED" ? "Solicitação rejeitada" : "Solicitação enviada");
@@ -116,13 +117,13 @@ export function CourierInvitePage() {
     {info?.ok && !checking && code && !outcome && <section className="invite-card invite-section">
       <h2>{info.restaurantName}</h2>
       {!info.registered ? <>
-        <p className="invite-note">Primeiro, complete seu cadastro de motoboy.</p>
-        <form onSubmit={register} aria-label="Cadastro de motoboy" aria-busy={pending}><fieldset disabled={pending}>
-          <FormField label="Seu nome" id="courier-name" name="name" defaultValue={typeof session.user?.user_metadata?.name === "string" ? session.user.user_metadata.name : ""} autoComplete="name" maxLength={120} required />
-          <FormField label="Celular com DDD (opcional)" id="courier-phone" name="phone" type="tel" autoComplete="tel" maxLength={19} />
-          <FormField label="Modelo da moto" id="courier-model" name="model" maxLength={80} required />
-          <FormField label="Placa" id="courier-plate" name="plate" maxLength={20} required autoCapitalize="characters" />
-          <FormField label="Cor da moto" id="courier-color" name="color" maxLength={40} required />
+        <p className="invite-note">Complete o que falta. As informações já salvas são preservadas.</p>
+        <form key={inspectionKey} onSubmit={register} aria-label="Cadastro de motoboy" aria-busy={pending}><fieldset disabled={pending}>
+          <FormField label="Seu nome" id="courier-name" name="name" defaultValue={info.profile?.name ?? (typeof session.user?.user_metadata?.name === "string" ? session.user.user_metadata.name : "")} readOnly={!!info.profile?.name} hint={info.profile?.name ? "Já salvo · somente leitura" : undefined} autoComplete="name" maxLength={120} required />
+          <FormField label="Celular com DDD (opcional)" id="courier-phone" name="phone" defaultValue={info.profile?.phone ?? ""} readOnly={!!info.profile?.phone} hint={info.profile?.phone ? "Já salvo · somente leitura" : undefined} type="tel" autoComplete="tel" maxLength={19} />
+          <FormField label="Modelo da moto" id="courier-model" name="model" defaultValue={info.profile?.model ?? ""} readOnly={!!info.profile?.model} hint={info.profile?.model ? "Já salvo · somente leitura" : undefined} maxLength={80} required />
+          <FormField label="Placa" id="courier-plate" name="plate" defaultValue={info.profile?.plate ?? ""} readOnly={!!info.profile?.plate} hint={info.profile?.plate ? "Já salvo · somente leitura" : undefined} maxLength={20} required autoCapitalize="characters" />
+          <FormField label="Cor da moto" id="courier-color" name="color" defaultValue={info.profile?.color ?? ""} readOnly={!!info.profile?.color} hint={info.profile?.color ? "Já salvo · somente leitura" : undefined} maxLength={40} required />
           <button className="button primary">{pending ? "Salvando cadastro…" : "Salvar cadastro de motoboy"}</button>
         </fieldset></form>
       </> : <>

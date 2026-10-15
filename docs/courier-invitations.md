@@ -41,8 +41,8 @@ Parâmetros SQL recebem prefixo `p_`.
 | create_courier_invite | restaurant_id, hours, max_uses | Convite sanitizado; OWNER/MANAGER próprio |
 | revoke_courier_invite | restaurant_id, invite_id | Revogação idempotente; mesmo controle |
 | list_courier_management | restaurant_id | Convites próprios e cadastros PENDING necessários; mesmo controle |
-| inspect_courier_invite | code | Nome da loja/existência do perfil próprio; autenticado e limitado |
-| complete_courier_registration | name, phone, model, plate, color | ID próprio; delega à RPC de perfil existente |
+| inspect_courier_invite | code | Nome da loja, completude e preenchimento válido somente do perfil próprio; autenticado e limitado |
+| complete_courier_registration | name, phone, model, plate, color | ID próprio; cria via RPC existente ou repara apenas campos ausentes/inválidos |
 | request_courier_membership | code | ID/status próprio; consumo atômico e limitado |
 | review_courier_membership | restaurant_id, relationship_id, approve | PENDING → ACTIVE/REJECTED; OWNER/MANAGER próprio |
 | list_my_establishments | nenhuma | Vínculos próprios e nomes das lojas |
@@ -77,6 +77,45 @@ revogados ou esgotados retornam o mesmo `unavailable`, sem enumeração de motiv
 - `/convite`: no-referrer/noindex; fragmento não integra requisição HTTP.
   Código segue somente no corpo do RPC autenticado. Scripts/extensões
   maliciosos e histórico de links compartilhados continuam riscos do dispositivo.
+
+## Complemento P2 — cadastros antigos incompletos
+
+Existir em couriers não significa cadastro completo. Um único critério SQL
+privado é compartilhado por inspeção, conclusão e solicitação de vínculo:
+nome (até120), modelo (até80), placa (até20) e cor (até40 caracteres), todos
+não vazios após remover espaços/tabs/quebras de linha nas extremidades.
+Telefone continua opcional. Foto, turnos e GPS não integram este critério.
+
+Inspeção retorna registered=false para dados ausentes, só whitespace ou acima
+dos limites. Retorna também profile com os próprios campos válidos, sem dados
+de terceiros ou GPS. A interface apresenta esses valores como somente leitura
+e permite preencher o que falta. Não usa a mera existência do courier para
+liberar a solicitação; após salvar, consulta novamente o backend.
+
+complete_courier_registration mantém a assinatura e deriva identidade apenas
+de auth.uid(). Reutiliza create_courier_profile para criação idempotente e,
+sob lock, reavalia os dados atuais. Preserva exatamente os valores válidos
+existentes (inclusive a grafia original); normaliza somente reparações e
+converte uma placa preenchida para maiúsculas. Nome e telefone válidos não são
+substituídos por argumentos divergentes. Telefone novo, se informado, exige
+E.164 brasileiro; um telefone legado inválido não é apagado quando omitido.
+Nenhum parâmetro aceita user_id/courier_id; nenhum UPDATE direto é concedido.
+
+Advisory lock por UID e locks em profiles → couriers serializam duas reparações
+e a validação no comando de vínculo. No request, o advisory é adquirido antes
+do contador de tentativas, evitando inversão com o lock de FK do perfil.
+Na reparação, o perfil usa FOR NO KEY UPDATE: bloqueia edições concorrentes
+sem impedir os locks KEY SHARE das FKs da RPC original de criação.
+As linhas são protegidas até commit, inclusive contra atualização direta do
+nome pela política própria já existente. Campos obrigatórios são revalidados
+no request antes de recibo/consumo/vínculo: não é possível contornar o formulário
+com chamada direta. Falha retorna profile_required sem consumir vaga ou criar
+vínculo; a interface recarrega os campos faltantes. Um preenchimento inválido
+faz rollback integral, inclusive de uma criação transitória de courier.
+Repetir o mesmo comando após completar não altera campos nem updated_at.
+
+Esta é revisão da migration ainda Draft e não aplicada. Não modifica migrations
+anteriores, RPC antiga, grants/RLS, identidade, Auth hospedado ou usuários reais.
 
 ## Compatibilidade e limites
 

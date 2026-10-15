@@ -16,6 +16,7 @@ for file in supabase/migrations/*.sql; do "${psql[@]}" -f "$file"; done
 "${psql[@]}" -f tests/sql/courier-gps/fixtures.sql
 "${psql[@]}" -f tests/sql/invitations/fixtures.sql
 "${psql[@]}" -f tests/sql/invitations/contracts.sql
+"${psql[@]}" -f tests/sql/invitations/registration.sql
 # Clear only fictional attempt windows. Never reset a hosted counter.
 "${psql[@]}" -c "update private.courier_invite_attempts set window_started_at=clock_timestamp()-interval '16 minutes';"
 for pair in 'invite_courier_a 10' 'invite_courier_b 11'; do
@@ -68,5 +69,41 @@ grep -q RPM_REVIEW_STALE /tmp/review-*.txt
  (select status in ('ACTIVE','REJECTED') and reviewed_at is not null and reviewed_by in (gps_test.id(2),gps_test.id(5))
  from public.restaurant_couriers where id='$rid'));"
 "${psql[@]}" -f tests/sql/privileges/rpc-rls.sql
+# Two real sessions repair one partially populated courier. The first committed
+# completion wins; the second preserves that complete tuple rather than mixing it.
+"${psql[@]}" -c "insert into public.couriers(user_id,motorcycle_model)
+ values(gps_test.id(17),'Saved model'),(gps_test.id(18),null);"
+pids=()
+for variant in A B; do
+ plate=AAA1A11; color=Azul
+ [[ "$variant" == B ]] && { plate=BBB2B22; color=Preta; }
+ "${psql[@]}" -U invite_courier_a -c "set statement_timeout='5s';
+ select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000017',false);
+ select public.complete_courier_registration('Ignored',null,'Ignored','$plate','$color');" >"/tmp/repair-$variant.txt" 2>&1 &
+ pids+=($!)
+done
+for pid in "${pids[@]}"; do wait "$pid"; done
+"${psql[@]}" -c "select onboard_test.check('concurrent repairs preserve valid fields and one complete tuple',
+ (select motorcycle_model='Saved model' and
+   (motorcycle_plate,motorcycle_color) in (('AAA1A11','Azul'),('BBB2B22','Preta'))
+ from public.couriers where user_id=gps_test.id(17)));"
+# Hold the repair transaction open while a separate connection requests a link.
+# The request must validate committed completed data, never a partial repair.
+PGAPPNAME=onboard_repair_race "${psql[@]}" -U invite_courier_a -c "begin;set local statement_timeout='5s';
+ select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000018',false);
+ select public.complete_courier_registration('Ignored',null,'Moto','CCC3C33','Preta');
+ select pg_sleep(1);commit;" >/tmp/repair-membership.txt 2>&1 &
+repair_pid=$!
+ready=false
+for attempt in {1..50}; do
+ if [[ $("${psql[@]}" -Atc "select exists(select 1 from pg_stat_activity
+   where application_name='onboard_repair_race' and wait_event='PgSleep')") == t ]]; then ready=true;break;fi
+done
+[[ "$ready" == true ]] || { echo 'FAIL: repair concurrency barrier not reached';exit 1; }
+"${psql[@]}" -U invite_courier_b -c "set statement_timeout='5s';
+ select set_config('request.jwt.claim.sub','00000000-0000-4000-8000-000000000018',false);
+ select onboard_test.check('request serializes with own repair',
+ public.request_courier_membership('aaaaaaaaaaaaaaaa0008')->>'status'='PENDING');"
+wait "$repair_pid"
 "${psql[@]}" -f tests/sql/courier-gps/assertions.sql
 echo 'PASS: PostgreSQL17 invitations, roles, concurrency, receipts, limits, RLS and GPS hardening'

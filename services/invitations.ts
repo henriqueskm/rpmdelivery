@@ -3,7 +3,8 @@ export type Invite = { id: string; code: string; active: boolean; expiresAt: str
 export type Membership = { id: string; restaurantName: string; status: "PENDING" | "ACTIVE" | "REJECTED" | "SUSPENDED" };
 export type PendingCourier = { id: string; name: string; motorcycleModel: string | null; motorcyclePlate: string | null; motorcycleColor: string | null; requestedAt: string };
 export type Management = { invites: Invite[]; requests: PendingCourier[] };
-export type InviteResult = { ok: boolean; reason?: "unavailable" | "rate_limited" | "profile_required"; restaurantName?: string; registered?: boolean; status?: Membership["status"] };
+export type CourierRegistration = { name: string | null; phone: string | null; model: string | null; plate: string | null; color: string | null };
+export type InviteResult = { ok: boolean; reason?: "unavailable" | "rate_limited" | "profile_required"; restaurantName?: string; registered?: boolean; profile?: CourierRegistration; status?: Membership["status"] };
 export function invitationMessage(cause: unknown) {
   if (cause && typeof cause === "object" && "code" in cause) {
     if (cause.code === "42501") return "Somente proprietários e gerentes desta loja podem gerenciar motoboys.";

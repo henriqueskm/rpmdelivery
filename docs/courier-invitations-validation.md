@@ -4,6 +4,52 @@ Base: `2a634939e9d88980f956c754f04356d07baa3971` (main após PR #20).
 Branch: `feat/courier-invitations`. Evidências correspondem à implementação
 desta PR, antes de seu commit final. Nenhum teste acessou Supabase hospedado.
 
+## Complemento do parecer Lead — cadastro existente incompleto
+
+O complemento parte do HEAD revisado
+`7a174c5d6a7587351716cf4e2701200797d0ffd0`. Revisa somente a migration
+proposta não aplicada, seu contrato/UI e testes de regressão.
+
+PostgreSQL17 e PGlite cobrem cadastro antigo com veículo nulo/parcial, nome
+em branco, valores acima dos limites, preenchimento normalizado, preservação
+de nome/telefone/modelo/cor válidos e retry sem alterar campos/timestamps.
+Também cobrem rollback integral, UPDATE direto negado, parâmetro user_id
+forjado rejeitado e ausência de alteração no cadastro de outra identidade.
+No PostgreSQL real, conexões distintas disputam a reparação da mesma pessoa
+e uma solicitação aguarda a reparação em outra transação.
+
+Playwright adiciona cadastros antigos com veículo todo/parcialmente vazio,
+campos válidos somente leitura, solicitação negada enquanto incompleto e
+recuperação após invalidação do cadastro entre inspeção e solicitação.
+O endpoint browser é mockado: a prova de autorização/grants vem do PostgreSQL.
+
+A suíte completa deste complemento passou com 152 testes, workers=1 e retries=0.
+Após a revisão visual, os campos preservados receberam a descrição acessível
+“Já salvo · somente leitura”. A suíte focada final passou com 20 testes,
+incluindo assertions de aria-describedby, sem retries; verify foi reexecutado
+com sucesso. PostgreSQL 17 e PGlite passaram novamente com o SQL final.
+O CI do novo HEAD é acompanhado separadamente no PR.
+
+### Rechecagem independente do complemento
+
+A sessão read-only `/root/rpmdelivery_visual_critic` inspecionou as quatro
+capturas finais, desktop 1280×844 e mobile 390×844, e o código dos campos.
+O P3 inicial de clareza — valores somente leitura pareciam editáveis — foi
+resolvido pelo Builder com o aviso individual “Já salvo · somente leitura”.
+O Critic confirmou rótulos, campos faltantes e botão legíveis, sem cortes ou
+sobreposições aparentes; salvar cadastro permanece distinto de solicitar vínculo.
+Nenhum achado P0–P3 pendente nessa cobertura, sem aprovação automática da PR.
+
+- [Cadastro antigo vazio — desktop](screenshots/courier-invitations/desktop-chromium-legacy-empty.png)
+- [Cadastro antigo vazio — mobile](screenshots/courier-invitations/mobile-chromium-legacy-empty.png)
+- [Cadastro antigo parcial — desktop](screenshots/courier-invitations/desktop-chromium-legacy-partial.png)
+- [Cadastro antigo parcial — mobile](screenshots/courier-invitations/mobile-chromium-legacy-partial.png)
+
+Limitações: imagens de página inteira e código, sem navegador interativo próprio,
+teclado/foco, leitor de tela ou contraste medido pelo Critic. Não há Figma aprovado.
+Testes e inspeção interativa do Builder não são atribuídos ao revisor.
+TOML carregado explicitamente; seleção automática por agent_type não comprovada.
+
 ## Testes e segurança
 
 | Verificação | Resultado |
@@ -14,7 +60,7 @@ desta PR, antes de seu commit final. Nenhum teste acessou Supabase hospedado.
 | npm run test:sql | PGlite aprovado, incluindo hardening anterior e contratos novos |
 | PostgreSQL 17.11 descartável | Aprovado com pgcrypto real, migrations completas e conexões concorrentes |
 | npm audit --omit=dev | Zero vulnerabilidades |
-| Playwright desktop/mobile | 146 aprovados em 5,8min, workers=1 e retries=0 |
+| Playwright desktop/mobile | 152 aprovados em 13,6min, workers=1 e retries=0 |
 | YAML, bash -n, git diff --check | Aprovados |
 
 PostgreSQL executado em container próprio sem rede externa, volume tmpfs novo,
@@ -50,8 +96,10 @@ Não se alteram retries globais.
 Servidor local isolado `127.0.0.1:3121`, build com URL/chave fictícias de teste.
 Em 1280×800 e 390×844: entrada pública do motoboy → convite digitável →
 armazenamento do código fictício → login marcado como motoboy.
-Console sem warnings/errors e captura CDP sem falhas de rede/HTTP nesse percurso
-anônimo; buffer completo, sem truncamento. Nenhuma credencial foi digitada.
+Console sem warnings/errors e nenhum erro HTTP nesse percurso anônimo.
+O buffer CDP completo registrou um fetch RSC de /login cancelado pela navegação
+(`net::ERR_ABORTED`, canceled=true), sem falha inesperada de API ou exceção.
+Nenhuma credencial foi digitada.
 Código local removido pela interface; viewport restaurado e aba própria fechada.
 
 Fluxos autenticados são testados por Playwright com mocks de SDK/PostgREST.

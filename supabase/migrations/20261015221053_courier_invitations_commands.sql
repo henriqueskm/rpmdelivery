@@ -49,6 +49,22 @@ begin
   return n<=10;
 end; $$;
 
+-- Shared by inspection, repair and the membership write gate. Empty/oversized
+-- legacy values are missing data, not proof of a completed registration.
+create function private.courier_registration_value(p_value text,p_max integer)
+returns text language sql immutable set search_path='' as $$
+  select case when length(v) between 1 and p_max then v end
+  from (select regexp_replace(p_value,'^[[:space:]]+|[[:space:]]+$','','g') v) cleaned;
+$$;
+create function private.courier_registration_complete(
+  p_name text,p_model text,p_plate text,p_color text)
+returns boolean language sql immutable set search_path='' as $$
+  select private.courier_registration_value(p_name,120) is not null
+    and private.courier_registration_value(p_model,80) is not null
+    and private.courier_registration_value(p_plate,20) is not null
+    and private.courier_registration_value(p_color,40) is not null;
+$$;
+
 create function public.create_courier_invite(
   p_restaurant_id uuid,p_hours integer default 72,p_max_uses integer default 20)
 returns jsonb language plpgsql security definer set search_path='' as $$
@@ -77,7 +93,7 @@ end; $$;
 
 create function public.inspect_courier_invite(p_code text)
 returns jsonb language plpgsql security definer set search_path='' as $$
-declare v public.courier_invites; v_code text;
+declare v public.courier_invites; v_code text; c public.couriers; p public.profiles;
 begin
   -- Return failures rather than RAISE: attempts must survive failed guesses.
   if not private.courier_invite_attempt_allowed() then
@@ -91,14 +107,28 @@ begin
   if not found or not v.active or v.expires_at is null or v.expires_at<=clock_timestamp()
     or v.max_uses is null or v.used_count>=v.max_uses then
     return jsonb_build_object('ok',false,'reason','unavailable'); end if;
-  return jsonb_build_object('ok',true,'registered',exists(select 1 from public.couriers where user_id=auth.uid()),'restaurantName',
+  select * into p from public.profiles where id=auth.uid();
+  select * into c from public.couriers where user_id=auth.uid();
+  return jsonb_build_object('ok',true,'registered',c.id is not null and
+    private.courier_registration_complete(p.name,c.motorcycle_model,c.motorcycle_plate,c.motorcycle_color),
+    'profile',jsonb_build_object(
+      'name',private.courier_registration_value(p.name,120),
+      'phone',case when p.phone ~ '^[+]55[1-9][0-9]9[0-9]{8}$' then p.phone end,
+      'model',private.courier_registration_value(c.motorcycle_model,80),
+      'plate',private.courier_registration_value(c.motorcycle_plate,20),
+      'color',private.courier_registration_value(c.motorcycle_color,40)),
+    'restaurantName',
     (select name from public.restaurants where id=v.restaurant_id));
 end; $$;
 
 create function public.request_courier_membership(p_code text)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare v public.courier_invites; c uuid; link public.restaurant_couriers; v_code text;
+  profile_name text; model text; plate text; color text;
 begin
+  if auth.uid() is null then raise exception 'RPM_AUTH_REQUIRED' using errcode='28000'; end if;
+  -- Same order as repair; acquire before the attempts FK can lock profiles.
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(auth.uid()::text,1));
   if not private.courier_invite_attempt_allowed() then
     return jsonb_build_object('ok',false,'reason','rate_limited'); end if;
   if p_code is null or length(p_code)>80 then
@@ -108,8 +138,11 @@ begin
     return jsonb_build_object('ok',false,'reason','unavailable'); end if;
   select * into v from public.courier_invites i where i.code=v_code for update;
   if not found then return jsonb_build_object('ok',false,'reason','unavailable'); end if;
-  select id into c from public.couriers where user_id=auth.uid();
-  if c is null then return jsonb_build_object('ok',false,'reason','profile_required'); end if;
+  select name into profile_name from public.profiles where id=auth.uid() for share;
+  select id,motorcycle_model,motorcycle_plate,motorcycle_color into c,model,plate,color
+    from public.couriers where user_id=auth.uid() for share;
+  if c is null or not private.courier_registration_complete(profile_name,model,plate,color) then
+    return jsonb_build_object('ok',false,'reason','profile_required'); end if;
   -- A completed retry is idempotent even if this invite expired/exhausted/revoked later.
   select rc.* into link from private.courier_invite_redemptions r
     join public.restaurant_couriers rc on rc.id=r.relationship_id
@@ -156,25 +189,41 @@ end; $$;
 create function public.complete_courier_registration(
   p_name text,p_phone text,p_model text,p_plate text,p_color text)
 returns uuid language plpgsql security definer set search_path='' as $$
-declare c uuid;
+declare c public.couriers; p public.profiles;
+  v_name text; v_model text; v_plate text; v_color text; v_phone text;
 begin
   if auth.uid() is null then raise exception 'RPM_AUTH_REQUIRED' using errcode='28000'; end if;
-  select id into c from public.couriers where user_id=auth.uid();
-  if c is not null then return c; end if;
-  if nullif(btrim(p_name),'') is null or length(p_name)>120
-    or nullif(btrim(p_model),'') is null or length(p_model)>80
-    or nullif(btrim(p_plate),'') is null or length(p_plate)>20
-    or nullif(btrim(p_color),'') is null or length(p_color)>40
-    or (nullif(btrim(p_phone),'') is not null and p_phone !~ '^[+]55[1-9][0-9]9[0-9]{8}$') then
-    raise exception 'RPM_COURIER_FIELDS' using errcode='22023';
-  end if;
-  -- Serialize registration per identity and reuse the existing idempotent RPC.
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(auth.uid()::text,1));
-  select id into c from public.couriers where user_id=auth.uid();
-  if c is not null then return c; end if;
-  update public.profiles set name=btrim(p_name),phone=nullif(btrim(p_phone),'')
-    where id=auth.uid();
-  return public.create_courier_profile(p_model,p_plate,p_color);
+  -- Only non-key fields change: allow FK KEY SHARE locks from the original
+  -- profile-creation RPC, while still excluding concurrent profile updates.
+  select * into p from public.profiles where id=auth.uid() for no key update;
+  if not found then raise exception 'RPM_PROFILE_REQUIRED' using errcode='P0002'; end if;
+  -- Reuse the existing identity-safe RPC, including its concurrent-create guard.
+  perform public.create_courier_profile(null,null,null);
+  select * into c from public.couriers where user_id=auth.uid() for update;
+  -- Preserve valid stored values exactly. Only missing/invalid fields are repaired.
+  v_name:=case when private.courier_registration_value(p.name,120) is not null
+    then p.name else private.courier_registration_value(p_name,120) end;
+  v_model:=case when private.courier_registration_value(c.motorcycle_model,80) is not null
+    then c.motorcycle_model else private.courier_registration_value(p_model,80) end;
+  v_plate:=case when private.courier_registration_value(c.motorcycle_plate,20) is not null
+    then c.motorcycle_plate else upper(private.courier_registration_value(p_plate,20)) end;
+  v_color:=case when private.courier_registration_value(c.motorcycle_color,40) is not null
+    then c.motorcycle_color else private.courier_registration_value(p_color,40) end;
+  if not private.courier_registration_complete(v_name,v_model,v_plate,v_color) then
+    raise exception 'RPM_COURIER_FIELDS' using errcode='22023'; end if;
+  v_phone:=p.phone;
+  if coalesce(p.phone,'') !~ '^[+]55[1-9][0-9]9[0-9]{8}$' and nullif(btrim(p_phone),'') is not null then
+    if btrim(p_phone) !~ '^[+]55[1-9][0-9]9[0-9]{8}$' then
+      raise exception 'RPM_COURIER_FIELDS' using errcode='22023'; end if;
+    v_phone:=btrim(p_phone);
+  end if;
+  update public.profiles set name=v_name,phone=v_phone where id=auth.uid()
+    and (name,phone) is distinct from (v_name,v_phone);
+  update public.couriers set motorcycle_model=v_model,motorcycle_plate=v_plate,motorcycle_color=v_color
+    where id=c.id and user_id=auth.uid()
+      and (motorcycle_model,motorcycle_plate,motorcycle_color) is distinct from (v_model,v_plate,v_color);
+  return c.id;
 end; $$;
 
 create function public.list_my_establishments()
@@ -204,7 +253,9 @@ begin
 end; $$;
 
 revoke all on function private.require_courier_invite_manager(uuid),
-  private.courier_invite_attempt_allowed() from public,anon,authenticated;
+  private.courier_invite_attempt_allowed(),
+  private.courier_registration_value(text,integer),
+  private.courier_registration_complete(text,text,text,text) from public,anon,authenticated;
 revoke all on function public.create_courier_invite(uuid,integer,integer),
   public.revoke_courier_invite(uuid,uuid),public.inspect_courier_invite(text),
   public.request_courier_membership(text),public.review_courier_membership(uuid,uuid,boolean),
