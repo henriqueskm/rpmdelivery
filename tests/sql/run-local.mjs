@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import assert from "node:assert/strict";
 import { checkDefaultPrivileges } from "./run-default-privileges.mjs";
 import { checkGlobalRoutines } from "./run-global-routines.mjs";
+import { checkGpsSequence } from "./run-gps-sequence.mjs";
 
 // Explicitly in-memory PostgreSQL. No connection string, remote Auth or database.
 const { PGlite } = await import(pathToFileURL(resolve(
@@ -38,6 +39,7 @@ try {
   console.log("PASS: migrations, legacy preservation, RPC fields, validation, grants and RLS");
   await checkGlobalRoutines(PGlite);
   await checkDefaultPrivileges(PGlite);
+  await checkGpsSequence(PGlite);
 } catch (error) {
   console.error(error.message);
   process.exitCode = 1;

@@ -1,0 +1,55 @@
+name: GPS sequence security
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: gps-sequence-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  sequence:
+    name: PostgreSQL 17 GPS sequence privileges
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: sequence_bootstrap
+          POSTGRES_DB: rpmdelivery_gps_sequence_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sequence_bootstrap -d rpmdelivery_gps_sequence_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      RPMDELIVERY_DISPOSABLE_POSTGRES: "1"
+      PGHOST: "127.0.0.1"
+      PGPORT: "5432"
+      PGDATABASE: rpmdelivery_gps_sequence_test
+      PGUSER: postgres
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y postgresql-client
+      - name: Create synthetic application owner distinct from bootstrap
+        run: PGUSER=sequence_bootstrap psql -X -v ON_ERROR_STOP=1 -c 'create role postgres login superuser;'
+      - name: Synthetic sequence before/after and rollback
+        shell: bash
+        run: |
+          mkdir -p test-results
+          bash tests/sql/run-gps-sequence.sh 2>&1 | tee test-results/gps-sequence-postgres.txt
+      - name: Synthetic security evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gps-sequence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-results/gps-sequence-postgres.txt
+          if-no-files-found: ignore
+          retention-days: 7
