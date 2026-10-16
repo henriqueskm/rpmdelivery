@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="32" android:viewportHeight="32">
+    <!-- Same path, centered inside the adaptive icon's 66dp safe zone. -->
+    <group android:translateY="-2">
+        <path android:fillColor="#15261C" android:pathData="M7,10h12l-4,6h10L14,26l3,-8H7l4,-5H7Z" />
+    </group>
+</vector>
