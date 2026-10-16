@@ -33,9 +33,12 @@ jobs:
           java-version: "17"
       - name: Verify Gradle wrapper
         run: echo 'ad16bca46cb71bb5887c546860d93992aeee35c1fdaf4a242b0a612375d937e0  gradle/wrapper/gradle-wrapper.jar' | sha256sum --check
-      - name: Install pinned SDK packages
-        # SDK manager may use the runner's Java 21; Gradle stays on Java 17.
-        run: JAVA_HOME="${JAVA_HOME_21_X64:-$JAVA_HOME}" sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
+      - name: Install pinned Android tools and SDK packages
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
+        with:
+          cmdline-tools-version: "13114758" # 19.0, also used in local validation
+          packages: "platform-tools platforms;android-36 build-tools;35.0.0"
+          log-accepted-android-sdk-licenses: false
       - name: Build, test native Compose and lint
         run: bash ./gradlew --no-daemon :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
       - name: Debug APK for review

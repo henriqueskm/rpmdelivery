@@ -27,6 +27,11 @@ skips. Lint passou com `warningsAsErrors`, sem supressões. `npm ci` e
 `npm run verify` também passaram, sem alterar arquivos npm. O resultado do
 GitHub Actions é registrado na Draft PR com o HEAD correspondente.
 
+A primeira execução Android no GitHub encontrou `sdkmanager: command not found`
+no runner, antes de compilar. O workflow passou a instalar explicitamente as
+Command-line Tools 19.0 (13114758), Platform 36 e Build Tools 35.0.0 com
+`android-actions/setup-android` v4 fixada por SHA, sem depender de SDK prévio.
+
 A suíte nativa contém nove testes:
 
 - feedback local de e-mail, senha fictícia e campos obrigatórios;
