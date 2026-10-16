@@ -93,6 +93,10 @@ Futuras ações dependerão da identidade real, autorização e regras do backen
 - Cadastro: dados básicos e da moto; confirmação explica que nenhuma conta foi
   criada. Campos ficam só na composição e são descartados ao sair da tela.
   Senhas não usam `rememberSaveable`, logs ou armazenamento.
+  Celular opcional com máscara brasileira e normalização E.164 local; moto
+  pesquisável num catálogo inicial de 14 modelos Honda/Yamaha. Só uma sugestão
+  selecionada é válida; modelo não encontrado tem tratamento explícito, sem
+  aceitar texto livre. [Regras e limites do cadastro](docs/registration.md).
 - Minha rota: mesma hierarquia da imagem aprovada — status, contador, pedido,
   endereço, navegação, conclusão verde e tentativa sem sucesso. Botões abrem
   avisos demonstrativos; não abrem mapas, alteram pedido ou criam ocorrências.
@@ -110,6 +114,9 @@ campos, cadastro, diálogos sem mutação e controles acessíveis. Também exerc
 320dp com fonte de 150% e endereço longo. As imagens renderizadas por
 Robolectric ficam em `app/build/outputs/demo-screenshots/`; não são fotos de
 emulador/aparelho. Previews Compose estão disponíveis no Android Studio.
+Os testes de cadastro cobrem DDD, E.164, colagem via contrato IME, seleção e
+apagamento no meio do número, limites, catálogo, escolha obrigatória e fonte
+ampliada com insets IME sintéticos. Esses insets não desenham um teclado real.
 
 O workflow `Android courier` executa build, testes e lint em Ubuntu/JDK 17,
 com permissões somente de leitura e sem secrets, assinatura release ou deploy.

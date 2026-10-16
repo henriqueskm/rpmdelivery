@@ -35,6 +35,7 @@ fun DemoTextField(
     maxLength: Int = 120,
     password: Boolean = false,
     last: Boolean = false,
+    hint: String? = null,
 ) {
     var visible by remember { mutableStateOf(false) }
     val visibilityLabel = stringResource(if (visible) R.string.hide_password else R.string.show_password)
@@ -45,7 +46,7 @@ fun DemoTextField(
         modifier = modifier.fillMaxWidth(),
         singleLine = true,
         isError = error != null,
-        supportingText = if (error != null) { { Text(error) } } else null,
+        supportingText = if (error != null || hint != null) { { Text(error ?: hint.orEmpty()) } } else null,
         keyboardOptions = KeyboardOptions(
             keyboardType = if (password) KeyboardType.Password else keyboardType,
             capitalization = capitalization,

@@ -1,5 +1,10 @@
 # RPM-ANDROID-001 · Evidências e limites
 
+Este é o registro da primeira entrega (APK 0.1.0-demo). O complemento
+RPM-ANDROID-001B, APK 0.1.1-demo, está documentado em
+[cadastro demonstrativo](docs/registration.md), com resultados atuais na PR #22.
+Os números e o hash abaixo pertencem ao APK original, não ao novo build.
+
 Base: `b93b2ffab8f0dd172ceae0e63367f58c25f4feb9`, main após o merge da PR #21.
 Branch: `feat/android-courier-foundation`. Implementação exclusivamente nova em
 `android/courier` e workflow Android próprio; nenhum arquivo web, dependência

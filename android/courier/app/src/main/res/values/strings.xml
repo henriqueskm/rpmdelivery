@@ -29,6 +29,19 @@
     <string name="your_motorcycle">Sua moto</string>
     <string name="name">Nome completo fictício</string>
     <string name="phone">Celular com DDD (opcional)</string>
+    <string name="invalid_phone">Informe um DDD válido e 9 dígitos de celular, começando por 9, ou deixe vazio.</string>
+    <string name="model_search_hint">Busque por marca ou modelo e selecione uma sugestão.</string>
+    <string name="model_selected">Modelo selecionado</string>
+    <string name="model_selection_required">Selecione uma moto da lista para continuar.</string>
+    <plurals name="model_result_count">
+        <item quantity="one">%1$d modelo neste catálogo inicial.</item>
+        <item quantity="other">%1$d modelos no catálogo inicial · mostrando até 4. Refine a busca.</item>
+    </plurals>
+    <string name="model_no_results">Nenhum modelo encontrado neste catálogo inicial.</string>
+    <string name="model_not_found">Não encontrei minha moto</string>
+    <string name="model_not_found_title">Vamos precisar ampliar o catálogo</string>
+    <string name="model_not_found_body">Esta lista inicial inclui alguns modelos Honda e Yamaha. Nesta demonstração, só é possível concluir escolhendo um modelo listado. Não selecione outra moto para representar a sua.</string>
+    <string name="model_search_again">Voltar à busca</string>
     <string name="model">Modelo da moto</string>
     <string name="plate">Placa fictícia</string>
     <string name="color">Cor da moto</string>
