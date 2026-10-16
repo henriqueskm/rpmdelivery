@@ -3,18 +3,21 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
+import { useInviteCode } from "@/features/invitations/use-invite-code";
 import { FormField } from "@/components/form-field";
 import { AuthShell } from "@/components/auth-shell";
 import { authMessage } from "@/lib/auth/errors";
 import { getSupabase } from "@/lib/supabase/client";
 
-export function AuthForm({ mode }: { mode: "login" | "signup" }) {
+export function AuthForm({ mode, courier = false }: { mode: "login" | "signup"; courier?: boolean }) {
   const signup = mode === "signup";
   const router = useRouter();
   const submitting = useRef(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [confirmation, setConfirmation] = useState(false);
+  const savedCode = useInviteCode();
+  const isCourier = courier || !!savedCode;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,7 +40,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             password,
             options: {
               data: { name: String(fields.get("name")).trim() },
-              emailRedirectTo: `${window.location.origin}/onboarding`,
+              emailRedirectTo: `${window.location.origin}${isCourier ? "/convite" : "/onboarding"}`,
             },
           })
         : await client.auth.signInWithPassword({ email, password });
@@ -49,7 +52,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         setConfirmation(true);
         return;
       }
-      router.replace("/onboarding");
+      router.replace(isCourier ? "/convite" : "/onboarding");
     } catch (cause) {
       setError(
         cause instanceof Error && cause.message.includes("configurado")
@@ -76,7 +79,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         {confirmation
           ? "Se o endereço puder ser cadastrado, você receberá um link de confirmação. Abra o e-mail para continuar."
           : signup
-            ? "Crie sua conta. Depois, vamos preparar seu restaurante."
+            ? isCourier ? "Crie sua conta de motoboy. Seu convite será retomado após confirmar o e-mail." : "Crie sua conta. Depois, vamos preparar seu restaurante."
             : "Entre na sua conta e siga com a operação."}
       </p>
       {confirmation ? (
@@ -85,12 +88,13 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             ✓
           </span>
           <p>Confirme seu endereço antes de entrar.</p>
-          <Link className="button primary" href="/login">
+          <Link prefetch={false} className="button primary" href={isCourier ? "/login?perfil=motoboy" : "/login"}>
             Voltar para o login <span aria-hidden="true">↗</span>
           </Link>
         </div>
       ) : (
         <form
+          className={isCourier ? "courier-auth-form" : undefined}
           onSubmit={submit}
           aria-label={signup ? "Criar conta" : "Entrar na conta"}
           aria-busy={pending}
@@ -113,7 +117,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
               name="email"
               type="email"
               autoComplete="email"
-              placeholder="voce@restaurante.com"
+              placeholder={isCourier ? "voce@email.com" : "voce@restaurante.com"}
               maxLength={254}
               required
             />
@@ -160,10 +164,11 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           </fieldset>
           <p className="form-switch">
             {signup ? "Já tem uma conta?" : "Primeira vez por aqui?"}{" "}
-            <Link href={signup ? "/login" : "/cadastro"}>
+            <Link prefetch={false} href={(signup ? "/login" : "/cadastro") + (isCourier ? "?perfil=motoboy" : "")}>
               {signup ? "Entrar" : "Criar conta"}
             </Link>
           </p>
+          {!isCourier && <p className="form-switch"><Link prefetch={false} href="/convite">Sou motoboy · Usar um convite</Link></p>}
         </form>
       )}
       <div className="secure-note">

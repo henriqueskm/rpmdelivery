@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/client";
 import { findRestaurant, type Restaurant } from "@/services/restaurant";
 import type { User } from "@supabase/supabase-js";
+import { readInvite } from "@/lib/invitations/context";
 
 type State =
   | { status: "loading" }
@@ -41,6 +42,10 @@ export function useWorkspace(destination: "onboarding" | "dashboard") {
             "Não foi possível verificar seu acesso. Confira sua conexão.",
           );
         }
+        if (destination === "onboarding" && readInvite()) {
+          router.replace("/convite");
+          return;
+        }
         const restaurant = await findRestaurant(data.user.id);
         if (!active) return;
         if (destination === "onboarding" && restaurant) {
@@ -73,12 +78,13 @@ export function useWorkspace(destination: "onboarding" | "dashboard") {
     try {
       const { data } = getSupabase().auth.onAuthStateChange((event) => {
         if (event === "SIGNED_OUT") router.replace("/login");
+        if (event === "SIGNED_IN") retry();
       });
       return () => data.subscription.unsubscribe();
     } catch {
       /* A configuração ausente é apresentada pelo carregamento acima. */
     }
-  }, [router]);
+  }, [router, retry]);
 
   return { state, retry };
 }

@@ -16,6 +16,7 @@ export function Dashboard() {
     );
   return (
     <Operations
+      courierManagementHref="/motoboys"
       key={state.restaurant.id}
       restaurantName={state.restaurant.name}
       email={state.user.email}

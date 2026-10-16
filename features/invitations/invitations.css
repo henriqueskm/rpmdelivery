@@ -1,0 +1,29 @@
+.invite-page { max-width: 1000px; margin: auto; padding: 24px; }
+.invite-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 22px; border-bottom: 1px solid var(--line); }
+.invite-header nav { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; min-width: 0; max-width: 100%; }
+.invite-header span, .invite-page h1, .invite-page h2 { overflow-wrap: anywhere; }
+.invite-page h1 { font-size: clamp(26px, 4vw, 38px); letter-spacing: -1px; margin: 24px 0 8px; }
+.invite-page h2 { font-size: 20px; margin-bottom: 12px; }
+.invite-page p { line-height: 1.6; color: var(--muted); overflow-wrap: anywhere; }
+.invite-page a, .invite-page button { min-height: 44px; touch-action: manipulation; }
+.invite-page nav a { display: inline-flex; align-items: center; }
+.invite-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px; align-items: start; }
+.invite-card { background: white; border: 1px solid var(--line); border-radius: 12px; padding: 20px; min-width: 0; }
+.invite-card + .invite-card { margin-top: 12px; }
+.invite-card p { font-size: 14px; }
+.invite-card input { font-size: 16px; }
+.invite-card .field { margin-bottom: 16px; }
+.invite-qr { display: block; width: min(100%,240px); height: auto; aspect-ratio: 1; margin: 12px auto; }
+.invite-code { display: block; font-size: 17px; font-weight: 700; letter-spacing: .7px; overflow-wrap: anywhere; padding: 12px 0; user-select: all; }
+.invite-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.invite-actions .button { width: auto; flex: 1; }
+.invite-secondary { border: 1px solid var(--line); background: #f1f3ed; color: var(--foreground); }
+.invite-status { display: inline-flex; padding: 5px 10px; border-radius: 6px; font-size: 13px; font-weight: 650; background: #edf0eb; margin: 8px 0; }
+.invite-status[data-status="PENDING"] { background: #fff2d7; color: #78500b; }
+.invite-status[data-status="ACTIVE"] { background: #e4f2e6; color: #215a30; }
+.invite-status[data-status="REJECTED"] { background: #fff0e9; color: #942b1a; }
+.invite-flow { max-width: 560px; }
+.invite-message { margin-top: 16px; }
+.invite-note { font-size: 13px; margin: 12px 0; }
+.invite-section { margin: 24px 0; }
+@media (max-width: 680px) { .invite-page { padding: 18px; } .invite-grid { grid-template-columns: 1fr; } .invite-card { padding: 16px; } }

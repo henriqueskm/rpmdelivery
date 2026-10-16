@@ -5,8 +5,9 @@ import {
   type DemoState,
 } from "./model";
 import { Badge, Empty, Icon } from "./ui";
+import Link from "next/link";
 
-export function CouriersPanel({ state }: { state: DemoState }) {
+export function CouriersPanel({ state, managementHref }: { state: DemoState; managementHref?: string }) {
   const available = availableCouriers(state);
   const rest = state.couriers.filter(
     (c) => !available.some((a) => a.id === c.id),
@@ -19,6 +20,7 @@ export function CouriersPanel({ state }: { state: DemoState }) {
         </h2>
         <Badge>{plural(available.length, "disponível", "disponíveis")}</Badge>
       </div>
+      {managementHref && <Link href={managementHref} className="text-button">Convites e vínculos reais</Link>}
       <div className="ops-courier-caption">Fila por ordem de chegada</div>
       <div
         className="ops-panel-scroll"

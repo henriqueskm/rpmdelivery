@@ -35,12 +35,14 @@ export function Operations({
   restaurantName,
   email,
   accountAction,
+  courierManagementHref,
   preview = false,
   initialScenario = "demo",
 }: {
   restaurantName: string;
   email?: string;
   accountAction?: ReactNode;
+  courierManagementHref?: string;
   preview?: boolean;
   initialScenario?: Scenario;
 }) {
@@ -64,6 +66,7 @@ export function Operations({
       restaurantName={restaurantName}
       email={email}
       accountAction={accountAction}
+      courierManagementHref={courierManagementHref}
       preview={preview}
       scenario={scenario}
       onScenario={changeScenario}
@@ -77,6 +80,7 @@ function OperationsWorkspace({
   restaurantName,
   email,
   accountAction,
+  courierManagementHref,
   preview,
   scenario,
   onScenario,
@@ -86,6 +90,7 @@ function OperationsWorkspace({
   restaurantName: string;
   email?: string;
   accountAction?: ReactNode;
+  courierManagementHref?: string;
   preview: boolean;
   scenario: Scenario;
   onScenario: (scenario: Scenario) => void;
@@ -249,7 +254,7 @@ function OperationsWorkspace({
             className={`ops-panel ${activeTab === "couriers" ? "is-active" : ""}`}
             aria-labelledby="ops-tab-couriers"
           >
-            <CouriersPanel state={state} />
+            <CouriersPanel state={state} managementHref={courierManagementHref} />
           </section>
         </div>
         <section

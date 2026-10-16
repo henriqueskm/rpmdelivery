@@ -1362,6 +1362,11 @@ Nenhuma integração externa deve ser acoplada diretamente ao domínio principal
 
 # 31. Regra Principal de Arquitetura
 
+O fluxo proposto de convites e vínculos reais, isolado da operação demonstrativa,
+está em [RPM-ONBOARD-001](courier-invitations.md). Comandos autenticados e
+autorizados por loja vivem em RPCs; a interface não escreve diretamente nos
+vínculos nem usa identificadores de ator fornecidos pelo cliente.
+
 Antes de implementar uma nova funcionalidade, verificar:
 
 1. qual entidade é responsável;
