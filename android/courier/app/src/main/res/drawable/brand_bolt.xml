@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Exact path of components/brand.tsx; existing brand, no redesign. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp" android:height="40dp"
+    android:viewportWidth="32" android:viewportHeight="32">
+    <path android:fillColor="#15261C" android:pathData="M7,10h12l-4,6h10L14,26l3,-8H7l4,-5H7Z" />
+</vector>

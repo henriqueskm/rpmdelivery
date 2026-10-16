@@ -1,0 +1,61 @@
+name: Android courier
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ["android/courier/**", ".github/workflows/android-courier.yml"]
+  push:
+    branches: [main]
+    paths: ["android/courier/**", ".github/workflows/android-courier.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-courier-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: APK, Compose tests and Android lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: android/courier
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Verify Gradle wrapper
+        run: echo 'ad16bca46cb71bb5887c546860d93992aeee35c1fdaf4a242b0a612375d937e0  gradle/wrapper/gradle-wrapper.jar' | sha256sum --check
+      - name: Install pinned Android tools and SDK packages
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
+        with:
+          cmdline-tools-version: "13114758" # 19.0, also used in local validation
+          packages: "platform-tools platforms;android-36 build-tools;35.0.0"
+          log-accepted-android-sdk-licenses: false
+      - name: Build, test native Compose and lint
+        run: bash ./gradlew --no-daemon :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+      - name: Debug APK for review
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: courier-demo-debug-apk
+          path: android/courier/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+          if-no-files-found: error
+      - name: Test results and rendered screenshots
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: courier-compose-evidence
+          path: |
+            android/courier/app/build/reports/
+            android/courier/app/build/test-results/
+            android/courier/app/build/outputs/demo-screenshots/
+          retention-days: 7
+          if-no-files-found: ignore
