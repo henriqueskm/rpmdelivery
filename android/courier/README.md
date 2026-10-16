@@ -40,6 +40,13 @@ Compile/target SDK 36; min SDK 26. Sem versões dinâmicas, alpha, beta ou RC.
 O BOM foi escolhido para compatibilidade com AGP 8.13/SDK 36; a linha Compose
 1.12 do BOM 2026.09 exige AGP 9.1/SDK 37 e não integra esta base.
 
+`OldTargetApi` permanece no relatório lint como **informativo**, pois o alvo 36
+é intencional nesta coorte validada (AGP 8.13 suporta até API 36.1). Os demais
+avisos continuam bloqueantes com `warningsAsErrors`; não há baseline ou
+desativação global. Antes de distribuir um release, atualizar e homologar a
+coorte para o Android mais recente e reavaliar esse aviso. Não há alegação de
+homologação em API 37 ou atendimento aos requisitos futuros da Play Store.
+
 - [Compatibilidade AGP/Gradle/JDK](https://developer.android.com/build/releases/agp-8-13-0-release-notes).
 - [BOM e compiler Compose](https://developer.android.com/develop/ui/compose/bom).
 - Runtime: AndroidX Activity/Compose/Material 3; sem biblioteca de ícones extensa,

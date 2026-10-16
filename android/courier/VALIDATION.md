@@ -23,7 +23,7 @@ conferidos pelos SHA-256 oficiais:
 
 Execução local concluída: `:app:assembleDebug :app:testDebugUnitTest
 :app:lintDebug` — **BUILD SUCCESSFUL**, nove testes aprovados, sem falhas ou
-skips. Lint passou com `warningsAsErrors`, sem supressões. `npm ci` e
+skips. Lint passou com `warningsAsErrors`. `npm ci` e
 `npm run verify` também passaram, sem alterar arquivos npm. O resultado do
 GitHub Actions é registrado na Draft PR com o HEAD correspondente.
 
@@ -31,6 +31,13 @@ A primeira execução Android no GitHub encontrou `sdkmanager: command not found
 no runner, antes de compilar. O workflow passou a instalar explicitamente as
 Command-line Tools 19.0 (13114758), Platform 36 e Build Tools 35.0.0 com
 `android-actions/setup-android` v4 fixada por SHA, sem depender de SDK prévio.
+
+Na execução seguinte, APK e nove testes passaram, mas o lint do runner
+identificou `OldTargetApi` para o alvo 36. A recomendação de alvo mais recente
+permanece visível como informativa: o alvo 36 é intencional na coorte AGP 8.13
+validada; não se fez um salto de toolchain para apenas satisfazer esse aviso.
+Todos os outros avisos seguem bloqueantes. Não há baseline nem desativação
+global. A atualização/homologação do alvo é requisito antes de release.
 
 A suíte nativa contém nove testes:
 
@@ -53,7 +60,8 @@ A primeira execução web concorrente com a compilação Android teve 151 passes
 e uma falha de temporização no teste preexistente mobile de cancelamento de
 autocomplete (`onboarding-address.spec.ts:70`, esperava uma request, recebeu 0).
 Não foi editado o teste, aumentado retry ou alterado o Next.js. A rechecagem
-sequencial e o resultado do CI serão discriminados no PR.
+sequencial passou com **152/152, zero retries**, em 5,7 minutos. O resultado
+do CI é discriminado no PR.
 
 ## Capturas
 

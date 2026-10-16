@@ -42,6 +42,9 @@ android {
     lint {
         warningsAsErrors = true
         checkReleaseBuilds = true
+        // API 36 is intentional for the validated AGP 8.13 demo cohort.
+        // Keep the newer-target advisory visible; reassess before a release.
+        informational += "OldTargetApi"
     }
 }
 kotlin { jvmToolchain(17) }
