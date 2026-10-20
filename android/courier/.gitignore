@@ -3,6 +3,7 @@
 .idea/
 **/build/
 local.properties
+auth.local.properties
 *.iml
 *.jks
 *.keystore

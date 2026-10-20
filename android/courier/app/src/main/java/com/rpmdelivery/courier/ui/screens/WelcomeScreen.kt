@@ -25,7 +25,7 @@ import com.rpmdelivery.courier.ui.components.ScreenHeading
 import com.rpmdelivery.courier.ui.components.StationaryNotice
 
 @Composable
-fun WelcomeScreen(onLogin: () -> Unit, onRegister: () -> Unit, onPreview: () -> Unit) {
+fun WelcomeScreen(onLogin: () -> Unit, onRegister: () -> Unit, onPreview: () -> Unit, realAccount: Boolean = false) {
     Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
         Brand()
         Column(Modifier.padding(top = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -47,7 +47,9 @@ fun WelcomeScreen(onLogin: () -> Unit, onRegister: () -> Unit, onPreview: () -> 
                 Text(stringResource(R.string.preview_route), textAlign = TextAlign.Center)
             }
         }
-        DemoNotice()
+        if (!realAccount) DemoNotice()
+        else Text("Use sua conta para completar o cadastro de motoboy. Minha rota é uma prévia separada, com dados fictícios.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         StationaryNotice()
     }
 }
