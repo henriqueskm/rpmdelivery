@@ -6,6 +6,7 @@ import { checkDefaultPrivileges } from "./run-default-privileges.mjs";
 import { checkGlobalRoutines } from "./run-global-routines.mjs";
 import { checkGpsSequence } from "./run-gps-sequence.mjs";
 import { checkInvitations } from "./run-invitations.mjs";
+import { checkDeliveryCore } from "./run-delivery-core.mjs";
 
 // Explicitly in-memory PostgreSQL. No connection string, remote Auth or database.
 const { PGlite } = await import(pathToFileURL(resolve(
@@ -42,6 +43,7 @@ try {
   await checkDefaultPrivileges(PGlite);
   await checkGpsSequence(PGlite);
   await checkInvitations(PGlite);
+  await checkDeliveryCore(PGlite);
 } catch (error) {
   console.error(error.message);
   process.exitCode = 1;
