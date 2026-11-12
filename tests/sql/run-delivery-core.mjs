@@ -15,6 +15,7 @@ export async function checkDeliveryCore(PGlite) {
     await db.exec(readFileSync("tests/sql/delivery-core/route-contracts.sql", "utf8"));
     await db.exec(readFileSync("tests/sql/delivery-core/execution-contracts.sql", "utf8"));
     await db.exec(readFileSync("tests/sql/delivery-core/tracking-contracts.sql", "utf8"));
-    console.log("PASS: delivery core orders, shifts, route composition, route execution and public tracking commands, roles, idempotency and privileges");
+    await db.exec(readFileSync("tests/sql/delivery-core/privacy-contracts.sql", "utf8"));
+    console.log("PASS: delivery core orders, shifts, route composition, route execution, public tracking and courier privacy commands, roles, idempotency and privileges");
   } finally { await db.close(); }
 }

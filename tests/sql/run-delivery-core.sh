@@ -195,4 +195,5 @@ grep -q RPM_ISSUE_CLOSED /tmp/core-decide-b.txt || { echo 'FAIL: unexpected deci
 "${psql[@]}" -f tests/sql/delivery-core/route-contracts.sql
 "${psql[@]}" -f tests/sql/delivery-core/execution-contracts.sql
 "${psql[@]}" -f tests/sql/delivery-core/tracking-contracts.sql
+"${psql[@]}" -f tests/sql/delivery-core/privacy-contracts.sql
 echo 'PASS: PostgreSQL 17 delivery core contracts and concurrency'
