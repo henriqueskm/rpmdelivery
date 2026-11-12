@@ -156,3 +156,13 @@ Como o cliente fica sabendo que o pedido saiu e que ele é o próximo **ainda n�
 - Mandar cada aviso à mão pelo WhatsApp da loja dá trabalho demais para o balcão; não é o plano.
 
 `lib/tracking/links.ts` (link público e mensagem `wa.me`) fica disponível, mas nenhuma tela depende dele. A decisão sai antes de ligar o painel e o app aos dados reais.
+
+## Leitura do motoboy sem o telefone do cliente
+
+Antes, o motoboy com rota ativa lia a linha inteira de `orders` pela RLS, telefone incluído. Loja e motoboy usam o mesmo papel `authenticated`, então um grant por coluna não separa os dois. Agora:
+
+- A policy `orders_select_allowed` admite só membros da loja.
+- O app do motoboy lê a rota por `get_courier_route()`: rota ativa (PREPARING, ON_ROUTE ou RETURNING) ou `null`, com `routeId`, `status`, `version`, `nextDeliveryId`, `pickupReleasedAt`, `startedAt`, a loja (nome, telefone, endereço e coordenadas) e as paradas na ordem planejada (nome do cliente, endereço, complemento, bairro, referência, observações, coordenadas, prazo, status, tentativas e fila de nova tentativa). **Nenhum telefone de cliente.**
+- `deliveries`, `routes` e `route_deliveries` continuam legíveis pelo motoboy dono da rota; nenhuma tem telefone.
+
+Problema na porta passa pela loja: o motoboy registra a falha e a loja liga para o cliente.
