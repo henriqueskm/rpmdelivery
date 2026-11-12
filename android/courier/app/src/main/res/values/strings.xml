@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">RpmDelivery · Demo</string>
+    <string name="app_name">RpmDelivery · Prévia</string>
     <string name="brand">RpmDelivery</string>
     <string name="courier_label">PARA QUEM FAZ A ENTREGA</string>
     <string name="demo_label">DEMONSTRAÇÃO</string>
-    <string name="demo_notice">Prévia com dados fictícios. Sem conta, conexão ou entregas reais.</string>
+    <string name="demo_notice">Prévia com dados fictícios. Nenhuma ação aqui modifica entregas reais.</string>
     <string name="welcome_title">Seu caminho.\nTudo em ordem.</string>
     <string name="welcome_body">Uma entrega por vez, com o que você precisa sempre à mão.</string>
     <string name="welcome_feature">Sua próxima parada, sem complicação.</string>

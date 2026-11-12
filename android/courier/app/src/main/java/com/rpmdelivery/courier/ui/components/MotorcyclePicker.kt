@@ -37,7 +37,7 @@ import com.rpmdelivery.courier.registration.MotorcycleCatalog
 import com.rpmdelivery.courier.registration.MotorcycleSelection
 
 @Composable
-fun MotorcyclePicker(selection: MotorcycleSelection, onChange: (MotorcycleSelection) -> Unit, showError: Boolean) {
+fun MotorcyclePicker(selection: MotorcycleSelection, onChange: (MotorcycleSelection) -> Unit, showError: Boolean, notFoundMessage: String? = null) {
     var focused by remember { mutableStateOf(false) }
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
@@ -82,7 +82,7 @@ fun MotorcyclePicker(selection: MotorcycleSelection, onChange: (MotorcycleSelect
             Surface(color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(12.dp)) {
                 Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(stringResource(R.string.model_not_found_title), style = MaterialTheme.typography.titleSmall)
-                    Text(stringResource(R.string.model_not_found_body), style = MaterialTheme.typography.bodySmall)
+                    Text(notFoundMessage ?: stringResource(R.string.model_not_found_body), style = MaterialTheme.typography.bodySmall)
                     TextButton(onClick = { onChange(MotorcycleSelection()); queryFocus.requestFocus(); keyboard?.show() }, modifier = Modifier.heightIn(min = 48.dp)) {
                         Text(stringResource(R.string.model_search_again))
                     }

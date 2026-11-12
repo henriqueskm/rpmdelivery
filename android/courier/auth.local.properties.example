@@ -1,0 +1,4 @@
+# Copy to auth.local.properties (ignored). Public client configuration only.
+# Never use service_role, sb_secret_, DB passwords or user credentials.
+RPM_SUPABASE_URL=https://yyfbpmppdszmvhcruoyb.supabase.co
+RPM_SUPABASE_PUBLISHABLE_KEY=
