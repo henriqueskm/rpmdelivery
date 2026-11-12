@@ -66,6 +66,42 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  delivery-core:
+    name: PostgreSQL 17 delivery core commands
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: rpmdelivery_core_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d rpmdelivery_core_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      RPMDELIVERY_DISPOSABLE_POSTGRES: "1"
+      PGHOST: "127.0.0.1"
+      PGPORT: "5432"
+      PGDATABASE: rpmdelivery_core_test
+      PGUSER: postgres
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y postgresql-client
+
+      - name: Test contracts and concurrency on disposable PostgreSQL
+        shell: bash
+        run: bash tests/sql/run-delivery-core.sh
+
   validate:
     name: Verify and Playwright
     runs-on: ubuntu-24.04
