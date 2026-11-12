@@ -1,6 +1,7 @@
-// Public tracking link and the WhatsApp message the store or the courier
-// sends by hand (wa.me): no paid API, works for every customer, including
-// iPhones that never receive web push.
+// Public tracking link and the WhatsApp message the store sends by hand
+// (wa.me): no paid API, works for every customer, including iPhones that
+// never receive web push. Only the store uses it: the courier never gets
+// the customer's phone.
 
 const TOKEN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 // Same rule as private.normalize_br_phone: +55, DDD, 8 or 9 digits.

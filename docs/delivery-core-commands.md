@@ -149,9 +149,11 @@ O cliente abre `/acompanhar/<tracking_token>` sem login. O token (UUID aleatóri
 
 ### Avisar o cliente sem API paga
 
-`lib/tracking/links.ts` monta o link público e o link `wa.me` com a mensagem pronta. Dois momentos:
+`lib/tracking/links.ts` monta o link público e o link `wa.me` com a mensagem pronta. Os dois avisos saem **do WhatsApp da loja**, que já tem o telefone do cliente:
 
-- **Saída** (`STARTED`): a loja envia ao iniciar a rota.
-- **Você é o próximo** (`NEXT`): o motoboy envia logo depois de concluir a parada anterior, ainda parado. É o aviso que faz o cliente descer antes da chegada, e funciona em qualquer celular, inclusive iPhone sem push.
+- **Saída** (`STARTED`): quando a rota inicia.
+- **Você é o próximo** (`NEXT`): quando o motoboy conclui a parada anterior, o painel pede o aviso do próximo cliente. É o aviso que faz o cliente descer antes da chegada, e funciona em qualquer celular, inclusive iPhone sem push.
+
+**Decisão:** o motoboy não recebe o telefone do cliente. Um `wa.me` aberto no celular dele mostraria o número e o deixaria no histórico do WhatsApp pessoal. Problemas na porta passam pela loja (ocorrência), que liga para o cliente. Hoje a RLS de `orders` ainda entrega a linha inteira, telefone incluído, ao motoboy com rota ativa; fechar isso é o próximo passo (leitura do motoboy por RPC sem o telefone).
 
 Web push fica como complemento opcional; o canal principal é o WhatsApp. Envio automático por API (WhatsApp Cloud) continua congelado até a simulação.
