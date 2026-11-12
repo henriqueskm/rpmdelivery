@@ -18,9 +18,9 @@ Hoje o painel `/preview/operacao` e o app Android usam dados fictícios. Este do
 
 | Fatia | Comandos | Estado |
 | --- | --- | --- |
-| 1. Pedidos e turnos | `create_order`, `cancel_order`, `request_shift`, `review_shift`, `end_shift` | PR #24 |
-| 2. Montagem de rota | `create_route`, `update_route_composition`, `release_route_pickup`, `revoke_route_pickup`, `cancel_route` | **em revisão** |
-| 3. Execução da rota | `start_route`, `complete_delivery`, `report_delivery_failure`, `decide_delivery_failure`, `cancel_delivery_on_route`, `arrive_at_store`, `record_courier_location` | depois |
+| 1. Pedidos e turnos | `create_order`, `cancel_order`, `request_shift`, `review_shift`, `end_shift` | no `main` (PR #24) |
+| 2. Montagem de rota | `create_route`, `update_route_composition`, `release_route_pickup`, `revoke_route_pickup`, `cancel_route` | no `main` (PR #25) |
+| 3. Execução da rota | `start_route`, `complete_delivery`, `report_delivery_failure`, `decide_delivery_failure`, `cancel_delivery_on_route`, `requeue_delivery`, `arrive_at_store`, `record_courier_locations` | **em revisão** |
 | 4. Rastreamento público | `get_tracking(token)` (anon, dados mínimos) + link WhatsApp `wa.me` | depois |
 
 Fora do caminho até a simulação: otimização/planejamento automático, push, WhatsApp/SMS por API, taxa por km, ofertas externas.
@@ -78,5 +78,49 @@ Atribuir e liberar **não** disparam tracking nem notificação ao cliente; isso
 ### Riscos e o que não cobre
 
 - Aplicação no Supabase hospedado exige aprovação separada (`supabase db push` não é executado aqui).
-- PGlite roda em conexão única: os testes cobrem regras, papéis e isolamento, não corrida real entre conexões. As corridas relevantes desta fatia são protegidas por índice único (turno aberto, `client_request_id`) e `FOR UPDATE`.
+- PGlite roda em conexão única: os testes cobrem regras, papéis e isolamento. As corridas reais entre conexões rodam no PostgreSQL 17 (`tests/sql/run-delivery-core.sh`, também no CI).
 - `orders.status` duplica parte de `deliveries.status`; as RPCs mantêm os dois em sincronia.
+
+## Fatia 3 — Execução da rota
+
+Segue as regras do protótipo de ocorrências (`docs/delivery-occurrences-prototype.md`), agora no banco. O motoboy executa uma parada por vez; a loja decide as falhas; ninguém fica preso esperando.
+
+### Mudanças de schema
+
+- `restaurants.issue_decision_minutes` (1–60, padrão 10): prazo da loja para decidir uma falha.
+- `route_deliveries.retry_queued_at`: fila de nova tentativa, separada da sequência planejada (que nunca muda depois do início).
+- Tabela nova `delivery_attempts` (somente leitura pela API, RLS: membros da loja e o motoboy dono da rota). Cada tentativa registra resultado (DELIVERED/FAILED), motivo, relato, ator, horário, prazo de decisão e como a ocorrência foi fechada (RETRY, RETURN, CANCEL, TIMEOUT, OTHERS_FINISHED). Uma ocorrência aberta por entrega, no máximo. O `client_request_id` dela é a idempotência dos comandos do motoboy.
+- Índice único `courier_locations (route_id, recorded_at)`: reenviar o mesmo lote de GPS não duplica pontos.
+
+### Comandos do motoboy (só o motoboy dono da rota; outra rota → `RPM_ROUTE_NOT_FOUND`)
+
+| RPC | Regra |
+| --- | --- |
+| `start_route(route, expected_version)` | PREPARING, liberação vigente (`RPM_PICKUP_NOT_RELEASED`), versão que o motoboy viu (`RPM_ROUTE_STALE`), turno AVAILABLE e vínculo ACTIVE. Rota e turno viram ON_ROUTE, entregas ON_ROUTE, pedidos DELIVERING; a primeira parada vira NEXT. Repetir devolve o estado. |
+| `complete_delivery(request_id, route, delivery)` | Só a parada NEXT (senão `RPM_DELIVERY_STATE` com o status atual no `detail`, ex.: CANCELLED pela loja). Entrega e pedido DELIVERED; a próxima parada vira NEXT. |
+| `report_delivery_failure(request_id, route, delivery, reason, notes)` | Só a NEXT. Motivos: CUSTOMER_NOT_FOUND, CUSTOMER_NOT_RESPONDING, ADDRESS_PROBLEM, OTHER (relato de 3–500 caracteres). Abre ocorrência com prazo e a rota segue. |
+| `arrive_at_store(route)` | RETURNING → COMPLETED. O turno volta a AVAILABLE com `available_since = agora` (fim da fila). Repetir é sucesso. |
+| `record_courier_locations(route, points)` | Lote de 1–100 pontos `{latitude, longitude, accuracy?, recordedAt}` em rota ON_ROUTE/RETURNING/COMPLETED. Pontos fora da janela da rota (relógio do aparelho, sincronização atrasada) são descartados; repetidos, ignorados. A posição ao vivo só avança e só com a rota ativa. |
+
+### Comandos da loja (membro ativo, inclusive OPERATOR)
+
+| RPC | Regra |
+| --- | --- |
+| `decide_delivery_failure(restaurant, delivery, decision)` | RETRY (volta para a fila de nova tentativa, depois das primeiras tentativas restantes), RETURN ou CANCEL. Repetir a mesma decisão é sucesso; ocorrência já fechada por outra decisão, pelo prazo ou pelo fim da rota → `RPM_ISSUE_CLOSED` (motivo no `detail`). |
+| `cancel_delivery_on_route(restaurant, delivery)` | Entrega ON_ROUTE, NEXT ou ATTEMPT_FAILED de rota em andamento. Fecha a ocorrência aberta com CANCEL. Repetir é sucesso. |
+| `requeue_delivery(restaurant, delivery)` | RETURN_TO_STORE → WAITING (pedido volta a OPEN) só depois que o motoboy chegou (`RPM_DELIVERY_IN_TRANSIT` antes). Nunca é automático: a loja decide se despacha de novo ou cancela com `cancel_order`. |
+
+### Progressão automática
+
+- Sempre existe exatamente uma NEXT enquanto há algo a tentar: primeiras tentativas na ordem planejada, depois novas tentativas na ordem em que a loja decidiu.
+- Quando nada resta, falhas sem decisão voltam para a loja (OTHERS_FINISHED) e rota e turno viram RETURNING. Vale também para falha na única ou última parada: o motoboy nunca fica esperando.
+- **Prazo sem worker.** Não há agendador: todo comando que mexe na rota fecha antes as ocorrências vencidas (TIMEOUT). O prazo vence na fronteira exata, mesmo contra uma decisão que chega no mesmo instante. Como a rota só fica ON_ROUTE enquanto o motoboy ainda tem paradas, o próximo comando dele sempre resolve o vencido. Até lá, a tela da loja deve tratar ATTEMPT_FAILED com prazo passado como "voltando para a loja".
+- Suspender o vínculo durante a rota não trava as entregas em andamento; o vínculo é exigido no início.
+
+### Concorrência
+
+Todo comando de execução trava `courier_shifts` → `routes` → entregas da rota (ordem de `id`), cada trava num statement próprio, e só depois confere o estado. Corridas cobertas no PostgreSQL 17: início × revogação da liberação, "Entregue" repetido ao mesmo tempo, conclusão × cancelamento pela loja, decisão da loja × fim da rota.
+
+### Fora desta fatia
+
+Disparo de link/notificação ao cliente no início (fatia 4 e depois), configuração do prazo pela tela, auditoria de eventos além de `delivery_attempts`, retenção do GPS e leitura agregada para o painel.
