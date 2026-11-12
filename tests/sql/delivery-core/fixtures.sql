@@ -35,10 +35,11 @@ grant execute on all functions in schema core_test to anon,authenticated;
 -- 5 courier X (complete, ACTIVE in A and B), 6 courier Y (PENDING in A),
 -- 7 courier Z (incomplete, ACTIVE in A), 8 outsider, 9 courier W (ACTIVE in A),
 -- 10 courier V (ACTIVE in A and B; reserved for PostgreSQL concurrency races),
--- 11/12 couriers U/T (ACTIVE in A; PostgreSQL route races), 13 courier R (ACTIVE in A).
+-- 11/12 couriers U/T (ACTIVE in A; PostgreSQL route races), 13 courier R (ACTIVE in A),
+-- 14/15 couriers Q/S (ACTIVE in A; PostgreSQL route execution races).
 insert into auth.users(id,email,raw_user_meta_data)
  select core_test.id(n),'core-'||n||'@fixture.invalid',jsonb_build_object('name','Synthetic '||n)
- from generate_series(1,13) n;
+ from generate_series(1,15) n;
 insert into public.restaurants(id,name,address) values
  (core_test.id(101),'Synthetic A','Fictional A'),
  (core_test.id(102),'Synthetic B','Fictional B');
@@ -56,7 +57,9 @@ insert into public.couriers(id,user_id,motorcycle_model,motorcycle_plate,motorcy
  (core_test.id(210),core_test.id(10),'Moto V','DDD1D11','Vermelha'),
  (core_test.id(211),core_test.id(11),'Moto U','EEE1E11','Cinza'),
  (core_test.id(212),core_test.id(12),'Moto T','FFF1F11','Verde'),
- (core_test.id(213),core_test.id(13),'Moto R','GGG1G11','Prata');
+ (core_test.id(213),core_test.id(13),'Moto R','GGG1G11','Prata'),
+ (core_test.id(214),core_test.id(14),'Moto Q','HHH1H11','Amarela'),
+ (core_test.id(215),core_test.id(15),'Moto S','JJJ1J11','Roxa');
 insert into public.restaurant_couriers(id,restaurant_id,courier_id,status) values
  (core_test.id(305),core_test.id(101),core_test.id(205),'ACTIVE'),
  (core_test.id(315),core_test.id(102),core_test.id(205),'ACTIVE'),
@@ -67,4 +70,6 @@ insert into public.restaurant_couriers(id,restaurant_id,courier_id,status) value
  (core_test.id(320),core_test.id(102),core_test.id(210),'ACTIVE'),
  (core_test.id(311),core_test.id(101),core_test.id(211),'ACTIVE'),
  (core_test.id(312),core_test.id(101),core_test.id(212),'ACTIVE'),
- (core_test.id(313),core_test.id(101),core_test.id(213),'ACTIVE');
+ (core_test.id(313),core_test.id(101),core_test.id(213),'ACTIVE'),
+ (core_test.id(334),core_test.id(101),core_test.id(214),'ACTIVE'),
+ (core_test.id(335),core_test.id(101),core_test.id(215),'ACTIVE');

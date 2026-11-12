@@ -114,6 +114,84 @@ grep -qx false /tmp/core-rreplay-b.txt || { echo 'FAIL: concurrent route replay'
 "${psql[@]}" -c "select core_test.check('concurrent route replay creates exactly one route',
  (select count(*)=1 from public.routes where client_request_id='$rq'));"
 
+# Route execution races: couriers Q (14) and S (15) get approved shifts.
+for actor in 14 15; do as_actor "$actor" "select public.request_shift(core_test.id(101))->>'status'" >/dev/null; done
+"${psql[@]}" -tA -c "select core_test.act(1);" -c "set role authenticated;" -c "
+ select public.review_shift(core_test.id(101),s.id,true) from public.courier_shifts s
+  where s.courier_id in (core_test.id(214),core_test.id(215)) and s.status='PENDING';
+ select public.create_order(core_test.id(101),core_test.id(99300+n),'Execucao '||n,'1196666000'||n,'Rua X'||n)
+  from generate_series(1,5) n;" >/dev/null
+shift_q=$("${psql[@]}" -tA -c "select id from public.courier_shifts where courier_id=core_test.id(214) and status='AVAILABLE'")
+shift_s=$("${psql[@]}" -tA -c "select id from public.courier_shifts where courier_id=core_test.id(215) and status='AVAILABLE'")
+x1=$(delivery 99301); x2=$(delivery 99302); x3=$(delivery 99303); x4=$(delivery 99304); x5=$(delivery 99305)
+store() { "${psql[@]}" -tA -c "select core_test.act(1);" -c "set role authenticated;" -c "$1" | tail -n 1; }
+route_q=$(store "select public.create_route(core_test.id(101),gen_random_uuid(),'$shift_q',array['$x1']::uuid[])->>'routeId'")
+route_s=$(store "select public.create_route(core_test.id(101),gen_random_uuid(),'$shift_s',array['$x2','$x3','$x4','$x5']::uuid[])->>'routeId'")
+store "select public.release_route_pickup(core_test.id(101),'$route_q',1); select public.release_route_pickup(core_test.id(101),'$route_s',1);" >/dev/null
+
+# Race 7: the store revokes the pickup while the courier taps "Iniciar rota".
+# The route lock serializes them: the start waits and sees no release.
+as_actor 1 "begin; select public.revoke_route_pickup(core_test.id(101),'$route_q')->>'status'; select pg_sleep(2); commit;" \
+ >/tmp/core-start-a.txt 2>&1 &
+first=$!
+sleep 0.5
+if as_actor 14 "select public.start_route('$route_q',1)" >/tmp/core-start-b.txt 2>&1; then
+ echo 'FAIL: route started after the pickup was revoked'; cat /tmp/core-start-*.txt; exit 1
+fi
+wait "$first"
+grep -q RPM_PICKUP_NOT_RELEASED /tmp/core-start-b.txt || { echo 'FAIL: unexpected start race error'; cat /tmp/core-start-b.txt; exit 1; }
+"${psql[@]}" -c "select core_test.check('start racing a revocation keeps the route waiting',
+ (select status='PREPARING' and pickup_released_at is null from public.routes where id='$route_q')
+ and (select status='ASSIGNED' from public.deliveries where id='$x1'));"
+
+as_actor 15 "select public.start_route('$route_s',1)->>'status'" >/dev/null
+
+# Race 8: the same "Entregue" arrives twice at once (Android retry).
+rq=00000000-0000-4000-9000-000000099401
+cmd="select public.complete_delivery('$rq','$route_s','$x2')->>'replayed'"
+as_actor 15 "begin; $cmd; select pg_sleep(2); commit;" >/tmp/core-done-a.txt 2>&1 &
+first=$!
+sleep 0.5
+as_actor 15 "$cmd" >/tmp/core-done-b.txt 2>&1
+wait "$first"
+grep -qx true /tmp/core-done-b.txt || { echo 'FAIL: concurrent completion replay'; cat /tmp/core-done-*.txt; exit 1; }
+"${psql[@]}" -c "select core_test.check('concurrent completion records one attempt and advances once',
+ (select count(*)=1 from public.delivery_attempts where delivery_id='$x2')
+ and (select status='NEXT' from public.deliveries where id='$x3'));"
+
+# Race 9: the store cancels the stop the courier is completing.
+as_actor 1 "begin; select public.cancel_delivery_on_route(core_test.id(101),'$x3')->>'deliveryStatus'; select pg_sleep(2); commit;" \
+ >/tmp/core-cancel-a.txt 2>&1 &
+first=$!
+sleep 0.5
+if as_actor 15 "select public.complete_delivery(gen_random_uuid(),'$route_s','$x3')" >/tmp/core-cancel-b.txt 2>&1; then
+ echo 'FAIL: cancelled delivery was completed'; cat /tmp/core-cancel-*.txt; exit 1
+fi
+wait "$first"
+grep -q RPM_DELIVERY_STATE /tmp/core-cancel-b.txt || { echo 'FAIL: unexpected cancel race error'; cat /tmp/core-cancel-b.txt; exit 1; }
+"${psql[@]}" -c "select core_test.check('completion racing a cancellation keeps CANCELLED',
+ (select status='CANCELLED' from public.deliveries where id='$x3')
+ and not exists (select 1 from public.delivery_attempts where delivery_id='$x3')
+ and (select status='NEXT' from public.deliveries where id='$x4'));"
+
+# Race 10: the store retries a failure while the courier finishes the last
+# stop. The finished route returns the failure first; the decision is refused.
+as_actor 15 "select public.report_delivery_failure(gen_random_uuid(),'$route_s','$x4','CUSTOMER_NOT_FOUND')->>'outcome'" >/dev/null
+as_actor 15 "begin; select public.complete_delivery(gen_random_uuid(),'$route_s','$x5')->>'status'; select pg_sleep(2); commit;" \
+ >/tmp/core-decide-a.txt 2>&1 &
+first=$!
+sleep 0.5
+if as_actor 1 "select public.decide_delivery_failure(core_test.id(101),'$x4','RETRY')" >/tmp/core-decide-b.txt 2>&1; then
+ echo 'FAIL: retry decided on a finished route'; cat /tmp/core-decide-*.txt; exit 1
+fi
+wait "$first"
+grep -q RPM_ISSUE_CLOSED /tmp/core-decide-b.txt || { echo 'FAIL: unexpected decision race error'; cat /tmp/core-decide-b.txt; exit 1; }
+"${psql[@]}" -c "select core_test.check('decision racing the end of the route keeps the return',
+ (select status='RETURN_TO_STORE' from public.deliveries where id='$x4')
+ and (select decision='OTHERS_FINISHED' from public.delivery_attempts where delivery_id='$x4')
+ and (select status='RETURNING' from public.routes where id='$route_s'));"
+
 "${psql[@]}" -f tests/sql/delivery-core/contracts.sql
 "${psql[@]}" -f tests/sql/delivery-core/route-contracts.sql
+"${psql[@]}" -f tests/sql/delivery-core/execution-contracts.sql
 echo 'PASS: PostgreSQL 17 delivery core contracts and concurrency'
