@@ -20,8 +20,8 @@ Hoje o painel `/preview/operacao` e o app Android usam dados fictícios. Este do
 | --- | --- | --- |
 | 1. Pedidos e turnos | `create_order`, `cancel_order`, `request_shift`, `review_shift`, `end_shift` | no `main` (PR #24) |
 | 2. Montagem de rota | `create_route`, `update_route_composition`, `release_route_pickup`, `revoke_route_pickup`, `cancel_route` | no `main` (PR #25) |
-| 3. Execução da rota | `start_route`, `complete_delivery`, `report_delivery_failure`, `decide_delivery_failure`, `cancel_delivery_on_route`, `requeue_delivery`, `arrive_at_store`, `record_courier_locations` | **em revisão** |
-| 4. Rastreamento público | `get_tracking(token)` (anon, dados mínimos) + link WhatsApp `wa.me` | depois |
+| 3. Execução da rota | `start_route`, `complete_delivery`, `report_delivery_failure`, `decide_delivery_failure`, `cancel_delivery_on_route`, `requeue_delivery`, `arrive_at_store`, `record_courier_locations` | no `main` (PR #26) |
+| 4. Rastreamento público | `get_tracking(token)` (anon, dados mínimos) + link WhatsApp `wa.me` (`lib/tracking/links.ts`) | **em revisão** |
 
 Fora do caminho até a simulação: otimização/planejamento automático, push, WhatsApp/SMS por API, taxa por km, ofertas externas.
 
@@ -124,3 +124,35 @@ Todo comando de execução trava `courier_shifts` → `routes` → entregas da r
 ### Fora desta fatia
 
 Disparo de link/notificação ao cliente no início (fatia 4 e depois), configuração do prazo pela tela, auditoria de eventos além de `delivery_attempts`, retenção do GPS e leitura agregada para o painel.
+
+## Fatia 4 — Rastreamento público
+
+O cliente abre `/acompanhar/<tracking_token>` sem login. O token (UUID aleatório, já existente em `deliveries`) é a única credencial, então a resposta só traz o necessário para aquela entrega.
+
+### `get_tracking(token)` (anon e authenticated)
+
+| Campo | Conteúdo |
+| --- | --- |
+| `status` | PREPARING (WAITING/ASSIGNED), ON_ROUTE, NEXT, ATTEMPT_FAILED, RETURNING_TO_STORE, DELIVERED ou CANCELLED |
+| `restaurantName` | Nome da loja |
+| `stopsBefore` | Paradas antes desta, na mesma ordem de execução da rota (primeiras tentativas, depois novas tentativas). Só com a entrega em rota |
+| `courier` | Último ponto de GPS dos últimos 10 minutos, **só quando a entrega é NEXT** |
+| `destination` | Coordenadas do próprio pedido, só quando NEXT e se houver geocodificação |
+| `issueReason` | Motivo da falha (sem o relato do motoboy), só em ATTEMPT_FAILED |
+| `startedAt`, `deliveredAt` | Saída para entrega e conclusão |
+
+**Nunca aparece:** nome, telefone, endereço ou observações de qualquer cliente; identidade, moto ou telefone do motoboy; outras paradas.
+
+**Desvio consciente da arquitetura (seção 14):** a posição do motoboy não aparece enquanto ele faz outra entrega. Parado na porta de outro cliente, a posição revelaria aquele endereço. Até lá, a página mostra só "N entregas antes da sua".
+
+**Validade:** entregue ou cancelada, o link responde por 24 h; em qualquer outro estado, por 7 dias desde o cadastro. Token vencido e token inexistente dão o mesmo `RPM_TRACKING_NOT_FOUND`, sem enumeração.
+
+### Avisar o cliente — em aberto
+
+Como o cliente fica sabendo que o pedido saiu e que ele é o próximo **ainda não está decidido**. Restrições já fixadas:
+
+- O motoboy nunca recebe o telefone do cliente (um `wa.me` no celular dele exporia o número e o deixaria no WhatsApp pessoal).
+- Web push não alcança iPhone sem instalar a página na tela de início, então não pode ser o único canal.
+- Mandar cada aviso à mão pelo WhatsApp da loja dá trabalho demais para o balcão; não é o plano.
+
+`lib/tracking/links.ts` (link público e mensagem `wa.me`) fica disponível, mas nenhuma tela depende dele. A decisão sai antes de ligar o painel e o app aos dados reais.
