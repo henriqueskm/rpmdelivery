@@ -78,9 +78,10 @@ reset role;
 
 select core_test.act(5);
 set role authenticated;
-select core_test.check('courier sees reserved route and its orders',
+-- The courier reads stops through get_courier_route, never the orders table.
+select core_test.check('courier sees reserved route and its deliveries, not the orders',
  (select count(*)=1 from public.routes where id=core_test.s('route_x'))
- and (select count(*)=2 from public.orders));
+ and (select count(*)=2 from public.deliveries) and (select count(*)=0 from public.orders));
 select core_test.expect('courier cannot create routes',
  $s$select public.create_route(core_test.id(101),gen_random_uuid(),core_test.s('shift_r'),array[core_test.s('d3')])$s$,'42501');
 select core_test.expect('courier cannot end shift with reserved route',
