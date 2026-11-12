@@ -147,13 +147,12 @@ O cliente abre `/acompanhar/<tracking_token>` sem login. O token (UUID aleatóri
 
 **Validade:** entregue ou cancelada, o link responde por 24 h; em qualquer outro estado, por 7 dias desde o cadastro. Token vencido e token inexistente dão o mesmo `RPM_TRACKING_NOT_FOUND`, sem enumeração.
 
-### Avisar o cliente sem API paga
+### Avisar o cliente — em aberto
 
-`lib/tracking/links.ts` monta o link público e o link `wa.me` com a mensagem pronta. Os dois avisos saem **do WhatsApp da loja**, que já tem o telefone do cliente:
+Como o cliente fica sabendo que o pedido saiu e que ele é o próximo **ainda não está decidido**. Restrições já fixadas:
 
-- **Saída** (`STARTED`): quando a rota inicia.
-- **Você é o próximo** (`NEXT`): quando o motoboy conclui a parada anterior, o painel pede o aviso do próximo cliente. É o aviso que faz o cliente descer antes da chegada, e funciona em qualquer celular, inclusive iPhone sem push.
+- O motoboy nunca recebe o telefone do cliente (um `wa.me` no celular dele exporia o número e o deixaria no WhatsApp pessoal).
+- Web push não alcança iPhone sem instalar a página na tela de início, então não pode ser o único canal.
+- Mandar cada aviso à mão pelo WhatsApp da loja dá trabalho demais para o balcão; não é o plano.
 
-**Decisão:** o motoboy não recebe o telefone do cliente. Um `wa.me` aberto no celular dele mostraria o número e o deixaria no histórico do WhatsApp pessoal. Problemas na porta passam pela loja (ocorrência), que liga para o cliente. Hoje a RLS de `orders` ainda entrega a linha inteira, telefone incluído, ao motoboy com rota ativa; fechar isso é o próximo passo (leitura do motoboy por RPC sem o telefone).
-
-Web push fica como complemento opcional; o canal principal é o WhatsApp. Envio automático por API (WhatsApp Cloud) continua congelado até a simulação.
+`lib/tracking/links.ts` (link público e mensagem `wa.me`) fica disponível, mas nenhuma tela depende dele. A decisão sai antes de ligar o painel e o app aos dados reais.
