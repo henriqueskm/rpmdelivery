@@ -157,6 +157,8 @@ Como o cliente fica sabendo que o pedido saiu e que ele é o próximo **ainda n�
 
 `lib/tracking/links.ts` (link público e mensagem `wa.me`) fica disponível, mas nenhuma tela depende dele. A decisão sai antes de ligar o painel e o app aos dados reais.
 
+**Atualização:** o "saiu para entrega" passa a ser automático pela WhatsApp Cloud API (número de teste da Meta na simulação). Ver `docs/customer-notifications.md`. "Você é o próximo" continua em aberto.
+
 ## Leitura do motoboy sem o telefone do cliente
 
 Antes, o motoboy com rota ativa lia a linha inteira de `orders` pela RLS, telefone incluído. Loja e motoboy usam o mesmo papel `authenticated`, então um grant por coluna não separa os dois. Agora:
