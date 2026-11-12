@@ -8,6 +8,7 @@ Hoje o painel `/preview/operacao` e o app Android usam dados fictícios. Este do
 
 - **Identidade vem do servidor.** O ator é sempre `auth.uid()`. Nenhum `user_id`, `actorId` ou papel é aceito do cliente.
 - **Locks na ordem fixa** para evitar deadlock: `courier_shifts` → `routes` → `deliveries`. Toda RPC que muda uma entrega trava a linha da entrega (`FOR UPDATE`).
+- **Travar e conferir são comandos separados.** Em READ COMMITTED, uma única expressão (`if trava(...) and exists(...)`) usa o snapshot tirado *antes* de esperar o lock e enxerga o estado antigo. Isso deixou o mesmo pedido entrar em duas rotas no teste de corrida do PostgreSQL 17 (o PGlite, com conexão única, não reproduz). Primeiro trava, depois confere num statement novo, ou lê a linha no próprio `SELECT ... FOR UPDATE`.
 - **Idempotência.** Comandos que criam algo recebem `p_request_id uuid` gerado pelo app. Repetir o mesmo comando (rede ruim, retry do Android) devolve o mesmo resultado sem duplicar. Isso prepara o modo offline do app do motoboy.
 - **Repetir uma transição já aplicada é sucesso** (ex.: aprovar turno já aprovado). Transição conflitante é erro.
 - **Erros com código estável** `RPM_*` para o front traduzir em mensagens.
@@ -17,8 +18,8 @@ Hoje o painel `/preview/operacao` e o app Android usam dados fictícios. Este do
 
 | Fatia | Comandos | Estado |
 | --- | --- | --- |
-| 1. Pedidos e turnos | `create_order`, `cancel_order`, `request_shift`, `review_shift`, `end_shift` | **esta PR** |
-| 2. Montagem de rota | `create_route`, `update_route_composition`, `release_route_pickup`, `revoke_route_pickup`, `cancel_route` | próxima |
+| 1. Pedidos e turnos | `create_order`, `cancel_order`, `request_shift`, `review_shift`, `end_shift` | PR #24 |
+| 2. Montagem de rota | `create_route`, `update_route_composition`, `release_route_pickup`, `revoke_route_pickup`, `cancel_route` | **em revisão** |
 | 3. Execução da rota | `start_route`, `complete_delivery`, `report_delivery_failure`, `decide_delivery_failure`, `cancel_delivery_on_route`, `arrive_at_store`, `record_courier_location` | depois |
 | 4. Rastreamento público | `get_tracking(token)` (anon, dados mínimos) + link WhatsApp `wa.me` | depois |
 
@@ -49,6 +50,30 @@ Coordenadas são **opcionais**: em cidade pequena a geocodificação pode falhar
 ### Leituras
 
 Continuam pelas tabelas com RLS existente (pedidos, entregas, turnos e rotas do próprio restaurante; motoboy vê só os próprios turnos). Uma RPC agregada de leitura para o painel fica para quando o painel for ligado aos dados reais.
+
+## Fatia 2 — Montagem de rota
+
+Segue o contrato já registrado em `docs/delivery-deadlines-pickup.md`: a rota nasce PREPARING com um motoboy reservado; a loja ajusta a composição, libera a retirada, e só então (fatia 3) o motoboy pode iniciar.
+
+### Mudanças de schema
+
+`routes` ganha: `composition_version` (começa em 1), `pickup_released_at`/`pickup_released_by`, `cancelled_at`/`cancelled_by`, `created_by` e `client_request_id` (único por restaurante).
+
+### Exclusividade da entrega
+
+Uma entrega só entra numa rota se estiver **WAITING**, verificado com a linha travada (`FOR UPDATE`). Ao entrar vira ASSIGNED; ao sair (remoção ou cancelamento da rota) volta para WAITING. Assim a mesma entrega nunca fica em duas rotas ativas, mesmo com dois operadores clicando ao mesmo tempo. As entregas são travadas em ordem de `id` para evitar deadlock entre comandos concorrentes.
+
+### Comandos (todos: membro ativo da loja, inclusive OPERATOR)
+
+| RPC | Regra |
+| --- | --- |
+| `create_route(restaurant, request_id, shift, delivery_ids[])` | Turno da loja em AVAILABLE, vínculo ACTIVE, sem outra rota ativa do motoboy. 1–30 entregas, sem repetição, todas WAITING. A ordem do array é a sequência. Idempotente por `request_id`. |
+| `update_route_composition(restaurant, route, expected_version, delivery_ids[])` | Só PREPARING. `expected_version` diferente da atual → `RPM_ROUTE_STALE` (a tela recarrega). Mudar o **conjunto** limpa a liberação; só reordenar mantém. Toda mudança incrementa a versão. Lista idêntica é no-op. |
+| `release_route_pickup(restaurant, route, expected_version)` | Só PREPARING e na versão atual. Repetir mantém o horário original. |
+| `revoke_route_pickup(restaurant, route)` | Só PREPARING. Repetir é sucesso. Depois de ON_ROUTE é recusado. |
+| `cancel_route(restaurant, route)` | Só PREPARING. Entregas voltam para WAITING; o motoboy volta a ficar livre. Repetir é sucesso. |
+
+Atribuir e liberar **não** disparam tracking nem notificação ao cliente; isso só acontece no início da rota (fatia 3).
 
 ### Riscos e o que não cobre
 
