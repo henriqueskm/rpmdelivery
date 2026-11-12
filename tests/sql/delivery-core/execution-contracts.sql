@@ -100,6 +100,9 @@ reset role;
 -- ---------------------------------------------------------
 -- complete_delivery / report_delivery_failure
 -- ---------------------------------------------------------
+-- The decision window comes from the store's delivery_issue_timeout_minutes.
+update public.restaurants set delivery_issue_timeout_minutes=7
+ where id=(select restaurant_id from public.routes where id=core_test.s('route_w'));
 select core_test.act(9);
 set role authenticated;
 select core_test.raises('only the NEXT stop can be completed',
@@ -136,8 +139,13 @@ select core_test.check('attempts record actor, outcome and the decision deadline
  and (select attempt=1 and reported_by=core_test.id(9) and reason is null
    from public.delivery_attempts where delivery_id=core_test.s('e1'))
  and (select attempt=1 and reason='CUSTOMER_NOT_RESPONDING' and notes='tocou 3x' and decision is null
-   and decision_deadline=reported_at+interval '10 minutes'
+   and decision_deadline=reported_at+interval '7 minutes'
    from public.delivery_attempts where delivery_id=core_test.s('e2')));
+select core_test.check('the duplicate decision column is gone',
+ not exists (select 1 from information_schema.columns where table_schema='public'
+   and table_name='restaurants' and column_name='issue_decision_minutes'));
+update public.restaurants set delivery_issue_timeout_minutes=10
+ where id=(select restaurant_id from public.routes where id=core_test.s('route_w'));
 select core_test.check('delivered order and failed delivery are mirrored',
  (select d.delivered_at is not null and o.status='DELIVERED' from public.deliveries d
    join public.orders o on o.id=d.order_id where d.id=core_test.s('e1'))

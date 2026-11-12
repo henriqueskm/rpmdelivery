@@ -87,7 +87,7 @@ Segue as regras do protótipo de ocorrências (`docs/delivery-occurrences-protot
 
 ### Mudanças de schema
 
-- `restaurants.issue_decision_minutes` (1–60, padrão 10): prazo da loja para decidir uma falha.
+- Prazo da loja para decidir uma falha: `restaurants.delivery_issue_timeout_minutes` (já existia no schema inicial, padrão 10). A fatia 3 tinha criado por engano uma coluna duplicada, `issue_decision_minutes`, removida pela migration `20261112230000_issue_decision_original_column.sql`.
 - `route_deliveries.retry_queued_at`: fila de nova tentativa, separada da sequência planejada (que nunca muda depois do início).
 - Tabela nova `delivery_attempts` (somente leitura pela API, RLS: membros da loja e o motoboy dono da rota). Cada tentativa registra resultado (DELIVERED/FAILED), motivo, relato, ator, horário, prazo de decisão e como a ocorrência foi fechada (RETRY, RETURN, CANCEL, TIMEOUT, OTHERS_FINISHED). Uma ocorrência aberta por entrega, no máximo. O `client_request_id` dela é a idempotência dos comandos do motoboy.
 - Índice único `courier_locations (route_id, recorded_at)`: reenviar o mesmo lote de GPS não duplica pontos.
