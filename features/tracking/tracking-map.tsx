@@ -2,7 +2,7 @@
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { Map as MapboxMap, Marker } from "mapbox-gl";
 import { useEffect, useRef, useState } from "react";
-import { glideMs, pointAlong, pointsBounds, publicMapToken } from "@/lib/tracking/motion";
+import { REFRAME_AFTER_MS, glideMs, pointAlong, pointsBounds, publicMapToken } from "@/lib/tracking/motion";
 import { clockTime, refreshSeconds, type Tracking, type TrackingPoint } from "@/lib/tracking/view";
 
 type Points = Pick<Tracking, "courier" | "destination">;
@@ -14,8 +14,10 @@ type Live = {
   /** Where the courier marker is drawn right now (mid-glide included). */
   shown: TrackingPoint | null;
   frame: number;
-  /** The customer panned or zoomed: stop reframing under their finger. */
+  /** The customer is panning or zooming: don't reframe under their finger. */
   userMoved: boolean;
+  /** Brings the courier back into view a moment after the customer lets go. */
+  reframeTimer: number;
 };
 
 const GLIDE_MS = (refreshSeconds("NEXT") ?? 15) * 1000;
@@ -69,10 +71,14 @@ function sync(live: Live, { courier, destination }: Points) {
     }
   }
 
-  if (live.userMoved) return;
+  if (!live.userMoved) reframe(live, { courier, destination }, true);
+}
+
+/** Fits the courier and the customer's address; `onlyIfHidden` skips it while both are on screen. */
+function reframe({ map }: Live, { courier, destination }: Points, onlyIfHidden: boolean) {
   const points = [courier, destination].filter((point): point is NonNullable<typeof point> => Boolean(point));
   const visible = map.getBounds();
-  if (visible && points.every(point => visible.contains(lngLat(point)))) return;
+  if (onlyIfHidden && visible && points.every(point => visible.contains(lngLat(point)))) return;
   const bounds = pointsBounds(points);
   if (bounds) map.fitBounds(bounds, { ...FIT, duration: prefersReducedMotion() ? 0 : 800 });
 }
@@ -118,7 +124,22 @@ export function TrackingMap({ courier, destination }: Points) {
       map.on("load", () => { loaded = true; });
       // After the first load a missing tile is transient; before it, the map never shows.
       map.on("error", () => { if (!loaded) setFailed(true); });
-      map.on("movestart", event => { if (created && "originalEvent" in event && event.originalEvent) created.userMoved = true; });
+      // Only gestures carry an originalEvent; our own fitBounds does not.
+      const byCustomer = (event: object) => "originalEvent" in event && Boolean(event.originalEvent);
+      map.on("movestart", event => {
+        if (!created || !byCustomer(event)) return;
+        created.userMoved = true;
+        window.clearTimeout(created.reframeTimer);
+      });
+      map.on("moveend", event => {
+        if (!created || !byCustomer(event)) return;
+        const current = created;
+        window.clearTimeout(current.reframeTimer);
+        current.reframeTimer = window.setTimeout(() => {
+          current.userMoved = false;
+          reframe(current, latest.current, false);
+        }, REFRAME_AFTER_MS);
+      });
       created = {
         map,
         courier: new mapboxgl.Marker({ element: markerElement("courier") }),
@@ -126,6 +147,7 @@ export function TrackingMap({ courier, destination }: Points) {
         shown: null,
         frame: 0,
         userMoved: false,
+        reframeTimer: 0,
       };
       live.current = created;
       sync(created, latest.current);
@@ -134,6 +156,7 @@ export function TrackingMap({ courier, destination }: Points) {
       cancelled = true;
       if (created) {
         cancelAnimationFrame(created.frame);
+        window.clearTimeout(created.reframeTimer);
         created.map.remove();
       }
       live.current = null;

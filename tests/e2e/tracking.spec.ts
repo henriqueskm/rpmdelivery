@@ -144,7 +144,22 @@ test("ocorrência e nome longo de loja cabem em 320/375/390 sem rolagem lateral"
     await expect(page.getByRole("heading", { name: "Não conseguimos entregar" })).toBeVisible();
     await expect(page.getByText(/ninguém atendeu\. Restaurante e Pizzaria .+ vai decidir o próximo passo\./)).toBeVisible();
     await expect(page.getByRole("list", { name: "Etapas da entrega" })).toHaveCount(0);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    expect(await page.evaluate(() => [innerWidth, document.documentElement.scrollWidth])).toEqual([width, width]);
+  }
+});
+
+test("mapa cabe em 320/375/390 sem alargar a página", async ({ page }) => {
+  await mockTracking(page, { body: states.next });
+  for (const width of [320, 375, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto(`/acompanhar/${token}`);
+    const map = page.getByRole("region", { name: "Mapa com o entregador e o seu endereço" });
+    await expect(map.locator(".tracking-marker-courier")).toBeVisible();
+    const box = (await map.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(width);
+    // innerWidth grows with overflowing content on phones, so compare with the set viewport.
+    expect(await page.evaluate(() => [innerWidth, document.documentElement.scrollWidth])).toEqual([width, width]);
   }
 });
 
@@ -154,4 +169,31 @@ test("token do mapa recusado mostra aviso e mantém o acompanhamento", async ({ 
   await expect(page.getByRole("heading", { name: "Você é o próximo!" })).toBeVisible();
   await expect(page.getByText("Mapa indisponível no momento.")).toBeVisible();
   await expect(page.getByText(/Posição do entregador às \d{2}:\d{2}/)).toBeVisible();
+});
+
+test("mapa volta sozinho para o entregador depois que o cliente para de mexer", async ({ page }) => {
+  await page.clock.install();
+  await mockTracking(page, { body: states.next });
+  await page.goto(`/acompanhar/${token}`);
+  const map = page.getByRole("region", { name: "Mapa com o entregador e o seu endereço" });
+  const courier = map.locator(".tracking-marker-courier");
+  await expect(courier).toBeVisible();
+  await page.clock.runFor(1_000);
+  const framed = (await courier.boundingBox())!;
+  const offset = async () => {
+    const box = (await courier.boundingBox())!;
+    return Math.abs(box.x - framed.x) + Math.abs(box.y - framed.y);
+  };
+
+  await map.getByRole("button", { name: "Zoom out" }).click();
+  await page.clock.runFor(1_000);
+  expect(await offset()).toBeGreaterThan(10);
+  const away = await courier.boundingBox();
+
+  // Still where the customer left it while they might keep looking around.
+  await page.clock.runFor(4_000);
+  expect(await courier.boundingBox()).toEqual(away);
+
+  await page.clock.runFor(3_000);
+  await expect.poll(offset).toBeLessThan(2);
 });

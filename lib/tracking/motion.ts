@@ -32,6 +32,9 @@ export function glideMs(from: TrackingPoint | null, to: TrackingPoint, intervalM
   return meters < 1 || meters > MAX_GLIDE_METERS ? 0 : intervalMs;
 }
 
+/** After the customer stops panning or zooming, the map goes back to the courier. */
+export const REFRAME_AFTER_MS = 6_000;
+
 /** Point `progress` (0..1) of the way from `from` to `to`. */
 export function pointAlong(from: TrackingPoint, to: TrackingPoint, progress: number): TrackingPoint {
   const t = Math.min(1, Math.max(0, progress));

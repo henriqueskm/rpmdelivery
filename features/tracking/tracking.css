@@ -21,7 +21,7 @@
 .tracking-card .tracking-chip { display: inline-block; margin-top: 16px; padding: 8px 12px; border-radius: 6px; background: #fff0e9; color: #8e331c; font-size: 13px; font-weight: 650; }
 
 .tracking-map { margin: 0; border: 1px solid var(--line); border-radius: 11px; overflow: hidden; background: #ecf1e7; }
-.tracking-map-canvas { width: 100%; aspect-ratio: 2 / 1; min-height: 220px; }
+.tracking-map-canvas { width: 100%; height: clamp(220px, 50vw, 300px); }
 .tracking-map .map-unavailable { margin: 0; }
 .tracking-marker { display: grid; place-items: center; color: white; }
 .tracking-marker-courier { width: 36px; height: 36px; border-radius: 50%; background: #1d2c24; border: 3px solid white; box-shadow: 0 2px 8px rgb(29 44 36 / 0.35); }
