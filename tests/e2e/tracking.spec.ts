@@ -8,6 +8,9 @@ const states = {
   next: { status: "NEXT", restaurantName: "Cozinha da Vila", issueReason: null, stopsBefore: 0,
     courier: { latitude: -23.551, longitude: -46.633, recordedAt: "2026-11-13T22:52:00Z" },
     destination: { latitude: -23.556, longitude: -46.64 }, startedAt: started, deliveredAt: null },
+  closer: { status: "NEXT", restaurantName: "Cozinha da Vila", issueReason: null, stopsBefore: 0,
+    courier: { latitude: -23.553, longitude: -46.636, recordedAt: "2026-11-13T22:52:15Z" },
+    destination: { latitude: -23.556, longitude: -46.64 }, startedAt: started, deliveredAt: null },
   delivered: { status: "DELIVERED", restaurantName: "Cozinha da Vila", issueReason: null, stopsBefore: null,
     courier: null, destination: null, startedAt: started, deliveredAt: "2026-11-13T22:58:00Z" },
 };
@@ -15,7 +18,7 @@ const notFound = { code: "P0002", message: "RPM_TRACKING_NOT_FOUND", details: nu
 
 type Reply = { status?: number; body: unknown } | "abort";
 
-async function mockTracking(page: Page, first: Reply) {
+async function mockTracking(page: Page, first: Reply, mapStyle: "ok" | "denied" = "ok") {
   let reply = first;
   const calls: unknown[] = [];
   const mapRequests: { url: string; referer?: string }[] = [];
@@ -24,13 +27,18 @@ async function mockTracking(page: Page, first: Reply) {
     if (reply === "abort") return route.abort("internetdisconnected");
     await route.fulfill({ status: reply.status ?? 200, contentType: "application/json", body: JSON.stringify(reply.body) });
   });
-  // Diagnostic-only image fixture; no real Mapbox request or public token.
-  await page.route("https://api.mapbox.com/**", route => {
-    mapRequests.push({ url: route.request().url(), referer: route.request().headers().referer });
-    return route.fulfill({ contentType: "image/svg+xml",
-      body: '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="320"><rect width="640" height="320" fill="#ecf1e7"/><path d="M0 160H640M300 0V320" stroke="#cbd2c8" stroke-width="24"/><text x="8" y="310" font-size="12">Mapa simulado para testes</text></svg>' });
+  // Minimal offline style: no real Mapbox request, no tiles, no public token.
+  await page.route(/^https:\/\/(api|events)\.mapbox\.com\//, route => {
+    const url = route.request().url();
+    mapRequests.push({ url, referer: route.request().headers().referer });
+    if (!new URL(url).pathname.startsWith("/styles/v1/mapbox/streets-v12")) return route.fulfill({ status: 204, body: "" });
+    return mapStyle === "denied"
+      ? route.fulfill({ status: 401, json: { message: "Not Authorized - Invalid Token" } })
+      : route.fulfill({ json: { version: 8, name: "e2e", sources: {},
+        layers: [{ id: "fundo", type: "background", paint: { "background-color": "#ecf1e7" } }] } });
   });
-  return { calls, mapRequests, set: (next: Reply) => { reply = next; } };
+  const styleLoads = () => mapRequests.filter(request => request.url.includes("/styles/v1/")).length;
+  return { calls, mapRequests, styleLoads, set: (next: Reply) => { reply = next; } };
 }
 
 function watchErrors(page: Page) {
@@ -61,15 +69,28 @@ test("cliente acompanha a caminho → próximo com mapa → entregue, e a págin
   mock.set({ body: states.next });
   await page.clock.runFor(15_000);
   await expect(page.getByRole("heading", { name: "Você é o próximo!" })).toBeVisible();
-  await expect(page.getByRole("img", { name: "Mapa com o entregador e o seu endereço" })).toBeVisible();
+  const map = page.getByRole("region", { name: "Mapa com o entregador e o seu endereço" });
+  await expect(map).toBeVisible();
+  const courier = map.locator(".tracking-marker-courier");
+  await expect(courier).toBeVisible();
+  await expect(map.locator(".tracking-marker-destination")).toBeVisible();
   await expect(page.getByText(/Posição do entregador às \d{2}:\d{2}/)).toBeVisible();
   await expect(steps.locator("[aria-current=step]")).toContainText("Você é o próximo");
   await expect(page.getByText("2 entregas antes da sua")).toHaveCount(0);
-  expect(mock.mapRequests.length).toBeGreaterThan(0);
-  for (const request of mock.mapRequests) {
-    expect(request.referer ?? "").not.toContain(token);
-    expect(request.url).toContain("pin-l-scooter");
-  }
+  await expect.poll(mock.styleLoads).toBe(1);
+
+  // A new reading glides the same marker on the same map: no new map load.
+  const position = () => courier.evaluate(element => getComputedStyle(element).transform);
+  const before = await position();
+  mock.set({ body: states.closer });
+  await page.clock.runFor(15_000);
+  await page.clock.runFor(7_000);
+  const midway = await position();
+  expect(midway).not.toBe(before);
+  await page.clock.runFor(9_000);
+  await expect.poll(position).not.toBe(midway);
+  expect(mock.styleLoads()).toBe(1);
+  for (const request of mock.mapRequests) expect(request.referer ?? "").not.toContain(token);
 
   mock.set({ body: states.delivered });
   await page.clock.runFor(15_000);
@@ -125,4 +146,12 @@ test("ocorrência e nome longo de loja cabem em 320/375/390 sem rolagem lateral"
     await expect(page.getByRole("list", { name: "Etapas da entrega" })).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
+});
+
+test("token do mapa recusado mostra aviso e mantém o acompanhamento", async ({ page }) => {
+  await mockTracking(page, { body: states.next }, "denied");
+  await page.goto(`/acompanhar/${token}`);
+  await expect(page.getByRole("heading", { name: "Você é o próximo!" })).toBeVisible();
+  await expect(page.getByText("Mapa indisponível no momento.")).toBeVisible();
+  await expect(page.getByText(/Posição do entregador às \d{2}:\d{2}/)).toBeVisible();
 });

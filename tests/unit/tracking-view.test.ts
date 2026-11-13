@@ -1,8 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  clockTime, parseTracking, refreshSeconds, stopsBeforeText, trackingMapUrl, trackingView,
+  clockTime, parseTracking, refreshSeconds, stopsBeforeText, trackingView,
 } from "../../lib/tracking/view.ts";
+import {
+  MAX_GLIDE_METERS, distanceMeters, glideMs, pointAlong, pointsBounds, publicMapToken,
+} from "../../lib/tracking/motion.ts";
 
 const base = {
   status: "ON_ROUTE", restaurantName: "Pizzaria Boa", issueReason: null, stopsBefore: 2,
@@ -50,16 +53,31 @@ test("contagem de entregas antes, atualização e horário", () => {
   assert.equal(clockTime(null), null);
 });
 
-test("mapa usa só token público e enquadra entregador e endereço", () => {
-  const courier = { latitude: -23.551234, longitude: -46.633301 };
-  const home = { latitude: -23.56, longitude: -46.64 };
-  assert.equal(trackingMapUrl(undefined, courier, home), null);
-  assert.equal(trackingMapUrl("sk.secret", courier, home), null);
-  assert.equal(trackingMapUrl("pk.abc", null, null), null);
-  const both = trackingMapUrl("pk.abc", courier, home)!;
-  assert.match(both, /pin-l-home\+bd401b\(-46\.64000,-23\.56000\),pin-l-scooter\+1d2c24\(-46\.63330,-23\.55123\)\/auto\//);
-  assert.match(both, /access_token=pk\.abc&padding=60$/);
-  const homeOnly = trackingMapUrl("pk.abc", null, home)!;
-  assert.match(homeOnly, /\(-46\.64000,-23\.56000\)\/-46\.64000,-23\.56000,15\/640x320@2x/);
-  assert.doesNotMatch(homeOnly, /padding/);
+test("mapa usa só token público", () => {
+  assert.equal(publicMapToken(undefined), null);
+  assert.equal(publicMapToken(""), null);
+  assert.equal(publicMapToken("sk.secret"), null);
+  assert.equal(publicMapToken("pk.abc"), "pk.abc");
+});
+
+test("entregador desliza entre leituras e salta quando o GPS some", () => {
+  const a = { latitude: -23.55, longitude: -46.633 };
+  const b = { latitude: -23.551, longitude: -46.633 };
+  assert.ok(Math.abs(distanceMeters(a, b) - 111) < 1);
+  assert.equal(distanceMeters(a, a), 0);
+  assert.equal(glideMs(null, b, 15_000, false), 0, "primeira posição aparece direto");
+  assert.equal(glideMs(a, b, 15_000, false), 15_000, "desliza até a próxima leitura");
+  assert.equal(glideMs(a, b, 15_000, true), 0, "respeita movimento reduzido");
+  assert.equal(glideMs(a, a, 15_000, false), 0, "parado não anima");
+  const far = { latitude: a.latitude + (MAX_GLIDE_METERS + 500) / 111_000, longitude: a.longitude };
+  assert.equal(glideMs(a, far, 15_000, false), 0, "lacuna de GPS salta");
+  assert.deepEqual(pointAlong(a, b, 0.5), { latitude: -23.5505, longitude: -46.633 });
+  assert.deepEqual(pointAlong(a, b, 2), b);
+  assert.deepEqual(pointAlong(a, b, -1), a);
+});
+
+test("enquadramento cobre entregador e endereço", () => {
+  assert.equal(pointsBounds([]), null);
+  assert.deepEqual(pointsBounds([{ latitude: -23.56, longitude: -46.64 }, { latitude: -23.55, longitude: -46.63 }]),
+    [[-46.64, -23.56], [-46.63, -23.55]]);
 });

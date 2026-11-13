@@ -124,19 +124,3 @@ export function clockTime(iso: string | null, timeZone?: string) {
   if (Number.isNaN(date.getTime())) return null;
   return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone });
 }
-
-const coordinate = (value: number) => value.toFixed(5);
-
-/** Mapbox static image with the courier and the customer's own address. */
-export function trackingMapUrl(token: string | undefined, courier: TrackingPoint | null, destination: TrackingPoint | null) {
-  // Only a separate, public Maps token can be embedded in an image URL.
-  if (!token?.startsWith("pk.") || (!courier && !destination)) return null;
-  const pins = [
-    destination && `pin-l-home+bd401b(${coordinate(destination.longitude)},${coordinate(destination.latitude)})`,
-    courier && `pin-l-scooter+1d2c24(${coordinate(courier.longitude)},${coordinate(courier.latitude)})`,
-  ].filter(Boolean).join(",");
-  const only = courier && destination ? null : courier ?? destination;
-  const view = only ? `${coordinate(only.longitude)},${coordinate(only.latitude)},15` : "auto";
-  const padding = only ? "" : "&padding=60";
-  return `https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/${pins}/${view}/640x320@2x?access_token=${encodeURIComponent(token)}${padding}`;
-}
