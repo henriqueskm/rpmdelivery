@@ -180,12 +180,16 @@ test("mapa volta sozinho para o entregador depois que o cliente para de mexer", 
   await expect(courier).toBeVisible();
   await page.clock.runFor(1_000);
   const framed = (await courier.boundingBox())!;
+  // Mapbox's controls speak Portuguese, and the courier is framed clear of them.
+  await expect(map.getByRole("button", { name: "Aproximar" })).toBeVisible();
+  const zoom = (await map.locator(".mapboxgl-ctrl-group").boundingBox())!;
+  expect(framed.x + framed.width < zoom.x || framed.y > zoom.y + zoom.height).toBe(true);
   const offset = async () => {
     const box = (await courier.boundingBox())!;
     return Math.abs(box.x - framed.x) + Math.abs(box.y - framed.y);
   };
 
-  await map.getByRole("button", { name: "Zoom out" }).click();
+  await map.getByRole("button", { name: "Afastar" }).click();
   await page.clock.runFor(1_000);
   expect(await offset()).toBeGreaterThan(10);
   const away = await courier.boundingBox();

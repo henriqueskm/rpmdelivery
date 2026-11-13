@@ -21,7 +21,20 @@ type Live = {
 };
 
 const GLIDE_MS = (refreshSeconds("NEXT") ?? 15) * 1000;
-const FIT = { padding: 60, maxZoom: 16 };
+// The zoom buttons sit top-right; the extra right padding keeps the courier clear of them.
+const FIT = { padding: { top: 60, bottom: 60, left: 60, right: 84 }, maxZoom: 16 };
+
+// The page is in Portuguese; Mapbox's own controls and gesture hints default to English.
+const MAP_LOCALE = {
+  "Map.Title": "Mapa",
+  "NavigationControl.ZoomIn": "Aproximar",
+  "NavigationControl.ZoomOut": "Afastar",
+  "AttributionControl.ToggleAttribution": "Mostrar créditos do mapa",
+  "LogoControl.Title": "Site da Mapbox",
+  "ScrollZoomBlocker.CtrlMessage": "Use Ctrl + rolagem para aproximar o mapa",
+  "ScrollZoomBlocker.CmdMessage": "Use ⌘ + rolagem para aproximar o mapa",
+  "TouchPanBlocker.Message": "Use dois dedos para mover o mapa",
+};
 
 function lngLat(point: TrackingPoint): [number, number] {
   return [point.longitude, point.latitude];
@@ -113,6 +126,7 @@ export function TrackingMap({ courier, destination }: Points) {
           pitchWithRotate: false,
           touchPitch: false,
           performanceMetricsCollection: false,
+          locale: MAP_LOCALE,
         });
       } catch {
         setFailed(true); // No WebGL on this device.
