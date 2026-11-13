@@ -7,7 +7,11 @@ import {
 import { Badge, Empty, Icon } from "./ui";
 import Link from "next/link";
 
-export function CouriersPanel({ state, managementHref }: { state: DemoState; managementHref?: string }) {
+export function CouriersPanel({ state, managementHref, onReviewShift, pending }: {
+  state: DemoState; managementHref?: string;
+  /** Real data: the counter approves the shift of a courier who arrived. */
+  onReviewShift?: (shiftId: string, approve: boolean) => void; pending?: boolean;
+}) {
   const available = availableCouriers(state);
   const rest = state.couriers.filter(
     (c) => !available.some((a) => a.id === c.id),
@@ -56,6 +60,14 @@ export function CouriersPanel({ state, managementHref }: { state: DemoState; man
                   )}
                   {label === "Turno pendente" && (
                     <small>Aguardando aprovação da loja</small>
+                  )}
+                  {label === "Turno pendente" && onReviewShift && (
+                    <span className="ops-shift-review">
+                      <button className="ops-primary" disabled={pending} onClick={() => onReviewShift(c.id, true)}
+                        aria-label={`Aprovar turno de ${c.name}`}>Aprovar</button>
+                      <button disabled={pending} onClick={() => onReviewShift(c.id, false)}
+                        aria-label={`Recusar turno de ${c.name}`}>Recusar</button>
+                    </span>
                   )}
                 </div>
                 {position >= 0 && (

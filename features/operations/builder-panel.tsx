@@ -3,7 +3,8 @@ import { availableCouriers, plural, type DemoState } from "./model";
 import { Badge, Empty, Icon, RouteBadge } from "./ui";
 
 type BuilderProps = {
-  onSuggest: () => void;
+  /** Absent with real data: route optimization stays off until the simulation. */
+  onSuggest?: () => void;
   state: DemoState;
   selected: string[];
   editingId?: string;
@@ -12,6 +13,10 @@ type BuilderProps = {
   onSelect: (ids: string[]) => void;
   onAssign: () => void;
   onCancel: () => void;
+  /** Real data: the route is saved and the courier sees it on the phone. */
+  live?: boolean;
+  /** A command is being saved. */
+  pending?: boolean;
 };
 
 export function BuilderPanel(props: BuilderProps) {
@@ -48,9 +53,9 @@ export function BuilderPanel(props: BuilderProps) {
       >
         {expanded && (
           <>
-            <div className="ops-conference-demo">
+            {props.onSuggest && <div className="ops-conference-demo">
               Demonstração · dados fictícios, sem persistência.
-            </div>
+            </div>}
             <BuilderContent
               {...props}
               onClose={() => dialog.current?.close()}
@@ -80,6 +85,8 @@ function BuilderContent({
   onClose,
   expandButton,
   onSuggest,
+  live,
+  pending,
 }: BuilderProps & {
   onExpand?: () => void;
   onClose?: () => void;
@@ -125,9 +132,9 @@ function BuilderContent({
       <div className="ops-builder-summary">
         <RouteBadge status="PREPARING" />
         <span>{plural(selected.length, "entrega", "entregas")}</span>
-        <button className="ops-suggest" disabled={selected.length<2 || (!!editing && editing.status!=="PREPARING")} onClick={onSuggest}>
+        {onSuggest && <button className="ops-suggest" disabled={selected.length<2 || (!!editing && editing.status!=="PREPARING")} onClick={onSuggest}>
           Sugerir sequência
-        </button>
+        </button>}
       </div>
       <div
         className="ops-panel-scroll"
@@ -216,10 +223,10 @@ function BuilderContent({
         <div className="ops-assign-buttons">
           <button
             className="ops-primary"
-            disabled={!selected.length || !chosen}
+            disabled={!selected.length || !chosen || pending}
             onClick={onAssign}
           >
-            {editing ? "Salvar montagem (demo)" : "Atribuir rota (demo)"}
+            {editing ? `Salvar montagem${live ? "" : " (demo)"}` : `Atribuir rota${live ? "" : " (demo)"}`}
             <span aria-hidden="true">→</span>
           </button>
           {(editing || selected.length > 0) && (

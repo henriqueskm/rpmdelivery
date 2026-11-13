@@ -8,15 +8,19 @@ export function NewOrderDialog({
   onAdd,
   now,
   defaultPromiseMinutes,
+  live = false,
 }: {
   dialogRef: RefObject<HTMLDialogElement | null>;
-  onAdd: (order: NewOrder) => boolean;
+  onAdd: (order: NewOrder) => boolean | Promise<boolean>;
   now: number;
   defaultPromiseMinutes: number;
+  /** Real data: the order is saved and the customer gets the tracking link. */
+  live?: boolean;
 }) {
   const phoneRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
-  function submit(event: FormEvent<HTMLFormElement>) {
+  const [saving, setSaving] = useState(false);
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
@@ -28,12 +32,14 @@ export function NewOrderDialog({
     if (!form.reportValidity()) return;
     if (!isValidBrazilianMobilePhone(value("phone"))) {
       phoneRef.current?.setCustomValidity(
-        "Informe um celular fictício com DDD e 9 dígitos.",
+        live ? "Informe o celular do cliente com DDD e 9 dígitos." : "Informe um celular fictício com DDD e 9 dígitos.",
       );
       phoneRef.current?.reportValidity();
       return;
     }
-    const added = onAdd({
+    if (saving) return;
+    setSaving(true);
+    const added = await onAdd({
       reference: value("reference"),
       customer: value("customer"),
       phone: value("phone"),
@@ -44,7 +50,8 @@ export function NewOrderDialog({
       orderedAt: parseLocalDateTime(value("orderedAt")),
       promisedMinutes: Number(value("promisedMinutes")),
     });
-    if (!added) { setError("Confira o horário original e o prazo prometido."); return; }
+    setSaving(false);
+    if (!added) { setError(live ? "Não foi possível salvar. Confira os dados e tente de novo." : "Confira o horário original e o prazo prometido."); return; }
     dialogRef.current?.close();
     form.reset();
   }
@@ -57,7 +64,7 @@ export function NewOrderDialog({
     >
       <div className="ops-dialog-heading">
         <div>
-          <span className="ops-kicker">CADASTRO DEMONSTRATIVO</span>
+          <span className="ops-kicker">{live ? "NOVO PEDIDO" : "CADASTRO DEMONSTRATIVO"}</span>
           <h2 id="ops-new-title">Novo pedido</h2>
         </div>
         <button
@@ -69,7 +76,8 @@ export function NewOrderDialog({
         </button>
       </div>
       <p className="ops-dialog-notice">
-        Use apenas dados fictícios. Nada será salvo ou enviado.
+        {live ? "O cliente recebe o link de acompanhamento quando a rota sair."
+          : "Use apenas dados fictícios. Nada será salvo ou enviado."}
       </p>
       <form onSubmit={submit} onInput={() => setError("")} className="ops-order-form">
         <label>
@@ -141,7 +149,7 @@ export function NewOrderDialog({
         <div className="ops-form-wide ops-form-footer">
           <span>Entra em Aguardando despacho.</span>
           <button type="submit" className="ops-primary">
-            Cadastrar pedido (demo)
+            {live ? saving ? "Salvando…" : "Cadastrar pedido" : "Cadastrar pedido (demo)"}
           </button>
         </div>
         {error && <p className="ops-form-wide" role="alert">{error}</p>}

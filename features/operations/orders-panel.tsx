@@ -15,7 +15,8 @@ export function OrdersPanel({
   selected: string[];
   editingId?: string;
   onSelect: (ids: string[]) => void;
-  onDeadline: (id: string) => void;
+  /** Absent with real data: promises are set when the order is created. */
+  onDeadline?: (id: string) => void;
   now: number;
 }) {
   const checkboxPrefix = useId();
@@ -68,9 +69,9 @@ export function OrdersPanel({
             }}
           />
         </label>
-        <button className="ops-default-promise" aria-label="Configurar prazo padrão" onClick={() => onDeadline("default")}>
+        {onDeadline ? <button className="ops-default-promise" aria-label="Configurar prazo padrão" onClick={() => onDeadline("default")}>
           <span>Padrão</span><strong>{state.defaultPromiseMinutes} min</strong>
-        </button>
+        </button> : <span className="ops-default-promise"><span>Padrão</span><strong>{state.defaultPromiseMinutes} min</strong></span>}
       </div>
       <div className="ops-list-toolbar">
         <label>
@@ -115,7 +116,8 @@ export function OrdersPanel({
           >
             {orders.length
               ? "Ajuste a busca ou o filtro para encontrar o pedido."
-              : "Cadastre um pedido fictício para experimentar o despacho."}
+              : onDeadline ? "Cadastre um pedido fictício para experimentar o despacho."
+                : "Cadastre um pedido para montar a primeira rota."}
           </Empty>
         ) : (
           visible.map((o) => (
@@ -141,7 +143,7 @@ export function OrdersPanel({
                   </span>
                 </span>
               </label>
-              <button className="ops-order-edit-promise" aria-label={`Editar prazo do pedido ${o.reference}`} title="Editar horário original e prazo prometido" onClick={() => onDeadline(o.id)}>Prazo</button>
+              {onDeadline && <button className="ops-order-edit-promise" aria-label={`Editar prazo do pedido ${o.reference}`} title="Editar horário original e prazo prometido" onClick={() => onDeadline(o.id)}>Prazo</button>}
               {o.notes && (
                   <label htmlFor={`${checkboxPrefix}-${o.id}`} className="ops-order-note">
                     <span aria-hidden="true">!</span>

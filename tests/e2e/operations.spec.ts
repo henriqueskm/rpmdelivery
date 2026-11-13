@@ -1,5 +1,4 @@
 import { expect, test, type Page } from "@playwright/test";
-import { mockSupabase } from "./support/supabase";
 
 async function area(page: Page, name: string) {
   await expect(page.getByRole("heading", { name: "Central de operações", exact: true })).toBeVisible();
@@ -397,36 +396,6 @@ test("vazio, um pedido e modal com teclado oferecem caminhos claros", async ({
     page.getByRole("checkbox", { name: "Selecionar pedido 1048", exact: true }),
   ).toBeVisible();
   await expect(page.locator(".ops-order")).toHaveCount(1);
-});
-
-test("dashboard preserva acesso e não envia operações ao Supabase", async ({
-  page,
-}) => {
-  const calls = await mockSupabase(page, { existing: true });
-  await page.goto("/dashboard");
-  await expect(page).toHaveURL(/\/login$/);
-  await page
-    .getByLabel("E-mail", { exact: true })
-    .fill("operador@example.test");
-  await page
-    .getByLabel("Senha", { exact: true })
-    .fill("Test-only-password-123!");
-  await page.getByRole("button", { name: "Entrar na minha conta" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Central de operações" }),
-  ).toBeVisible();
-  await expect(page.getByLabel("Cenário")).toHaveCount(0);
-  await page
-    .getByRole("checkbox", { name: "Selecionar pedido 1048", exact: true })
-    .check();
-  if (await page.getByRole("tab", { name: /^Montagem/ }).isVisible())
-    await page.getByRole("tab", { name: /^Montagem/ }).click();
-  await page.getByRole("button", { name: "Atribuir rota (demo)" }).click();
-  await expect(route(page, "R-43")).toBeVisible();
-  expect(calls.rpc).toEqual([]);
-  expect(calls.unexpected).toEqual([]);
-  await page.getByRole("button", { name: "Sair", exact: true }).click();
-  await expect(page).toHaveURL(/\/login$/);
 });
 
 test("cadastro valida campos vazios e celular sem perder os dados preenchidos", async ({

@@ -17,7 +17,8 @@ export function DeadlineText({ order, now }: { order: DemoOrder; now: number }) 
     <time dateTime={new Date(info.dueAt).toISOString()} title={calendarTime(info.dueAt)}>Até {otherDay ? calendarTime(info.dueAt) : clockTime(info.dueAt)}</time>
   </span>;
 }
-export function DeadlineButton({ order, now, onEdit }: { order: DemoOrder; now: number; onEdit: () => void }) {
+export function DeadlineButton({ order, now, onEdit }: { order: DemoOrder; now: number; onEdit?: () => void }) {
+  if (!onEdit) return <span className="ops-deadline-button"><DeadlineText order={order} now={now} /></span>;
   return <button className="ops-deadline-button" aria-label={`Editar prazo do pedido ${order.reference}`} title="Editar horário original e prazo prometido"
     disabled={deliveryFinal(order.delivery)} onClick={onEdit}>
     <DeadlineText order={order} now={now} />

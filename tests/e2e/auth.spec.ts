@@ -65,7 +65,7 @@ test("login → onboarding → RPC → dashboard → sair, sem erros inesperados
   ).toBeVisible();
   await expect(
     page.getByText("Demonstração com dados fictícios.", { exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Aguardando despacho" }),
   ).toBeVisible();

@@ -18,6 +18,7 @@ export function Dashboard() {
     <Operations
       courierManagementHref="/motoboys"
       key={state.restaurant.id}
+      restaurantId={state.restaurant.id}
       restaurantName={state.restaurant.name}
       email={state.user.email}
       accountAction={<SignOut />}
