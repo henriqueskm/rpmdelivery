@@ -1,0 +1,47 @@
+.tracking-page { min-height: 100svh; max-width: 520px; margin: 0 auto; padding: 24px 20px 28px; display: flex; flex-direction: column; gap: 16px; }
+.tracking-header { padding-bottom: 12px; }
+.tracking-loading { display: flex; align-items: center; font-size: 14px; color: var(--muted); padding: 24px 0; }
+
+.tracking-card { background: white; border: 1px solid var(--line); border-radius: 11px; padding: 22px; }
+.tracking-card h1 { font-size: 28px; font-weight: 650; letter-spacing: -1px; line-height: 1.15; margin: 8px 0 10px; overflow-wrap: anywhere; }
+.tracking-card p { font-size: 14px; line-height: 1.6; color: var(--muted); }
+.tracking-store { text-transform: uppercase; overflow-wrap: anywhere; }
+.tracking-retry { margin-top: 20px; }
+
+.tone-next { background: #1d2c24; border-color: #1d2c24; color: #f5f8f2; }
+.tone-next .tracking-store { color: #b6c5b4; }
+.tone-next h1 { color: #fb825e; }
+.tone-next p { color: #c0cdbd; }
+.tone-attention { background: #fff0e9; border-color: #efc6b5; }
+.tone-attention h1 { color: #942b1a; }
+.tone-attention p { color: #6e3a2b; }
+.tone-done { background: #ecf1e7; border-color: #d4dfcb; }
+.tone-done h1 { color: #2f5634; }
+
+.tracking-card .tracking-chip { display: inline-block; margin-top: 16px; padding: 8px 12px; border-radius: 6px; background: #fff0e9; color: #8e331c; font-size: 13px; font-weight: 650; }
+
+.tracking-map { margin: 0; border: 1px solid var(--line); border-radius: 11px; overflow: hidden; background: #ecf1e7; }
+.tracking-map img { width: 100%; height: auto; display: block; }
+.tracking-map figcaption { display: flex; align-items: center; gap: 8px; padding: 12px 14px; font-size: 12px; color: var(--muted); background: white; border-top: 1px solid var(--line); }
+.tracking-live { width: 8px; height: 8px; border-radius: 50%; background: #397544; box-shadow: 0 0 0 3px #3975442e; flex-shrink: 0; }
+
+.tracking-steps { list-style: none; margin: 0; padding: 20px 22px; background: white; border: 1px solid var(--line); border-radius: 11px; }
+.tracking-steps li { position: relative; display: flex; gap: 14px; align-items: flex-start; min-height: 44px; padding-bottom: 14px; }
+.tracking-steps li:last-child { min-height: 0; padding-bottom: 0; }
+.tracking-steps li:not(:last-child)::before { content: ""; position: absolute; left: 10px; top: 24px; bottom: 2px; width: 2px; background: var(--line); }
+.tracking-steps li[data-state=done]:not(:last-child)::before { background: #397544; }
+.step-dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #cbd2c8; background: white; flex-shrink: 0; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: white; }
+[data-state=done] .step-dot { background: #397544; border-color: #397544; }
+[data-state=current] .step-dot { border-color: var(--accent); box-shadow: 0 0 0 4px #bd401b24; background: radial-gradient(circle, var(--accent) 0 4px, white 5px); }
+.step-label { font-size: 14px; font-weight: 600; line-height: 22px; }
+[data-state=pending] .step-label { color: var(--muted); font-weight: 500; }
+.step-time { display: block; font-size: 12px; font-weight: 500; color: var(--muted); line-height: 1.4; }
+
+.tracking-offline { margin: 0; }
+.tracking-footer { margin-top: auto; padding-top: 16px; text-align: center; font-size: 11px; color: #6c7569; }
+.tracking-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+@media (min-width: 741px) {
+  .tracking-page { padding-top: 48px; }
+  .tracking-card h1 { font-size: 32px; }
+}
