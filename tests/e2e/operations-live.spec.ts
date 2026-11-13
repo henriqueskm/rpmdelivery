@@ -44,11 +44,17 @@ test("painel real: aprova turno, cadastra pedido, monta e libera rota pelo banco
   await expect(page.getByRole("checkbox", { name: "Selecionar pedido 1048", exact: true })).toBeVisible();
   expect(backend.calls[0]).toEqual({ fn: "get_operations_board", body: { p_restaurant_id: testRestaurant.id } });
 
-  // A courier arrived and asked for a shift.
+  // A courier arrived and asked for a shift; on phones the Motoboys tab says so.
+  const couriersTab = page.getByRole("tab", { name: /^Motoboys/ });
+  const phone = await couriersTab.isVisible();
+  if (phone) await expect(couriersTab).toHaveAccessibleName("Motoboys 1 turno pendente");
   await showArea(page, /^Motoboys/);
-  await page.getByRole("button", { name: "Aprovar turno de Carla Dias" }).click();
+  const approve = page.getByRole("button", { name: "Aprovar turno de Carla Dias" });
+  expect((await approve.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await approve.click();
   await expect(page.getByRole("status").filter({ hasText: "Turno de Carla Dias aprovado." })).toBeVisible();
   await expect(page.getByRole("button", { name: "Aprovar turno de Carla Dias" })).toHaveCount(0);
+  if (phone) await expect(couriersTab).toHaveAccessibleName("Motoboys");
 
   // New order, saved with the normalized phone and a request id.
   await page.getByRole("button", { name: "Novo pedido" }).click();
@@ -125,6 +131,9 @@ test("sem conexão: primeira leitura permite tentar de novo e queda depois mant�
   backend.setOffline(true);
   await signIn(page);
   await expect(page.getByRole("alert").filter({ hasText: "Não foi possível carregar a operação." })).toBeVisible();
+  // The store can still see which account is signed in and leave.
+  await expect(page.getByText(testRestaurant.name, { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sair" })).toBeVisible();
 
   backend.setOffline(false);
   await page.getByRole("button", { name: "Tentar novamente" }).click();

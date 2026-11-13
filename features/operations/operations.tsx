@@ -21,6 +21,7 @@ import { tabs, useOperationsController, type LiveSource } from "./use-operations
 import { useOperationsBoard } from "./live/use-operations-board";
 import { useOperationsClock } from "./use-operations-clock";
 import { Icon } from "./ui";
+import { courierLabel, plural } from "./model";
 import "./operations.css";
 import "./operations-deadlines.css";
 import "./automatic.css";
@@ -103,16 +104,30 @@ function LiveOperations({ restaurantId, ...props }: {
   const board = state.status === "ready" ? state.board : undefined;
   const receivedAt = state.status === "ready" ? state.receivedAt : 0;
   const live = useMemo(() => board && { restaurantId, board, receivedAt, refresh }, [board, receivedAt, restaurantId, refresh]);
-  if (state.status === "error") return (
+  // Before the first board arrives the store still sees who is signed in and can leave.
+  const shell = (content: ReactNode) => (
     <main className="operations">
-      <div className="ops-load-error" role="alert">
-        <strong>Não foi possível carregar a operação.</strong>
-        <span>Confira a conexão e tente de novo.</span>
-        <button className="ops-primary" onClick={retry}>Tentar novamente</button>
-      </div>
+      <header className="ops-header">
+        <Brand />
+        <div className="ops-account">
+          <div>
+            <strong>{props.restaurantName}</strong>
+            {props.email && <small>{props.email}</small>}
+          </div>
+          {props.accountAction}
+        </div>
+      </header>
+      {content}
     </main>
   );
-  if (!live) return <main className="operations"><p role="status">Carregando a operação da loja…</p></main>;
+  if (state.status === "error") return shell(
+    <div className="ops-load-error" role="alert">
+      <strong>Não foi possível carregar a operação.</strong>
+      <span>Confira a conexão e tente de novo.</span>
+      <button className="ops-primary" onClick={retry}>Tentar novamente</button>
+    </div>
+  );
+  if (!live) return shell(<p className="ops-load-error" role="status">Carregando a operação da loja…</p>);
   return (
     <OperationsWorkspace {...props} preview={false} scenario="empty" onScenario={() => {}}
       live={live} offline={state.status === "ready" && state.offline} />
@@ -158,6 +173,7 @@ function OperationsWorkspace({
   const [highlightedRoute,setHighlightedRoute]=useState<string>();
   const alerts=useIssueAlerts(state,viewedAlerts);
   const pending=pendingIssues(state);
+  const pendingShifts=state.couriers.filter(c=>courierLabel(state,c)==="Turno pendente").length;
   function followRoute(id?:string) {
     setActiveTab("routes");setHighlightedRoute(id);
     window.requestAnimationFrame(()=>{
@@ -264,6 +280,12 @@ function OperationsWorkspace({
               {tab.id === "builder" && selected.length > 0 && (
                 <span className="ops-tab-count">{selected.length}</span>
               )}
+              {tab.id === "couriers" && pendingShifts > 0 && (<>
+                {" "}
+                <span className="ops-tab-count" aria-label={plural(pendingShifts, "turno pendente", "turnos pendentes")}>
+                  {pendingShifts}
+                </span>
+              </>)}
             </button>
           ))}
         </nav>

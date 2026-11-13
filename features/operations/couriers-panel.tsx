@@ -24,7 +24,7 @@ export function CouriersPanel({ state, managementHref, onReviewShift, pending }:
         </h2>
         <Badge>{plural(available.length, "disponível", "disponíveis")}</Badge>
       </div>
-      {managementHref && <Link href={managementHref} className="text-button">Convites e vínculos reais</Link>}
+      {managementHref && <Link href={managementHref} className="text-button">Convites e vínculos</Link>}
       <div className="ops-courier-caption">Fila por ordem de chegada</div>
       <div
         className="ops-panel-scroll"
