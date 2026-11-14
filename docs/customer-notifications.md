@@ -46,5 +46,5 @@ app chama dispatch-notifications ──┤ claim_route_notifications (service_ro
 ## O que ainda falta para a simulação
 
 - **Quem chama a função:** o app do motoboy chama logo depois de `start_route` dar certo; o painel da loja pode chamar de novo para reenviar o que ficou pendente. Hoje as telas ainda usam dados fictícios, então isso entra quando forem ligadas aos dados reais.
-- **A página `/acompanhar/<token>`** ainda não existe; até lá o link da mensagem abre uma página não encontrada.
+- **A página `/acompanhar/<token>`** já existe: veja `docs/delivery-core-commands.md`, fatia 4. O link só abre em produção depois do deploy do site com `PUBLIC_SITE_URL` apontando para ele.
 - **"Você é o próximo"** usa o mesmo caminho (outro tipo e outro modelo) e fica para depois de validar o "saiu para entrega".

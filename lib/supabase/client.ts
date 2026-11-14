@@ -33,6 +33,7 @@ type Database = {
       create_courier_invite: { Args: { p_restaurant_id: string; p_hours: number; p_max_uses: number }; Returns: Invite };
       revoke_courier_invite: { Args: { p_restaurant_id: string; p_invite_id: string }; Returns: undefined };
       inspect_courier_invite: { Args: { p_code: string }; Returns: InviteResult };
+      get_tracking: { Args: { p_token: string }; Returns: unknown };
       request_courier_membership: { Args: { p_code: string }; Returns: InviteResult };
       review_courier_membership: { Args: { p_restaurant_id: string; p_relationship_id: string; p_approve: boolean }; Returns: string };
       create_restaurant: {

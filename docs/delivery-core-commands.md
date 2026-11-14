@@ -147,6 +147,31 @@ O cliente abre `/acompanhar/<tracking_token>` sem login. O token (UUID aleatóri
 
 **Validade:** entregue ou cancelada, o link responde por 24 h; em qualquer outro estado, por 7 dias desde o cadastro. Token vencido e token inexistente dão o mesmo `RPM_TRACKING_NOT_FOUND`, sem enumeração.
 
+### A página `/acompanhar/<token>`
+
+- **Arquivos:**
+  - rota: `app/acompanhar/[token]/page.tsx`;
+  - tela: `features/tracking/`;
+  - textos e regras: `lib/tracking/view.ts`, com testes em `tests/unit/tracking-view.test.ts`.
+- **Leitura:** chama `get_tracking` no navegador, com a chave pública. Um token com formato inválido nem chega a consultar o banco.
+- **Atualização automática:**
+  - a cada 15 s em rota, quando o cliente é o próximo e quando a entrega falhou;
+  - a cada 30 s em preparo e quando o pedido voltou para a loja;
+  - para quando a entrega termina, entregue ou cancelada.
+  - Com a aba escondida, a página não consulta; volta a consultar quando a aba aparece de novo.
+- **Sem conexão:** se a primeira leitura falhar, a página mostra "Tentar novamente". Depois de carregada, uma queda mantém o último status com o aviso "Sem conexão" e continua tentando a cada 15 s.
+- **Mapa:** só quando o cliente é o próximo. É um mapa interativo do Mapbox GL (`mapbox-gl`, versão fixa) com o entregador e o endereço do próprio cliente, feito com o token público `NEXT_PUBLIC_MAPBOX_MAP_TOKEN`. Sem posição recente, a página mostra "Aguardando a posição do entregador".
+  - **Movimento:** a cada leitura nova, o entregador desliza da posição anterior até a nova durante os 15 s até a próxima leitura, e parece andar sem parar. Leituras a mais de 2 km uma da outra (lacuna de GPS) e o modo "reduzir movimento" do aparelho saltam direto. Regras em `lib/tracking/motion.ts`.
+  - **Custo:** o Mapbox cobra por mapa aberto, não por movimento. A página cria um único mapa por visita e só move os marcadores; a biblioteca só é baixada quando o cliente vira o próximo.
+  - **Gestos:** com um dedo a página rola normalmente; mover o mapa pede dois dedos (ou Ctrl + rolagem no computador). Enquanto o cliente mexe no mapa, a página não reenquadra; 6 s depois que ele para, o mapa volta sozinho para o entregador e o endereço.
+  - **Falhas:** sem WebGL ou com o token recusado, aparece "Mapa indisponível no momento." e o resto do acompanhamento continua.
+  - As métricas de desempenho do Mapbox ficam desligadas; o evento de abertura do mapa, que o Mapbox usa para cobrança, continua.
+- **Privacidade:** `referrer: no-referrer`, para o token não ir a outros sites, inclusive o Mapbox. Por isso o token público do mapa não pode ter restrição por URL (ela depende do referrer). `noindex`, para não aparecer em buscadores.
+- **Fora desta versão:**
+  - "Ativar notificações" (push), congelado até a simulação;
+  - previsão de chegada.
+- **Visual:** não existe frame aprovado no Figma para esta tela. Segue o design system e o raio atuais.
+
 ### Avisar o cliente — em aberto
 
 Como o cliente fica sabendo que o pedido saiu e que ele é o próximo **ainda não está decidido**. Restrições já fixadas:

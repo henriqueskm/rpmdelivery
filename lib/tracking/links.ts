@@ -8,8 +8,12 @@ const STORED_PHONE = /^\+55[1-9]{2}\d{8,9}$/;
 
 export type TrackingMessageKind = "STARTED" | "NEXT";
 
+export function isTrackingToken(token: string) {
+  return TOKEN.test(token);
+}
+
 export function trackingUrl(origin: string, token: string) {
-  if (!TOKEN.test(token)) throw new Error("Link de acompanhamento inválido.");
+  if (!isTrackingToken(token)) throw new Error("Link de acompanhamento inválido.");
   return new URL(`/acompanhar/${token.toLowerCase()}`, origin).toString();
 }
 
