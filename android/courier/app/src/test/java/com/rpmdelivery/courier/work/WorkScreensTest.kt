@@ -166,7 +166,7 @@ class WorkScreensTest {
         node("Histórico").assertIsDisplayed()
         node("R$ 116,00").assertIsDisplayed()
         node("8 entregas em 30 dias").assertIsDisplayed()
-        node("sex., 14/11 · Cozinha da Vila").assertIsDisplayed()
+        node("sáb., 14/11 · Cozinha da Vila").assertIsDisplayed()
         node("3 entregas · encosta R$ 30,00 · entregas R$ 21,00").assertIsDisplayed()
         assertTrue(fake.calls.contains("history"))
         captureEvidence(compose, "work-12-history-390")
