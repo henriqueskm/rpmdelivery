@@ -1,11 +1,11 @@
 // POST { routeId } with the signed-in user's JWT (courier of the route or
-// store member). Sends the route's pending "saiu para entrega" WhatsApp
-// messages through Meta's Cloud API and records each result.
+// store member). Sends the route's pending WhatsApp messages ("saiu para entrega"
+// and "você é o próximo") through Meta's Cloud API and records each result.
 // The response carries only counts: never a customer phone.
 import {
   classifyMetaResponse,
   readWhatsAppConfig,
-  routeStartedMessage,
+  messageFor,
   type ClaimedNotification,
   type SendOutcome,
 } from "../_shared/whatsapp.ts";
@@ -40,7 +40,7 @@ async function rpc(baseUrl: string, serviceKey: string, name: string, args: Reco
 async function send(config: NonNullable<ReturnType<typeof readWhatsAppConfig>>, item: ClaimedNotification): Promise<SendOutcome> {
   let message;
   try {
-    message = routeStartedMessage(config, item);
+    message = messageFor(config, item);
   } catch (error) {
     return { outcome: "FAILED", error: error instanceof Error ? error.message : "INVALID_MESSAGE" };
   }

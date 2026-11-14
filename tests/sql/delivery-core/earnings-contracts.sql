@@ -128,3 +128,8 @@ select core_test.check('earnings functions are definer, signed-in only, empty se
    and has_function_privilege('authenticated',p.oid,'EXECUTE') and not has_function_privilege('anon',p.oid,'EXECUTE'))
   from pg_proc p where p.oid in ('public.set_courier_pay(uuid,integer,integer)'::regprocedure,
    'public.get_courier_pay(uuid,date)'::regprocedure,'public.get_courier_history(integer)'::regprocedure)));
+
+-- "Você é o próximo" on a fresh route: none at the start, one when the second stop came up.
+select core_test.check('route e: next-stop message only for the stop that came up after the first',
+ (select count(*) from public.delivery_notifications where type='NEXT_DELIVERY' and delivery_id=core_test.s('e2'))=1
+ and not exists (select 1 from public.delivery_notifications where type='NEXT_DELIVERY' and delivery_id=core_test.s('e1')));
