@@ -21,6 +21,8 @@ data class Shift(
     val restaurantName: String,
     val status: String,
     val queuePosition: Int?,
+    /** When the courier entered the line (approval or last return to the store). */
+    val availableSince: String? = null,
 )
 
 /** The store on the route: where to return. No customer phone ever reaches the app. */
@@ -138,7 +140,7 @@ fun parseHome(element: JsonElement): CourierHome {
         stores = root.list("stores").map { Store(it.required("restaurantId"), it.required("name"), it.required("linkStatus")) },
         shift = root.child("shift")?.let {
             Shift(it.required("shiftId"), it.required("restaurantId"), it.text("restaurantName").orEmpty(),
-                it.required("status"), it.text("queuePosition")?.toIntOrNull())
+                it.required("status"), it.text("queuePosition")?.toIntOrNull(), it.text("availableSince"))
         },
         route = root.child("route")?.let(::parseRoute),
         today = root.child("today")?.let {

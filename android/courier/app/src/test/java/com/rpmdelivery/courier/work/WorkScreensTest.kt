@@ -91,7 +91,7 @@ class WorkScreensTest {
         swipe("Deslize para iniciar a rota")
         node("Minha rota").assertIsDisplayed()
         node("Entrega 1 de 2").assertIsDisplayed()
-        compose.onAllNodesWithText("Helena Prado").onFirst().performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Helena Prado") and hasAnyAncestor(hasTestTag("next-stop"))).performScrollTo().assertIsDisplayed()
         node("Pedido #1048").assertIsDisplayed()
         node("Observação: Portão azul, tocar duas vezes").assertIsDisplayed()
         assertTrue(fake.calls.contains("start_route:2"))
@@ -106,7 +106,7 @@ class WorkScreensTest {
         swipe("Deslize para confirmar a entrega")
         assertTrue(fake.calls.contains("complete_delivery:d-1"))
         node("Entrega 2 de 2").assertIsDisplayed()
-        compose.onAllNodesWithText("Igor Nunes").onFirst().performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Igor Nunes") and hasAnyAncestor(hasTestTag("next-stop"))).performScrollTo().assertIsDisplayed()
 
         // A failure needs a reason, and a written report for "Outro motivo".
         node("Não consegui entregar").performClick()
@@ -166,10 +166,27 @@ class WorkScreensTest {
         compose.onNodeWithText("RpmDelivery").assertDoesNotExist()
 
         // On shift the earnings sit in the middle of the fixed top line.
-        fake.home = fake.home.copy(shift = Shift("shift-1", "r-1", "Cozinha da Vila", "AVAILABLE", 1))
+        fake.home = fake.home.copy(shift = Shift("shift-1", "r-1", "Cozinha da Vila", "AVAILABLE", 1, "2026-11-14T13:42:00+00:00"))
         reload()
         pill.assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+
+        // Waiting in line: the checks for the alerts and the day so far fill the screen.
+        node("Pronto para os avisos").assertIsDisplayed()
+        node("Notificações · ligado").assertIsDisplayed()
+        node("Localização · ligado").assertIsDisplayed()
+        node("Economia de bateria · desligado").assertIsDisplayed()
+        node("Ativar").assertHeightIsAtLeast(48.dp)
+        node("Seu dia").assertIsDisplayed()
+        node("Na fila desde").assertIsDisplayed()
+        node("Entregas hoje").assertIsDisplayed()
+        node("Encosta").assertIsDisplayed()
+        node("R$ 21,00").assertIsDisplayed()
+        node("A receber hoje").assertIsDisplayed()
+        captureEvidence(compose, "work-14-queue-blocks-390")
         assertFalse("past days are read only when the history opens", fake.calls.contains("history"))
+        node("Ver histórico").performClick()
+        node("Histórico").assertIsDisplayed()
+        node("Voltar").performClick()
         captureEvidence(compose, "work-11-today-390")
         pill.performClick()
         node("Histórico").assertIsDisplayed()
@@ -199,6 +216,18 @@ class WorkScreensTest {
         node("Minha rota").assertIsDisplayed()
         compose.onNodeWithContentDescription("A receber hoje: R$ 58,00, 4 entregas. Abrir histórico").assertIsDisplayed()
         captureEvidence(compose, "work-13-route-with-earnings-390")
+
+        // The route stays put; its stops and the store's phone slide up from the bottom.
+        compose.onNodeWithText("Ligar para a loja").assertIsNotDisplayed()
+        compose.onNodeWithText("Entregas da rota").assertIsDisplayed().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Ligar para a loja").assertIsDisplayed()
+        compose.onNodeWithText("Na sequência").assertIsDisplayed()
+        node("Minha rota").assertIsDisplayed()
+        captureEvidence(compose, "work-15-route-sheet-open-390")
+        compose.onNodeWithText("Entregas da rota").performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Ligar para a loja").assertIsNotDisplayed()
     }
 
     @Test fun routeWithoutLocationGoesOnAndSaysTheCustomerCannotSeeTheCourier() {

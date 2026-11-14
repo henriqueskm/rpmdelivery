@@ -13,6 +13,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.widthIn
+import android.os.PowerManager
+import android.provider.Settings
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.testTag
+import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import kotlinx.coroutines.launch
 import com.rpmdelivery.courier.ui.components.BrandMark
 import com.rpmdelivery.courier.ui.theme.Ink
 import com.rpmdelivery.courier.work.Today
@@ -135,12 +154,94 @@ fun WorkScreen(work: WorkController) {
         fail = work::reportFailure,
         arrive = work::arriveAtStore,
         retry = work::refresh,
+        openHistory = work::openHistory,
         navigate = { query -> open(Intent(Intent.ACTION_VIEW, query.toUri()), "Nenhum aplicativo de mapas encontrado neste aparelho.") },
         dial = { phone -> open(Intent(Intent.ACTION_DIAL, "tel:$phone".toUri()), "Nenhum aplicativo de telefone encontrado neste aparelho.") },
     )
     BackHandler(enabled = state.historyOpen) { work.closeHistory() }
-    if (state.historyOpen) HistoryContent(state, onBack = work::closeHistory, onRetry = work::loadHistory)
-    else WorkContent(state, actions)
+    val route = state.home?.route
+    when {
+        state.historyOpen -> Scrolling { HistoryContent(state, onBack = work::closeHistory, onRetry = work::loadHistory) }
+        // On the street the screen stays put; the route's stops slide up from the bottom.
+        route != null && (route.status == "ON_ROUTE" || route.status == "RETURNING") -> RouteSheetScreen(state, route, actions)
+        else -> Scrolling { WorkContent(state, actions) }
+    }
+}
+
+@Composable
+private fun Scrolling(content: @Composable () -> Unit) {
+    Column(Modifier.widthIn(max = 480.dp).fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) { content() }
+}
+
+/** What every courier screen says first: no connection, what just worked, what was refused. */
+@Composable
+private fun Feedback(state: WorkState) {
+    if (state.offline) Banner("Sem conexão. Mostrando os últimos dados; o aplicativo tenta de novo sozinho.", SoftCoral)
+    state.notice?.let { Banner(it, SoftGreen, Green) }
+    state.message?.let {
+        Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+    }
+}
+
+/**
+ * The route on the street: the current stop and its actions fixed on screen, and a sheet at the
+ * bottom with every stop of the route and the store's phone. The sheet opens to three quarters of
+ * the screen at most, so the stop above stays in sight. Only with very large text, when the stop
+ * cannot fit, does the top part scroll.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RouteSheetScreen(state: WorkState, route: CourierRoute, actions: WorkActions) {
+    val sheet = rememberBottomSheetScaffoldState()
+    val scope = rememberCoroutineScope()
+    val open = sheet.bottomSheetState.targetValue == SheetValue.Expanded
+    BackHandler(enabled = open) { scope.launch { sheet.bottomSheetState.partialExpand() } }
+    BoxWithConstraints(Modifier.widthIn(max = 480.dp).fillMaxSize()) {
+        val sheetMax = maxHeight * 0.75f
+        BottomSheetScaffold(
+            scaffoldState = sheet,
+            sheetPeekHeight = 84.dp,
+            sheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+            sheetContainerColor = MaterialTheme.colorScheme.surface,
+            sheetShadowElevation = 10.dp,
+            containerColor = MaterialTheme.colorScheme.background,
+            sheetDragHandle = {
+                Box(Modifier.padding(top = 10.dp, bottom = 4.dp).size(width = 36.dp, height = 4.dp)
+                    .background(MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(2.dp)))
+            },
+            sheetContent = {
+                Column(Modifier.fillMaxWidth().heightIn(max = sheetMax).padding(horizontal = 20.dp)) {
+                    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                        .clickable(onClickLabel = if (open) "Fechar a lista" else "Ver as entregas") {
+                            scope.launch { if (open) sheet.bottomSheetState.partialExpand() else sheet.bottomSheetState.expand() }
+                        }, verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Entregas da rota", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.semantics { heading() })
+                            Text("${entregues(route.delivered)} de ${route.stops.size}", style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Text(if (open) "▾" else "▴", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Column(Modifier.verticalScroll(rememberScrollState()).padding(top = 4.dp, bottom = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        StopRows(route)
+                        route.store.phone?.let { phone ->
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            TextButton(onClick = { actions.dial(phone) }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Ligar para a loja") }
+                        }
+                    }
+                }
+            },
+        ) { inner ->
+            Column(Modifier.fillMaxSize().padding(inner).verticalScroll(rememberScrollState()).padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Feedback(state)
+                RouteContent(route, state.home?.shift, state.busy, actions, withStops = false)
+                StationaryNotice()
+            }
+        }
+    }
 }
 
 /**
@@ -193,6 +294,7 @@ class WorkActions(
     val fail: (CourierRoute, Stop, FailureReason, String) -> Unit,
     val arrive: (CourierRoute) -> Unit,
     val retry: () -> Unit,
+    val openHistory: () -> Unit = {},
     /** Opens a geo: URI in the installed maps app. */
     val navigate: (String) -> Unit,
     val dial: (String) -> Unit,
@@ -207,17 +309,18 @@ fun mapQuery(latitude: Double?, longitude: Double?, address: String): String =
 fun WorkContent(state: WorkState, actions: WorkActions) {
     val home = state.home
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        if (state.offline) Banner("Sem conexão. Mostrando os últimos dados; o aplicativo tenta de novo sozinho.", SoftCoral)
-        state.notice?.let { Banner(it, SoftGreen, Green) }
-        state.message?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
-        }
+        Feedback(state)
         when {
             home == null && state.loading -> Text("Carregando suas lojas e seu turno…")
             home == null -> OutlinedButton(onClick = actions.retry, enabled = !state.busy,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), shape = RoundedCornerShape(14.dp)) { Text("Tentar novamente") }
             home.route != null -> RouteContent(home.route, home.shift, state.busy, actions)
-            home.shift != null -> ShiftContent(home.shift, state.busy, actions)
+            home.shift != null -> {
+                ShiftContent(home.shift, state.busy, actions)
+                // Waiting in line: make sure the alerts will reach the pocket, and show the day so far.
+                ReadyChecks()
+                home.today?.let { YourDay(it, home.shift, actions.openHistory) }
+            }
             else -> StoresContent(home.stores, state.busy, actions)
         }
         StationaryNotice()
@@ -388,6 +491,83 @@ private fun ShiftContent(shift: Shift, busy: Boolean, actions: WorkActions) {
 }
 
 /**
+ * "Pronto para os avisos": what makes the queue alerts reach a phone in the pocket. Each item that
+ * is off has a button that fixes it on the spot; it reads again when the courier comes back.
+ */
+@Composable
+private fun ReadyChecks() {
+    val context = LocalContext.current
+    var checks by remember { mutableIntStateOf(0) }
+    LifecycleResumeEffect(Unit) { checks++; onPauseOrDispose { } }
+    val notificationsOn = remember(checks) { NotificationManagerCompat.from(context).areNotificationsEnabled() }
+    val locationOn = remember(checks) { hasLocation(context) }
+    val batteryFree = remember(checks) {
+        (context.getSystemService(Context.POWER_SERVICE) as PowerManager).isIgnoringBatteryOptimizations(context.packageName)
+    }
+    val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { checks++ }
+    val askLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { checks++ }
+    fun open(intent: Intent) { try { context.startActivity(intent) } catch (_: ActivityNotFoundException) { } }
+    Card {
+        Heading("Pronto para os avisos")
+        CheckRow("Notificações", "Toca quando você for o próximo e quando a rota for liberada.", notificationsOn) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+                askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+            else open(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
+        }
+        CheckRow("Localização", "Só durante a rota, para o cliente ver você chegando.", locationOn) {
+            askLocation.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+        }
+        CheckRow("Economia de bateria", "Sem restrição, o aviso chega com a tela apagada.", batteryFree) {
+            open(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+        }
+        if (notificationsOn && locationOn && batteryFree)
+            Text("Tudo certo: você recebe os avisos com a tela apagada.", style = MaterialTheme.typography.bodyMedium, color = Green)
+    }
+}
+
+@Composable
+private fun CheckRow(title: String, why: String, ok: Boolean, fix: () -> Unit) {
+    Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) { }, verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Surface(shape = CircleShape, color = if (ok) SoftGreen else SoftCoral, contentColor = if (ok) Green else Coral,
+            modifier = Modifier.size(28.dp)) {
+            Box(contentAlignment = Alignment.Center) { Text(if (ok) "✓" else "!", fontWeight = FontWeight.Bold) }
+        }
+        Column(Modifier.weight(1f)) {
+            Text("$title · ${if (ok) "ligado" else "desligado"}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+            Text(why, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (!ok) TextButton(onClick = fix, modifier = Modifier.heightIn(min = 48.dp)) { Text("Ativar") }
+    }
+}
+
+/** "Seu dia": since when the courier waits, and today's earnings split into encosta and deliveries. */
+@Composable
+private fun YourDay(today: Today, shift: Shift, onHistory: () -> Unit) {
+    Card {
+        Heading("Seu dia")
+        if (shift.status == "AVAILABLE") clockTime(shift.availableSince)?.let {
+            DayLine("Na fila desde", it)
+        }
+        DayLine("Entregas hoje", "${today.deliveries}")
+        DayLine("Encosta", reais(today.shiftFeeCents))
+        DayLine("Entregas", reais(today.deliveryFeesCents))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        DayLine("A receber hoje", reais(today.totalCents), strong = true)
+        TextButton(onClick = onHistory, modifier = Modifier.heightIn(min = 48.dp)) { Text("Ver histórico") }
+    }
+}
+
+@Composable
+private fun DayLine(label: String, value: String, strong: Boolean = false) {
+    Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) { }, horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyLarge, fontWeight = if (strong) FontWeight.Bold else FontWeight.Medium)
+    }
+}
+
+/**
  * Ending the shift happens once, at the end of the day: a quiet link at the foot of the card,
  * confirmed in a dialog, so a stray tap never takes the courier out of line.
  */
@@ -416,7 +596,7 @@ private fun EndShift(shift: Shift, busy: Boolean, actions: WorkActions) {
 // ---------------------------------------------------------------- route
 
 @Composable
-private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, actions: WorkActions) {
+private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, actions: WorkActions, withStops: Boolean = true) {
     var failing by remember(route.nextDeliveryId) { mutableStateOf(false) }
     val total = route.stops.size
     val storeName = route.store.name.ifBlank { shift?.restaurantName.orEmpty() }
@@ -466,9 +646,12 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
                 }
             }
         }
-        if (route.stops.isNotEmpty()) StopList(route)
-        route.store.phone?.let { phone ->
-            TextButton(onClick = { actions.dial(phone) }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Ligar para a loja") }
+        // On the street the stops and the store's phone live in the bottom sheet.
+        if (withStops) {
+            if (route.stops.isNotEmpty()) StopList(route)
+            route.store.phone?.let { phone ->
+                TextButton(onClick = { actions.dial(phone) }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Ligar para a loja") }
+            }
         }
     }
 }
@@ -491,7 +674,7 @@ private fun entregues(count: Int) = if (count == 1) "1 entregue" else "$count en
 
 @Composable
 private fun NextStop(stop: Stop) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.testTag("next-stop"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         stop.reference?.let {
             Text("Pedido #$it", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -516,6 +699,13 @@ private fun StopList(route: CourierRoute) {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Text("Entregas da rota", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
             modifier = Modifier.semantics { heading() })
+        StopRows(route)
+    }
+}
+
+@Composable
+private fun StopRows(route: CourierRoute) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         route.stops.forEach { stop ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(Modifier.weight(1f)) {
