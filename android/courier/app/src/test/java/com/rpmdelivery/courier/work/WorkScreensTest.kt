@@ -1,6 +1,11 @@
 package com.rpmdelivery.courier.work
 
+import android.Manifest
+import android.app.Application
 import androidx.compose.ui.test.*
+import androidx.test.core.app.ApplicationProvider
+import com.rpmdelivery.courier.shift.ShiftService
+import org.robolectric.Shadows.shadowOf
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.unit.dp
@@ -37,7 +42,11 @@ class WorkScreensTest {
     private lateinit var work: WorkController
     @After fun cleanup() { scope.cancel() }
 
-    private fun show() {
+    private val app: Application get() = ApplicationProvider.getApplicationContext()
+    private fun show(grant: Boolean = true) {
+        // Robolectric never answers a permission dialog: the flows run as if the courier had allowed them.
+        if (grant) shadowOf(app).grantPermissions(Manifest.permission.POST_NOTIFICATIONS,
+            Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
         controller = AuthController(auth, scope)
         // Long interval: the test drives each read, no timer fires during it.
         work = WorkController(fake, scope, onExpired = { controller.sessionExpired() }, refreshMillis = 3_600_000)
@@ -56,9 +65,12 @@ class WorkScreensTest {
         show()
         node("Pronto para começar?").assertIsDisplayed()
         captureEvidence(compose, "work-01-stores-390")
+        assertNull("no shift, no service", shadowOf(app).peekNextStartedService())
         node("Cheguei · pedir turno").assertHeightIsAtLeast(48.dp).performClick()
         node("Aguardando a loja").assertIsDisplayed()
         node("Cancelar pedido de turno").assertIsDisplayed()
+        // An open shift starts the shift service, which rings when the store answers.
+        assertEquals(ShiftService::class.java.name, shadowOf(app).nextStartedService.component!!.className)
 
         fake.approve(); reload()
         node("1º").assertIsDisplayed()
@@ -140,6 +152,18 @@ class WorkScreensTest {
         reload()
         node("Cheguei · pedir turno").performClick()
         node(WorkCopy.forCode("RPM_SHIFT_OPEN_ELSEWHERE")).assertIsDisplayed()
+    }
+
+    @Test fun routeWithoutLocationGoesOnAndSaysTheCustomerCannotSeeTheCourier() {
+        fake.home = fake.home.copy(shift = Shift("shift-1", "r-1", "Cozinha da Vila", "ON_ROUTE", null))
+        fake.assign()
+        fake.home = fake.home.copy(route = fake.home.route!!.copy(status = "ON_ROUTE", pickupReleased = true, nextDeliveryId = "d-1",
+            stops = fake.home.route!!.stops.mapIndexed { i, stop -> stop.copy(status = if (i == 0) "NEXT" else "ON_ROUTE") }))
+        show(grant = false)
+        node("Localização desligada: o cliente que é o próximo não vê você no mapa.").assertIsDisplayed()
+        node("Permitir localização").assertHeightIsAtLeast(48.dp)
+        node("Deslize para confirmar a entrega").assertIsDisplayed()
+        captureEvidence(compose, "work-10-location-off-390")
     }
 
     @Test fun expiredSessionReturnsToLoginWithoutTheRoute() {

@@ -14,6 +14,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.*
@@ -88,6 +89,24 @@ class SupabaseCourierWorkTest {
                 bodies.values.none { it.contains("user_id") || it.contains("courier_id") || it.contains(uid) })
             assertTrue(requests.filter { it.url.encodedPath.startsWith("/rest/v1/rpc/") }
                 .all { it.headers[HttpHeaders.Authorization] == "Bearer synthetic-access" })
+        } finally { auth.close() }
+    }
+
+    @Test fun locationsTravelInTheShapeTheServerChecks() = runBlocking {
+        val (auth, work) = repositories()
+        try {
+            auth.login("synthetic@example.invalid", "synthetic-pass")
+            work.recordLocations("route-1", listOf(
+                GpsPoint(-23.55, -46.63, 8.5, "2026-11-14T12:00:00Z"),
+                GpsPoint(-23.56, -46.64, null, "2026-11-14T12:00:05Z")))
+            val sent = body("record_courier_locations")
+            assertEquals(setOf("p_route_id", "p_points"), sent.keys)
+            val points = sent["p_points"]!!.jsonArray
+            assertEquals(2, points.size)
+            assertEquals(setOf("latitude", "longitude", "accuracy", "recordedAt"), points[0].jsonObject.keys)
+            assertEquals("8.5", points[0].jsonObject["accuracy"]!!.jsonPrimitive.content)
+            assertEquals(JsonNull, points[1].jsonObject["accuracy"])
+            assertTrue(runCatching { work.recordLocations("route-1", emptyList()) }.isFailure)
         } finally { auth.close() }
     }
 

@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Auth/RPC only. No location, notification or background-service permissions. -->
+    <!-- Shift alerts and GPS while on a route. Location is asked when starting a route, only
+         "while using the app"; no background-location permission. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <application
         android:allowBackup="false"
         android:fullBackupContent="@xml/backup_rules"
@@ -27,5 +34,14 @@
                 <data android:scheme="rpmdelivery" android:host="auth" android:path="/confirm" />
             </intent-filter>
         </activity>
+        <!-- Open shift only: specialUse while waiting in line (alerts), location while on the route. -->
+        <service
+            android:name=".shift.ShiftService"
+            android:exported="false"
+            android:foregroundServiceType="location|specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Fila de entregas: avisar o motoboy quando o turno for aprovado, quando ele for o próximo da fila e quando a rota for liberada para retirada." />
+        </service>
     </application>
 </manifest>

@@ -1,8 +1,16 @@
 package com.rpmdelivery.courier.ui.screens
 
+import android.Manifest
 import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import com.rpmdelivery.courier.shift.ShiftService
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -30,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -78,10 +87,40 @@ fun WorkScreen(work: WorkController) {
     fun open(intent: Intent, missing: String) {
         try { context.startActivity(intent) } catch (_: ActivityNotFoundException) { work.inform(missing) }
     }
+
+    // The shift service follows the open shift: alerts while waiting, GPS on the route.
+    val shiftOpen = state.home?.shift != null
+    LaunchedEffect(shiftOpen, state.home != null) {
+        if (shiftOpen) ShiftService.start(context) else if (state.home != null) ShiftService.stop(context)
+    }
+
+    // Permissions are asked at the moment they make sense; a refusal never blocks the work.
+    var locationOn by remember { mutableStateOf(hasLocation(context)) }
+    var pendingStore by remember { mutableStateOf<Store?>(null) }
+    val notificationsAsk = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        pendingStore?.let(work::requestShift); pendingStore = null
+    }
+    var pendingRoute by remember { mutableStateOf<CourierRoute?>(null) }
+    val locationAsk = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        locationOn = hasLocation(context)
+        pendingRoute?.let(work::startRoute); pendingRoute = null
+    }
+    val askLocation = { locationAsk.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) }
+
     val actions = WorkActions(
-        requestShift = work::requestShift,
+        requestShift = { store ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                pendingStore = store
+                notificationsAsk.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else work.requestShift(store)
+        },
         endShift = work::endShift,
-        startRoute = work::startRoute,
+        startRoute = { route ->
+            if (hasLocation(context)) work.startRoute(route) else { pendingRoute = route; askLocation() }
+        },
+        askLocation = askLocation,
+        locationOn = locationOn,
         complete = work::completeDelivery,
         fail = work::reportFailure,
         arrive = work::arriveAtStore,
@@ -92,10 +131,17 @@ fun WorkScreen(work: WorkController) {
     WorkContent(state, actions)
 }
 
+fun hasLocation(context: Context): Boolean =
+    ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
 class WorkActions(
     val requestShift: (Store) -> Unit,
     val endShift: (Shift) -> Unit,
     val startRoute: (CourierRoute) -> Unit,
+    /** Asks for location again; [locationOn] says whether the route is being shared. */
+    val askLocation: () -> Unit = {},
+    val locationOn: Boolean = true,
     val complete: (CourierRoute, Stop) -> Unit,
     val fail: (CourierRoute, Stop, FailureReason, String) -> Unit,
     val arrive: (CourierRoute) -> Unit,
@@ -308,6 +354,7 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
             else -> {
                 val next = route.next
                 Heading("Minha rota", "Entrega ${minOf(route.settled + 1, total)} de $total", "Em rota")
+                LocationOff(actions)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 if (next == null) {
                     Text("Aguardando a loja decidir as ocorrências. A tela se atualiza sozinha.", style = MaterialTheme.typography.bodyLarge)
@@ -329,6 +376,19 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
         if (route.stops.isNotEmpty()) StopList(route)
         route.store.phone?.let { phone ->
             TextButton(onClick = { actions.dial(phone) }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Ligar para a loja") }
+        }
+    }
+}
+
+/** Without location the route goes on, but the next customer's map shows no courier: say so, and offer to allow it. */
+@Composable
+private fun LocationOff(actions: WorkActions) {
+    if (actions.locationOn) return
+    Surface(color = SoftCoral, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(start = 14.dp, top = 12.dp, end = 6.dp, bottom = 4.dp)) {
+            Text("Localização desligada: o cliente que é o próximo não vê você no mapa.", style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+            TextButton(onClick = actions.askLocation, modifier = Modifier.heightIn(min = 48.dp)) { Text("Permitir localização") }
         }
     }
 }

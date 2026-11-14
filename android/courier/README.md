@@ -42,8 +42,8 @@ Wrapper e distribuição possuem SHA-256 verificado/fixado. Nenhuma versão din�
 
 Auth/PostgREST supabase-kt **3.6.0**, engine Ktor OkHttp **3.4.3**. Sem Storage,
 Realtime, mapas, GPS, Room, WorkManager, DI ou bibliotecas pesadas de navegação.
-INTERNET é a única permissão adicional; sem serviços/processos em segundo plano. A rota é lida
-a cada 15 s só com o app visível. GPS em primeiro plano fica para a próxima etapa.
+Permissões: INTERNET, notificações, localização "durante o uso" (nunca em segundo plano) e serviço em
+primeiro plano (`specialUse` na fila, `location` na rota). Ver [fatia 7](../../docs/delivery-core-commands.md).
 Tema claro, cores, raio minimalista, máscara de celular e catálogo da PR #22 preservados.
 
 Lint mantém `warningsAsErrors`; `OldTargetApi` e `AndroidGradlePluginVersion` (Gradle 8.14.7 saiu
@@ -60,7 +60,8 @@ app/src/main/java/com/rpmdelivery/courier/
   MainActivity.kt       # Activity, ciclo de vida e entrega do callback
   auth/                 # contratos, SDK, controller, ViewModel, storage Keystore
   registration/         # celular e catálogo locais, sem rede
-  work/                 # turno e rota reais: leitura, comandos, controller
+  work/                 # turno e rota reais: leitura, comandos, controller, avisos, lote de GPS
+  shift/                # serviço do turno: notificação fixa, avisos e GPS da rota
   demo/                 # fixture separada de rota e validação de campos
   ui/CourierApp.kt      # navegação e estados do fluxo conectado
   ui/components/        # marca, campos, ações e sugestões
