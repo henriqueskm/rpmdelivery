@@ -89,12 +89,15 @@ class WorkScreensTest {
 
         // A failure needs a reason, and a written report for "Outro motivo".
         node("Não consegui entregar").performClick()
-        compose.onNodeWithText("Enviar para a loja").assertIsNotEnabled()
-        compose.onNodeWithText("Outro motivo").performClick()
-        compose.onNodeWithText("Enviar para a loja").assertIsNotEnabled()
-        compose.onNodeWithText("O que aconteceu? (obrigatório)").performTextInput("Portão fechado")
+        compose.onNodeWithText("ENTREGA CONCLUÍDA").assertDoesNotExist()
+        node("Enviar para a loja").assertIsNotEnabled()
+        node("Voltar").performClick()
+        node("Não consegui entregar").performClick()
+        node("Outro motivo").performClick()
+        node("Enviar para a loja").assertIsNotEnabled()
+        node("O que aconteceu? (obrigatório)").performTextInput("Portão fechado")
         captureEvidence(compose, "work-05-failure-390")
-        compose.onNodeWithText("Enviar para a loja").assertIsEnabled().performClick()
+        node("Enviar para a loja").assertIsEnabled().performClick()
         assertTrue(fake.calls.contains("report_delivery_failure:d-2:OTHER:Portão fechado"))
 
         node("Volte para a loja").assertIsDisplayed()

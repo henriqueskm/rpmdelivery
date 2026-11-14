@@ -310,6 +310,10 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 if (next == null) {
                     Text("Aguardando a loja decidir as ocorrências. A tela se atualiza sozinha.", style = MaterialTheme.typography.bodyLarge)
+                } else if (failing) {
+                    NextStop(next)
+                    FailureForm(busy, onBack = { failing = false },
+                        onSend = { reason, notes -> failing = false; actions.fail(route, next, reason, notes) })
                 } else {
                     NextStop(next)
                     NavigationButton("Abrir navegação", "Google Maps, Waze ou o aplicativo de mapas instalado") {
@@ -341,10 +345,6 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
             TextButton(onClick = { confirming = false; actions.complete(route, next) }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Confirmar entrega") }
         },
         dismissButton = { TextButton(onClick = { confirming = false }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Voltar") } },
-    )
-    if (failing && next != null) FailureDialog(
-        onDismiss = { failing = false },
-        onSend = { reason, notes -> failing = false; actions.fail(route, next, reason, notes) },
     )
 }
 
@@ -392,40 +392,40 @@ private fun StopList(route: CourierRoute) {
     }
 }
 
+/**
+ * The failure report in place of the stop's actions, not in a dialog: the keyboard has the
+ * whole screen, also at 320 px with large font, and the stop stays visible above it.
+ */
 @Composable
-private fun FailureDialog(onDismiss: () -> Unit, onSend: (FailureReason, String) -> Unit) {
+private fun FailureForm(busy: Boolean, onBack: () -> Unit, onSend: (FailureReason, String) -> Unit) {
     var reason by remember { mutableStateOf<FailureReason?>(null) }
     var notes by remember { mutableStateOf("") }
     val trimmed = notes.trim()
     val valid = reason != null && trimmed.length <= 500 && (reason != FailureReason.OTHER || trimmed.length >= 3)
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Por que não deu para entregar?") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Column(Modifier.selectableGroup()) {
-                    FailureReason.entries.forEach { option ->
-                        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                            .selectable(selected = reason == option, onClick = { reason = option }, role = Role.RadioButton),
-                            verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(selected = reason == option, onClick = null)
-                            Spacer(Modifier.width(8.dp))
-                            Text(option.label, style = MaterialTheme.typography.bodyLarge)
-                        }
-                    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Text("Por que não deu para entregar?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.semantics { heading() })
+        Column(Modifier.selectableGroup()) {
+            FailureReason.entries.forEach { option ->
+                Row(Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                    .selectable(selected = reason == option, onClick = { reason = option }, role = Role.RadioButton),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(selected = reason == option, onClick = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(option.label, style = MaterialTheme.typography.bodyLarge)
                 }
-                OutlinedTextField(value = notes, onValueChange = { if (it.length <= 500) notes = it },
-                    label = { Text(if (reason == FailureReason.OTHER) "O que aconteceu? (obrigatório)" else "Detalhes para a loja (opcional)") },
-                    modifier = Modifier.fillMaxWidth())
-                Text("A loja decide se você tenta de novo, devolve o pedido ou cancela.", style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-        },
-        confirmButton = {
-            TextButton(onClick = { reason?.let { onSend(it, trimmed) } }, enabled = valid, modifier = Modifier.heightIn(min = 48.dp)) {
-                Text("Enviar para a loja")
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text("Voltar") } },
-    )
+        }
+        OutlinedTextField(value = notes, onValueChange = { if (it.length <= 500) notes = it },
+            label = { Text(if (reason == FailureReason.OTHER) "O que aconteceu? (obrigatório)" else "Detalhes para a loja (opcional)") },
+            modifier = Modifier.fillMaxWidth())
+        Text("A loja decide se você tenta de novo, devolve o pedido ou cancela.", style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Button(onClick = { reason?.let { onSend(it, trimmed) } }, enabled = valid && !busy, shape = RoundedCornerShape(14.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+            Text("Enviar para a loja", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        }
+        Secondary("Voltar", busy, onBack)
+    }
 }
