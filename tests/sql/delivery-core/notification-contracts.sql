@@ -9,6 +9,21 @@ select set_config('core.t'||n,(select d.id::text from public.deliveries d join p
  where o.client_request_id=core_test.id(9700+n)),false) from generate_series(1,4) n;
 
 -- ---------------------------------------------------------
+-- "Você é o próximo" (migration 20261115120000)
+-- ---------------------------------------------------------
+-- Earlier files moved route_w3 on: t1 was next at the start, then t2, then t3.
+select core_test.check('a stop that becomes next after the first queues "você é o próximo"; the first stop does not',
+ (select count(*)=2 and bool_and(n.type='NEXT_DELIVERY' and n.channel='WHATSAPP' and n.status='PENDING'
+   and n.destination=o.customer_phone)
+  from public.delivery_notifications n join public.deliveries d on d.id=n.delivery_id
+  join public.orders o on o.id=d.order_id
+  where n.type='NEXT_DELIVERY' and n.delivery_id in (core_test.s('t2'),core_test.s('t3')))
+ and not exists (select 1 from public.delivery_notifications
+  where type='NEXT_DELIVERY' and delivery_id=core_test.s('t1')));
+-- The checks below follow "saiu para entrega" alone.
+delete from public.delivery_notifications where type='NEXT_DELIVERY';
+
+-- ---------------------------------------------------------
 -- Enqueue
 -- ---------------------------------------------------------
 select core_test.check('route start queued one WhatsApp per stop, to the customer',

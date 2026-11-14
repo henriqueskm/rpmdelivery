@@ -49,6 +49,13 @@ class WorkControllerTest {
         work.startRoute(work.state.value.home!!.route!!); advanceUntilIdle()
         assertEquals(1, fake.notified)
         assertEquals("ON_ROUTE", work.state.value.home!!.route!!.status)
+        // Each settled stop brings the next customer up: the server may have a "você é o próximo" to send.
+        val route = work.state.value.home!!.route!!
+        work.completeDelivery(route, route.next!!); advanceUntilIdle()
+        assertEquals(2, fake.notified)
+        val after = work.state.value.home!!.route!!
+        work.reportFailure(after, after.next!!, FailureReason.CUSTOMER_NOT_RESPONDING, ""); advanceUntilIdle()
+        assertEquals(3, fake.notified)
     }
 
     @Test fun droppedConnectionKeepsTheLastScreen() = runTest {

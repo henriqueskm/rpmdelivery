@@ -97,21 +97,29 @@ class WorkController(
     }
     fun startRoute(route: CourierRoute) = act("Rota iniciada. Boa entrega!") {
         repository.startRoute(route.routeId, route.version)
-        scope.launch {
-            try { repository.notifyCustomers(route.routeId) }
-            catch (error: CancellationException) { throw error }
-            catch (_: Exception) { /* The store can resend; the route goes on. */ }
-        }
+        notifyCustomers(route.routeId)
     }
     fun completeDelivery(route: CourierRoute, stop: Stop) = act("Entrega concluída.") {
         once("complete:${stop.deliveryId}") { repository.completeDelivery(it, route.routeId, stop.deliveryId) }
+        // The next customer is now first in line: "você é o próximo".
+        notifyCustomers(route.routeId)
     }
     fun reportFailure(route: CourierRoute, stop: Stop, reason: FailureReason, notes: String) =
         act("Ocorrência enviada. A loja decide o que fazer com este pedido.") {
             once("failure:${stop.deliveryId}:${stop.attempts}") {
                 repository.reportFailure(it, route.routeId, stop.deliveryId, reason, notes)
             }
+            notifyCustomers(route.routeId)
         }
+
+    /** Asks the server to send what the route queued ("saiu", "próximo"). Never blocks the route. */
+    private fun notifyCustomers(routeId: String) {
+        scope.launch {
+            try { repository.notifyCustomers(routeId) }
+            catch (error: CancellationException) { throw error }
+            catch (_: Exception) { /* The store can resend; the route goes on. */ }
+        }
+    }
     fun arriveAtStore(route: CourierRoute) = act("Chegada registrada. Você voltou para a fila.") {
         repository.arriveAtStore(route.routeId)
     }

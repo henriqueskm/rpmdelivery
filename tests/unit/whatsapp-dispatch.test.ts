@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { classifyMetaResponse, readWhatsAppConfig, routeStartedMessage }
+import { classifyMetaResponse, messageFor, readWhatsAppConfig, routeStartedMessage }
   from "../../supabase/functions/_shared/whatsapp.ts";
 
 const env = (values: Record<string, string>) => (name: string) => values[name];
@@ -18,8 +18,9 @@ test("sem token, número ou site o envio fica desligado", () => {
   assert.equal(readWhatsAppConfig(env({ ...base, PUBLIC_SITE_URL: "not a url" })), null);
   assert.deepEqual(readWhatsAppConfig(env(base)), {
     token: "test-token", phoneNumberId: "123456789012345", template: "rpm_pedido_saiu",
-    language: "pt_BR", graphVersion: "v23.0", siteUrl: "https://rpm.example",
+    nextTemplate: "rpm_voce_e_o_proximo", language: "pt_BR", graphVersion: "v23.0", siteUrl: "https://rpm.example",
   });
+  assert.equal(readWhatsAppConfig(env({ ...base, WHATSAPP_TEMPLATE_NEXT: "proximo_teste" }))?.nextTemplate, "proximo_teste");
   assert.equal(readWhatsAppConfig(env({ ...base, WHATSAPP_TEMPLATE: "hello_world", WHATSAPP_GRAPH_VERSION: "v24.0" }))?.template, "hello_world");
 });
 
@@ -36,6 +37,15 @@ test("mensagem de modelo com loja e link, para o número sem +", () => {
   });
   assert.throws(() => routeStartedMessage(config, { ...item, to: "11912345678" }), /INVALID_PHONE/);
   assert.throws(() => routeStartedMessage(config, { ...item, trackingToken: "../x" }), /INVALID_TRACKING_TOKEN/);
+});
+
+test("o tipo do aviso escolhe o modelo: saiu para entrega ou você é o próximo", () => {
+  const config = readWhatsAppConfig(env(base))!;
+  assert.equal(messageFor(config, item).body.template.name, "rpm_pedido_saiu");
+  const next = messageFor(config, { ...item, type: "NEXT_DELIVERY" });
+  assert.equal(next.body.template.name, "rpm_voce_e_o_proximo");
+  assert.deepEqual(next.body.template.components, routeStartedMessage(config, item).body.template.components);
+  assert.throws(() => messageFor(config, { ...item, type: "DELIVERY_COMPLETED" }), /UNSUPPORTED_TYPE/);
 });
 
 test("resposta da Meta: enviado, tentar de novo ou falha definitiva, sem telefone no erro", () => {

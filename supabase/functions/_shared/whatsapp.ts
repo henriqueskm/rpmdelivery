@@ -5,7 +5,10 @@
 export type WhatsAppConfig = {
   token: string;
   phoneNumberId: string;
+  /** "Saiu para entrega" (TRACKING_LINK). */
   template: string;
+  /** "Você é o próximo" (NEXT_DELIVERY). */
+  nextTemplate: string;
   language: string;
   graphVersion: string;
   siteUrl: string;
@@ -46,14 +49,27 @@ export function readWhatsAppConfig(get: (name: string) => string | undefined): W
     token,
     phoneNumberId,
     template: get("WHATSAPP_TEMPLATE")?.trim() || "rpm_pedido_saiu",
+    nextTemplate: get("WHATSAPP_TEMPLATE_NEXT")?.trim() || "rpm_voce_e_o_proximo",
     language: get("WHATSAPP_TEMPLATE_LANGUAGE")?.trim() || "pt_BR",
     graphVersion: get("WHATSAPP_GRAPH_VERSION")?.trim() || "v23.0",
     siteUrl: origin,
   };
 }
 
-// Template body: {{1}} store name, {{2}} public tracking link.
+// Both templates share one body shape: {{1}} store name, {{2}} public tracking link.
+// The kind of message picks the template; an unknown kind is never sent.
+export function messageFor(config: WhatsAppConfig, item: ClaimedNotification) {
+  if (item.type === "TRACKING_LINK") return templateMessage(config, config.template, item);
+  if (item.type === "NEXT_DELIVERY") return templateMessage(config, config.nextTemplate, item);
+  throw new Error("UNSUPPORTED_TYPE");
+}
+
+// "Saiu para entrega": kept for callers and tests that build it directly.
 export function routeStartedMessage(config: WhatsAppConfig, item: ClaimedNotification) {
+  return templateMessage(config, config.template, item);
+}
+
+function templateMessage(config: WhatsAppConfig, template: string, item: ClaimedNotification) {
   if (!STORED_PHONE.test(item.to)) throw new Error("INVALID_PHONE");
   if (!TOKEN.test(item.trackingToken)) throw new Error("INVALID_TRACKING_TOKEN");
   const store = item.restaurantName.trim().replace(/\s+/g, " ").slice(0, 60);
@@ -64,7 +80,7 @@ export function routeStartedMessage(config: WhatsAppConfig, item: ClaimedNotific
       to: item.to.slice(1),
       type: "template",
       template: {
-        name: config.template,
+        name: template,
         language: { code: config.language },
         components: [{
           type: "body",
