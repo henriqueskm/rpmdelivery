@@ -29,7 +29,10 @@ export function rpcFor(command: Command | StoreCommand, restaurantId: string, bo
         p_customer_name: order.customer.trim(), p_customer_phone: parseBrazilianMobilePhone(order.phone),
         p_delivery_address: order.address.trim(), p_neighborhood: blank(order.neighborhood),
         p_complement: blank(order.complement), p_reference: blank(order.reference), p_notes: blank(order.notes),
-        p_ordered_at: new Date(order.orderedAt).toISOString(), p_promised_minutes: order.promisedMinutes } };
+        p_ordered_at: new Date(order.orderedAt).toISOString(), p_promised_minutes: order.promisedMinutes,
+        // Coordinates only from a picked address; typed text alone is saved without them.
+        ...(order.geocode ? { p_latitude: order.geocode.latitude, p_longitude: order.geocode.longitude,
+          p_address_provider: "mapbox", p_address_provider_id: order.geocode.providerId } : {}) } };
     }
     case "assign":
       return command.editingId

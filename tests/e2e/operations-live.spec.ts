@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { mockSupabase, testRestaurant } from "./support/supabase";
 import { storeBackend } from "./support/store-backend";
+import { mockGeocoding, resolvedAddress } from "./support/geocoding";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
@@ -74,6 +75,8 @@ test("painel real: aprova turno, cadastra pedido, monta e libera rota pelo banco
     p_customer_phone: "+5511912345678", p_delivery_address: "Rua das Acácias, 55", p_neighborhood: "Vila Mariana",
     p_reference: "2001", p_promised_minutes: 60 });
   expect(created.p_request_id).toMatch(UUID);
+  // Typed text only (the search was not used): saved without coordinates.
+  expect(created.p_latitude).toBeUndefined();
 
   // Route with two waiting orders for the first courier in line (Bruno, waiting longest after Dani's route).
   await page.getByRole("checkbox", { name: "Selecionar pedido 1048", exact: true }).check();
@@ -197,6 +200,37 @@ test("cancelar pedido e rota em preparação pedem confirmação; pedido devolvi
   // On the street, no "simulação" label on real routes.
   await showArea(page, /^Rotas/);
   await expect(page.getByText(/— simulação/)).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test("novo pedido: endereço escolhido na busca vai com a localização para o mapa do cliente", async ({ page }) => {
+  const errors = watchErrors(page);
+  const backend = storeBackend();
+  await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  const geocoding = await mockGeocoding(page);
+  await openPanel(page);
+  await page.getByRole("button", { name: "Novo pedido" }).click();
+  const form = page.locator("dialog[open]");
+  await expect(form).toContainText("Sem escolher, o pedido é salvo só com o texto.");
+  await form.locator('input[name="customer"]').fill("Marina Teixeira");
+  await form.locator('input[name="phone"]').fill("(11) 91234-5678");
+  await form.getByRole("combobox", { name: "Endereço" }).fill("Rua das Flores, 120");
+  await form.getByRole("option", { name: "Rua das Flores, 120 São Paulo, Brasil" }).click();
+  await expect(form.getByText("✓ Endereço confirmado", { exact: true })).toBeVisible();
+  await expect(form).toContainText("o cliente vê a casa no mapa");
+  await expect(form.getByRole("img", { name: "Mapa do endereço do cliente, com marcador" })).toBeVisible();
+  await form.locator('input[name="neighborhood"]').fill("Vila Mariana");
+  await form.getByRole("button", { name: "Cadastrar pedido" }).click();
+  await expect(form).toHaveCount(0);
+  expect(geocoding.resolve).toEqual([resolvedAddress.providerId]);
+  expect(backend.commandCalls().find(call => call.fn === "create_order")!.body).toMatchObject({
+    p_delivery_address: resolvedAddress.address, p_latitude: resolvedAddress.latitude, p_longitude: resolvedAddress.longitude,
+    p_address_provider: "mapbox", p_address_provider_id: resolvedAddress.providerId });
+
+  // The next order starts with an empty address search.
+  await page.getByRole("button", { name: "Novo pedido" }).click();
+  await expect(page.locator("dialog[open]").getByRole("combobox", { name: "Endereço" })).toHaveValue("");
+  await expect(page.locator("dialog[open]").getByText("✓ Endereço confirmado", { exact: true })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

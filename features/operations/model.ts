@@ -70,7 +70,10 @@ export type NewOrder = Pick<
   | "notes"
   | "orderedAt"
   | "promisedMinutes"
->;
+> & {
+  /** Real data: the address picked from the search, so the customer's map shows the house. */
+  geocode?: { latitude: number; longitude: number; providerId: string };
+};
 export type Command =
   | IssueCommand
   | { type: "batch-assign"; proposal: AssignmentProposal; groups: PlannedGroup[]; parameters: PlanningParameters; now: number }

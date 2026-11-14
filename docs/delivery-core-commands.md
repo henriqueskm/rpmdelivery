@@ -325,3 +325,7 @@ Comandos que já existiam no banco (fatias 1 a 3) e agora têm botão no `/dashb
 - **Cancelar rota em preparação** (`cancel_route`): "Cancelar rota" no cartão da rota, com confirmação. Os pedidos voltam a aguardar e o motoboy volta para a fila; uma retirada liberada é desfeita.
 - **Devolver à fila** (`requeue_delivery`): a seção "Voltaram para a loja", abaixo dos pedidos, lista os pedidos que o motoboy trouxe de volta. Com a rota encerrada, "Devolver à fila" põe o pedido de novo em despacho; com o motoboy ainda na rua, aparece "Volta com o motoboy". Para desistir de um pedido devolvido, devolva à fila e cancele.
 - O rótulo "— simulação" saiu do cancelamento de entrega em rota no painel real.
+
+## Endereço do pedido com localização
+
+No `/dashboard`, o campo "Endereço" do "Novo pedido" usa a mesma busca do cadastro da loja (`/api/geocoding/suggest` e `/resolve`, Mapbox no servidor). Escolher um endereço da lista envia `p_latitude`, `p_longitude`, `p_address_provider = 'mapbox'` e `p_address_provider_id` para `create_order`, e o cliente que é o próximo vê a casa no mapa do acompanhamento. A busca nunca bloqueia o pedido: sem escolher (endereço não encontrado ou busca fora do ar), o pedido é salvo só com o texto, como antes. Editar o endereço depois de escolher apaga a localização. Sem migration: `create_order` já aceitava as coordenadas desde a fatia 1.

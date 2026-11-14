@@ -15,10 +15,23 @@ const messages = {
   confirmed: "Localização confirmada. Ao editar, selecione o endereço novamente.",
 };
 
-export function AddressAutocomplete({ onChange }: { onChange: (value: ResolvedAddress | null) => void }) {
+export type AddressHints = Partial<typeof messages>;
+
+/**
+ * Address search with Mapbox confirmation. The store's own address must be confirmed; a customer's
+ * address in a new order may be saved as typed text, so callers can reword the hints and the map.
+ */
+export function AddressAutocomplete({ onChange, hints, placeholder = "Rua, número e cidade", mapAlt, className = "field address-field" }: {
+  onChange: (value: ResolvedAddress | null) => void;
+  hints?: AddressHints;
+  placeholder?: string;
+  mapAlt?: string;
+  className?: string;
+}) {
   const id = useId();
   const listId = `${id}-list`;
   const state = useAddressAutocomplete(onChange);
+  const text = { ...messages, ...hints };
   const expanded = state.open && state.suggestions.length > 0;
   function keyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Escape") { event.preventDefault(); state.close(); }
@@ -35,11 +48,11 @@ export function AddressAutocomplete({ onChange }: { onChange: (value: ResolvedAd
     }
   }
   return (
-    <div className="field address-field">
+    <div className={className}>
       <label htmlFor={id}>Endereço</label>
       <div className="input-wrap">
         <input id={id} name="address" role="combobox" value={state.query}
-          placeholder="Rua, número e cidade" autoComplete="off" maxLength={200} required
+          placeholder={placeholder} autoComplete="off" maxLength={200} required
           aria-autocomplete="list" aria-expanded={expanded} aria-controls={listId}
           aria-activedescendant={expanded && state.active >= 0 ? `${id}-option-${state.active}` : undefined}
           aria-describedby={`${id}-status`} aria-invalid={state.status === "error"}
@@ -59,8 +72,8 @@ export function AddressAutocomplete({ onChange }: { onChange: (value: ResolvedAd
         )}
       </div>
       <p className={`field-hint ${state.status === "error" ? "address-error" : ""}`}
-        id={`${id}-status`} role="status" aria-live="polite">{messages[state.status]}</p>
-      {state.resolved && <AddressConfirmationMap key={state.resolved.providerId} address={state.resolved} />}
+        id={`${id}-status`} role="status" aria-live="polite">{text[state.status]}</p>
+      {state.resolved && <AddressConfirmationMap key={state.resolved.providerId} address={state.resolved} alt={mapAlt} />}
     </div>
   );
 }
