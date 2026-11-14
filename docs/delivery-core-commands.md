@@ -22,7 +22,8 @@ O painel da loja (`/dashboard`) usa dados reais desde a fatia 5; o `/preview/ope
 | 2. Montagem de rota | `create_route`, `update_route_composition`, `release_route_pickup`, `revoke_route_pickup`, `cancel_route` | no `main` (PR #25) |
 | 3. Execução da rota | `start_route`, `complete_delivery`, `report_delivery_failure`, `decide_delivery_failure`, `cancel_delivery_on_route`, `requeue_delivery`, `arrive_at_store`, `record_courier_locations` | no `main` (PR #26) |
 | 4. Rastreamento público | `get_tracking(token)` (anon, dados mínimos) + link WhatsApp `wa.me` (`lib/tracking/links.ts`) | no `main` (PR #27) |
-| 5. Painel da loja | `get_operations_board(restaurant)` (leitura agregada) e o `/dashboard` ligado aos comandos das fatias 1–3 | **em revisão** |
+| 5. Painel da loja | `get_operations_board(restaurant)` (leitura agregada) e o `/dashboard` ligado aos comandos das fatias 1–3 | no `main` (PR #32) |
+| 6. App do motoboy | `get_courier_home()` (leitura da tela inicial) e o app Android ligado aos comandos do motoboy | **em revisão** |
 
 Fora do caminho até a simulação: otimização/planejamento automático, push, WhatsApp/SMS por API, taxa por km, ofertas externas.
 
@@ -226,3 +227,34 @@ Rotas canceladas não aparecem; as entregas delas voltam a aguardar.
 ### Fora desta fatia (escondido no painel real)
 
 Montagem automática e sugestão de sequência (otimização congelada até a simulação), edição de prazo do pedido e do prazo padrão, tempo de resposta das ocorrências pela tela, visão simulada do motoboy, cancelar rota em preparação, cancelar pedido e devolver à fila um pedido que voltou. O endereço do pedido ainda é texto livre, sem geocodificação; sem coordenadas, o mapa do cliente mostra só o entregador.
+
+## Fatia 6 — App do motoboy com dados reais
+
+O app Android deixa a prévia de "Minha rota" e passa a usar o banco: pedir turno na loja, esperar na fila, executar a rota e voltar. A prévia com dados fictícios continua na tela de boas-vindas, para quem ainda não entrou.
+
+### `get_courier_home()` (o próprio motoboy)
+
+Uma leitura só, `stable`, a cada 15 s com o app aberto e logo depois de cada comando. Sem perfil de motoboy: `RPM_COURIER_REQUIRED` (42501); `anon` não executa.
+
+| Campo | Conteúdo |
+| --- | --- |
+| `stores` | Lojas ativas com vínculo ACTIVE ou PENDING, com o id que `request_shift` recebe. `list_my_establishments()` devolve o id do vínculo, não o da loja |
+| `shift` | O turno aberto, com o nome da loja e a posição na fila: só para AVAILABLE sem rota em preparação, contando os disponíveis da mesma loja na ordem do painel (`available_since`) |
+| `route` | Exatamente o que `get_courier_route()` devolve: a rota ativa, sem telefone de cliente |
+| `serverNow` | Relógio do servidor |
+
+### O que o app faz
+
+- **Turno:** "Cheguei · pedir turno" (`request_shift`), aguardar a aprovação, ver a posição na fila, cancelar o pedido ou encerrar o turno (`end_shift`).
+- **Rota:** aguarda a liberação da retirada; "Iniciar rota" (`start_route` com a versão vista) e, em seguida, chama `dispatch-notifications` para o aviso "saiu para entrega". Sem a função publicada, a chamada falha em silêncio e a rota segue.
+- **Parada atual:** pedido, cliente, endereço, complemento, bairro, prazo, tentativa e observações; navegação pelo app de mapas instalado (coordenadas quando existem, senão o endereço escrito).
+- **Entregue** pede confirmação (`complete_delivery`). **Não consegui entregar** pede o motivo e, em "Outro motivo", um relato de 3 a 500 caracteres (`report_delivery_failure`).
+- **Volta:** "Volte para a loja", com o resumo da rota, navegação até a loja e "Cheguei na loja" (`arrive_at_store`), que devolve o motoboy ao fim da fila.
+- **Ligar para a loja** abre o discador com o telefone da loja. O app nunca recebe o telefone do cliente.
+- **Repetição segura:** "Entregue" e "Não consegui entregar" guardam o `request_id` até dar certo; repetir depois de uma queda reaproveita o mesmo id e o banco não aplica duas vezes.
+- **Sessão:** o app renova o token de acesso uma vez quando o banco o recusa por expiração; renovação recusada volta ao login. Login e comandos de rota compartilham uma trava, então nunca renovam a sessão ao mesmo tempo.
+- **Sem conexão:** a primeira leitura oferece "Tentar novamente"; depois, uma queda mantém a última tela com o aviso "Sem conexão".
+
+### Fora desta fatia
+
+GPS (`record_courier_locations`) com serviço em primeiro plano e permissão de localização fica para a próxima PR; até lá o cliente que é o próximo não vê o motoboy no mapa. Sem notificações push: com o app fechado, a tela só se atualiza ao abrir.

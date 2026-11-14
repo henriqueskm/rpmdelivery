@@ -1,0 +1,404 @@
+package com.rpmdelivery.courier.ui.screens
+
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
+import com.rpmdelivery.courier.R
+import com.rpmdelivery.courier.ui.components.StationaryNotice
+import com.rpmdelivery.courier.ui.theme.Green
+import com.rpmdelivery.courier.ui.theme.SoftCoral
+import com.rpmdelivery.courier.ui.theme.SoftGreen
+import com.rpmdelivery.courier.work.CourierRoute
+import com.rpmdelivery.courier.work.FailureReason
+import com.rpmdelivery.courier.work.Shift
+import com.rpmdelivery.courier.work.Stop
+import com.rpmdelivery.courier.work.Store
+import com.rpmdelivery.courier.work.WorkController
+import com.rpmdelivery.courier.work.WorkState
+import com.rpmdelivery.courier.work.clockTime
+import com.rpmdelivery.courier.work.stopLabel
+
+/** The signed-in courier's day: ask for a shift, wait in line, run the route, come back. */
+@Composable
+fun WorkScreen(work: WorkController) {
+    val state by work.state.collectAsState()
+    DisposableEffect(work) {
+        work.setShown(true)
+        onDispose { work.setShown(false) }
+    }
+    val context = LocalContext.current
+    fun open(intent: Intent, missing: String) {
+        try { context.startActivity(intent) } catch (_: ActivityNotFoundException) { work.inform(missing) }
+    }
+    val actions = WorkActions(
+        requestShift = work::requestShift,
+        endShift = work::endShift,
+        startRoute = work::startRoute,
+        complete = work::completeDelivery,
+        fail = work::reportFailure,
+        arrive = work::arriveAtStore,
+        retry = work::refresh,
+        navigate = { query -> open(Intent(Intent.ACTION_VIEW, query.toUri()), "Nenhum aplicativo de mapas encontrado neste aparelho.") },
+        dial = { phone -> open(Intent(Intent.ACTION_DIAL, "tel:$phone".toUri()), "Nenhum aplicativo de telefone encontrado neste aparelho.") },
+    )
+    WorkContent(state, actions)
+}
+
+class WorkActions(
+    val requestShift: (Store) -> Unit,
+    val endShift: (Shift) -> Unit,
+    val startRoute: (CourierRoute) -> Unit,
+    val complete: (CourierRoute, Stop) -> Unit,
+    val fail: (CourierRoute, Stop, FailureReason, String) -> Unit,
+    val arrive: (CourierRoute) -> Unit,
+    val retry: () -> Unit,
+    /** Opens a geo: URI in the installed maps app. */
+    val navigate: (String) -> Unit,
+    val dial: (String) -> Unit,
+)
+
+/** geo: URI for a place: exact coordinates when known, otherwise the written address. */
+fun mapQuery(latitude: Double?, longitude: Double?, address: String): String =
+    if (latitude != null && longitude != null) "geo:$latitude,$longitude?q=$latitude,$longitude"
+    else "geo:0,0?q=${Uri.encode(address)}"
+
+@Composable
+fun WorkContent(state: WorkState, actions: WorkActions) {
+    val home = state.home
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        if (state.offline) Banner("Sem conexão. Mostrando os últimos dados; o aplicativo tenta de novo sozinho.", SoftCoral)
+        state.notice?.let { Banner(it, SoftGreen, Green) }
+        state.message?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+        }
+        when {
+            home == null && state.loading -> Text("Carregando suas lojas e seu turno…")
+            home == null -> OutlinedButton(onClick = actions.retry, enabled = !state.busy,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), shape = RoundedCornerShape(14.dp)) { Text("Tentar novamente") }
+            home.route != null -> RouteContent(home.route, home.shift, state.busy, actions)
+            home.shift != null -> ShiftContent(home.shift, state.busy, actions)
+            else -> StoresContent(home.stores, state.busy, actions)
+        }
+        StationaryNotice()
+    }
+}
+
+@Composable
+private fun Banner(text: String, color: androidx.compose.ui.graphics.Color, content: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface) {
+    Surface(color = color, contentColor = content, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+        Text(text, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(14.dp).semantics { liveRegion = LiveRegionMode.Polite })
+    }
+}
+
+@Composable
+private fun Card(content: @Composable () -> Unit) {
+    Surface(shape = RoundedCornerShape(20.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) { content() }
+    }
+}
+
+@Composable
+private fun Heading(title: String, detail: String? = null, chip: String? = null) {
+    Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, fontSize = 26.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.semantics { heading() })
+            detail?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
+        chip?.let {
+            Surface(color = SoftGreen, contentColor = Green, shape = RoundedCornerShape(100.dp)) {
+                Text(it, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun Primary(label: String, busy: Boolean, onClick: () -> Unit) {
+    Button(onClick = onClick, enabled = !busy, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+        Text(label, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 4.dp))
+    }
+}
+
+@Composable
+private fun Secondary(label: String, busy: Boolean, onClick: () -> Unit) {
+    OutlinedButton(onClick = onClick, enabled = !busy, shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+        Text(label, fontSize = 16.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(vertical = 4.dp))
+    }
+}
+
+@Composable
+private fun NavigationButton(title: String, hint: String, onClick: () -> Unit) {
+    Surface(onClick = onClick, shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp)) {
+        Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(painterResource(R.drawable.navigation_arrow), contentDescription = null, modifier = Modifier.size(22.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------- stores and shift
+
+@Composable
+private fun StoresContent(stores: List<Store>, busy: Boolean, actions: WorkActions) {
+    val active = stores.filter { it.active }
+    val waiting = stores.filterNot { it.active }
+    Card {
+        if (active.isEmpty()) {
+            Heading("Nenhuma loja aprovada")
+            Text("Peça o convite à loja, abra o link no navegador do celular e entre com esta mesma conta. Quando a loja aprovar, ela aparece aqui.",
+                style = MaterialTheme.typography.bodyLarge)
+        } else {
+            Heading("Pronto para começar?", "Ao chegar na loja, peça seu turno. A loja aprova e você entra na fila.")
+            active.forEach { store ->
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Text(store.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Primary("Cheguei · pedir turno em ${store.name}", busy) { actions.requestShift(store) }
+            }
+        }
+        waiting.forEach {
+            Text("Aguardando a loja ${it.name} aprovar seu vínculo.", style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun ShiftContent(shift: Shift, busy: Boolean, actions: WorkActions) {
+    Card {
+        when (shift.status) {
+            "PENDING" -> {
+                Heading("Aguardando a loja", shift.restaurantName)
+                Text("Seu turno foi pedido. Assim que a loja aprovar, você entra na fila.", style = MaterialTheme.typography.bodyLarge)
+                Secondary("Cancelar pedido de turno", busy) { actions.endShift(shift) }
+            }
+            "AVAILABLE" -> {
+                Heading("Você está na fila", shift.restaurantName, "Disponível")
+                shift.queuePosition?.let { position ->
+                    Surface(color = SoftGreen, contentColor = Green, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text("${position}º", fontSize = 40.sp, fontWeight = FontWeight.SemiBold)
+                            Text(if (position == 1) "Você é o próximo da fila" else "da fila", style = MaterialTheme.typography.titleMedium)
+                        }
+                    }
+                }
+                Text("Quando a loja montar sua rota, ela aparece aqui sozinha.", style = MaterialTheme.typography.bodyLarge)
+                Secondary("Encerrar turno", busy) { actions.endShift(shift) }
+            }
+            else -> {
+                Heading("Atualizando seu turno…", shift.restaurantName)
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------- route
+
+@Composable
+private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, actions: WorkActions) {
+    var confirming by remember(route.nextDeliveryId) { mutableStateOf(false) }
+    var failing by remember(route.nextDeliveryId) { mutableStateOf(false) }
+    val total = route.stops.size
+    val storeName = route.store.name.ifBlank { shift?.restaurantName.orEmpty() }
+    Card {
+        when (route.status) {
+            "PREPARING" -> {
+                Heading("Rota em preparação", "$storeName · ${entregas(total)}", if (route.pickupReleased) "Liberada" else null)
+                if (route.pickupReleased) {
+                    Banner("Retirada liberada. Pegue os pedidos e inicie a rota.", SoftGreen, Green)
+                    Primary("Iniciar rota", busy) { actions.startRoute(route) }
+                } else {
+                    Text("A loja está separando os pedidos. Aguarde a liberação da retirada.", style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+            "RETURNING" -> {
+                Heading("Volte para a loja", storeName, "Retornando")
+                Text(buildString {
+                    append(entregues(route.delivered))
+                    if (route.toReturn > 0) append(" · ${route.toReturn} para devolver na loja")
+                }, style = MaterialTheme.typography.bodyLarge)
+                route.store.address?.let { address ->
+                    NavigationButton("Navegar até a loja", address) {
+                        actions.navigate(mapQuery(route.store.latitude, route.store.longitude, address))
+                    }
+                }
+                Primary("Cheguei na loja", busy) { actions.arrive(route) }
+            }
+            else -> {
+                val next = route.next
+                Heading("Minha rota", "Entrega ${minOf(route.settled + 1, total)} de $total", "Em rota")
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                if (next == null) {
+                    Text("Aguardando a loja decidir as ocorrências. A tela se atualiza sozinha.", style = MaterialTheme.typography.bodyLarge)
+                } else {
+                    NextStop(next)
+                    NavigationButton("Abrir navegação", "Google Maps, Waze ou o aplicativo de mapas instalado") {
+                        actions.navigate(mapQuery(next.latitude, next.longitude, listOfNotNull(next.address, next.neighborhood).joinToString(", ")))
+                    }
+                    Button(onClick = { confirming = true }, enabled = !busy,
+                        colors = ButtonDefaults.buttonColors(containerColor = SoftGreen, contentColor = Green),
+                        shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp)) {
+                        Icon(painterResource(R.drawable.check_circle), contentDescription = null, modifier = Modifier.size(22.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("ENTREGA CONCLUÍDA", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
+                            modifier = Modifier.weight(1f, fill = false).padding(vertical = 6.dp))
+                    }
+                    Secondary("Não consegui entregar", busy) { failing = true }
+                }
+            }
+        }
+        if (route.stops.isNotEmpty()) StopList(route)
+        route.store.phone?.let { phone ->
+            TextButton(onClick = { actions.dial(phone) }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Ligar para a loja") }
+        }
+    }
+    val next = route.next
+    if (confirming && next != null) AlertDialog(
+        onDismissRequest = { confirming = false },
+        title = { Text("Confirmar entrega?") },
+        text = { Text("${next.customerName}\n${next.address}") },
+        confirmButton = {
+            TextButton(onClick = { confirming = false; actions.complete(route, next) }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Confirmar entrega") }
+        },
+        dismissButton = { TextButton(onClick = { confirming = false }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Voltar") } },
+    )
+    if (failing && next != null) FailureDialog(
+        onDismiss = { failing = false },
+        onSend = { reason, notes -> failing = false; actions.fail(route, next, reason, notes) },
+    )
+}
+
+private fun entregas(count: Int) = if (count == 1) "1 entrega" else "$count entregas"
+private fun entregues(count: Int) = if (count == 1) "1 entregue" else "$count entregues"
+
+@Composable
+private fun NextStop(stop: Stop) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        stop.reference?.let {
+            Text("Pedido #$it", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Text(stop.customerName, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+        Text(stop.address, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
+        stop.complement?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
+        val details = listOfNotNull(stop.neighborhood, clockTime(stop.deadlineAt)?.let { "Prazo $it" },
+            if (stop.attempts > 0) "${stop.attempts + 1}ª tentativa" else null)
+        if (details.isNotEmpty()) Text(details.joinToString(" · "), style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        stop.notes?.let {
+            Surface(color = SoftCoral, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+                Text("Observação: $it", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(12.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun StopList(route: CourierRoute) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Text("Entregas da rota", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.semantics { heading() })
+        route.stops.forEach { stop ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.weight(1f)) {
+                    Text(stop.customerName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                    Text(listOfNotNull(stop.address, stop.neighborhood).joinToString(" · "), style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Text(stopLabel(stop), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold,
+                    color = if (stop.status == "NEXT") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun FailureDialog(onDismiss: () -> Unit, onSend: (FailureReason, String) -> Unit) {
+    var reason by remember { mutableStateOf<FailureReason?>(null) }
+    var notes by remember { mutableStateOf("") }
+    val trimmed = notes.trim()
+    val valid = reason != null && trimmed.length <= 500 && (reason != FailureReason.OTHER || trimmed.length >= 3)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Por que não deu para entregar?") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(Modifier.selectableGroup()) {
+                    FailureReason.entries.forEach { option ->
+                        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .selectable(selected = reason == option, onClick = { reason = option }, role = Role.RadioButton),
+                            verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = reason == option, onClick = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text(option.label, style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
+                OutlinedTextField(value = notes, onValueChange = { if (it.length <= 500) notes = it },
+                    label = { Text(if (reason == FailureReason.OTHER) "O que aconteceu? (obrigatório)" else "Detalhes para a loja (opcional)") },
+                    modifier = Modifier.fillMaxWidth())
+                Text("A loja decide se você tenta de novo, devolve o pedido ou cancela.", style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { reason?.let { onSend(it, trimmed) } }, enabled = valid, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text("Enviar para a loja")
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text("Voltar") } },
+    )
+}

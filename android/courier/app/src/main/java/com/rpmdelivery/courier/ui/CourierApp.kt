@@ -21,6 +21,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -45,10 +46,14 @@ import com.rpmdelivery.courier.ui.screens.AuthAction
 import com.rpmdelivery.courier.ui.screens.CourierProfileScreen
 import com.rpmdelivery.courier.ui.screens.RouteScreen
 import com.rpmdelivery.courier.ui.screens.WelcomeScreen
+import com.rpmdelivery.courier.ui.screens.WorkScreen
+import com.rpmdelivery.courier.work.WorkController
 
 @Composable
-fun CourierApp(controller: AuthController) {
+fun CourierApp(controller: AuthController, work: WorkController? = null) {
     val state by controller.state.collectAsState()
+    // Another account must never see the previous courier's shift or route.
+    LaunchedEffect(state.authenticated) { if (!state.authenticated) work?.clear() }
     var previewMessage by remember { mutableStateOf(false) }
     val back = { controller.navigate(if (state.authenticated) AuthScreen.Home else AuthScreen.Welcome) }
     BackHandler(state.screen !in setOf(AuthScreen.Welcome, AuthScreen.Home, AuthScreen.Loading), onBack = back)
@@ -87,13 +92,19 @@ fun CourierApp(controller: AuthController) {
                         }
                         AuthScreen.Profile -> CourierProfileScreen(state.registration, state.busy, controller::complete,
                             onLater = { controller.navigate(AuthScreen.Home) })
-                        AuthScreen.Home -> {
+                        AuthScreen.Home -> if (work != null && state.registration.complete) {
+                            Brand()
+                            WorkScreen(work)
+                        } else {
                             Brand()
                             ScreenHeading(if (state.registration.complete) "Cadastro de motoboy concluído" else "Conta criada · cadastro pendente",
                                 if (state.registration.complete) "Seus dados de motoboy estão salvos com segurança."
                                 else "Complete os dados da sua moto quando estiver pronto. Não escolha um modelo diferente do seu.")
-                            Text("Nenhuma rota conectada neste aplicativo", style = MaterialTheme.typography.titleMedium)
-                            Text("A consulta de rotas reais ainda não foi integrada. A prévia abaixo é uma demonstração independente com dados fictícios.")
+                            if (work != null) Text("Com o cadastro completo, você pede turno na loja e recebe suas rotas aqui.")
+                            else {
+                                Text("Nenhuma rota conectada neste aplicativo", style = MaterialTheme.typography.titleMedium)
+                                Text("A consulta de rotas reais ainda não foi integrada. A prévia abaixo é uma demonstração independente com dados fictícios.")
+                            }
                             if (!state.registration.complete) AuthAction("Completar cadastro", state.busy) { controller.navigate(AuthScreen.Profile) }
                             AuthAction("Recarregar dados", state.busy, controller::reload)
                             TextButton(onClick = { controller.navigate(AuthScreen.Preview) }, enabled = !state.busy, modifier = Modifier.heightIn(min = 48.dp)) { Text("Conhecer Minha rota · demonstração") }

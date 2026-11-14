@@ -19,7 +19,7 @@ class MainActivity : ComponentActivity() {
         val bars = SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
         enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)
         setContent {
-            CourierTheme { CourierApp(auth.controller) }
+            CourierTheme { CourierApp(auth.controller, auth.work) }
         }
         consumeCallback(intent)
     }
@@ -37,5 +37,11 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         if (auth.controller.state.value.authenticated) auth.controller.reload()
+        // The route screen reads only while the app is visible: no background work in this version.
+        auth.work.setForeground(true)
+    }
+    override fun onStop() {
+        auth.work.setForeground(false)
+        super.onStop()
     }
 }
