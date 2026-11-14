@@ -248,7 +248,7 @@ Uma leitura só, `stable`, a cada 15 s com o app aberto e logo depois de cada co
 - **Turno:** "Cheguei · pedir turno" (`request_shift`), aguardar a aprovação, ver a posição na fila, cancelar o pedido ou encerrar o turno (`end_shift`).
 - **Rota:** aguarda a liberação da retirada; "Iniciar rota" (`start_route` com a versão vista) e, em seguida, chama `dispatch-notifications` para o aviso "saiu para entrega". Sem a função publicada, a chamada falha em silêncio e a rota segue.
 - **Parada atual:** pedido, cliente, endereço, complemento, bairro, prazo, tentativa e observações; navegação pelo app de mapas instalado (coordenadas quando existem, senão o endereço escrito).
-- **Entregue** pede confirmação (`complete_delivery`). **Não consegui entregar** pede o motivo e, em "Outro motivo", um relato de 3 a 500 caracteres (`report_delivery_failure`).
+- **Deslizar para confirmar:** "Iniciar rota", "Entregue" (`complete_delivery`) e "Cheguei na loja" só acontecem deslizando até o fim; tocar ou soltar no meio não faz nada. Com leitor de tela, o toque duplo aciona a mesma ação. "Encerrar turno" é um link discreto com confirmação. **Não consegui entregar** abre no próprio cartão o motivo e, em "Outro motivo", um relato de 3 a 500 caracteres (`report_delivery_failure`).
 - **Volta:** "Volte para a loja", com o resumo da rota, navegação até a loja e "Cheguei na loja" (`arrive_at_store`), que devolve o motoboy ao fim da fila.
 - **Ligar para a loja** abre o discador com o telefone da loja. O app nunca recebe o telefone do cliente.
 - **Repetição segura:** "Entregue" e "Não consegui entregar" guardam o `request_id` até dar certo; repetir depois de uma queda reaproveita o mesmo id e o banco não aplica duas vezes.

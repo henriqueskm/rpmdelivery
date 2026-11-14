@@ -60,7 +60,7 @@ class CompactWorkTest {
         compose.onNodeWithText("Vila Mariana · Prazo", substring = true).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("2ª tentativa", substring = true).performScrollTo().assertIsDisplayed()
         captureEvidence(compose, "work-07-next-stop-320-font150")
-        for (label in listOf("Abrir navegação", "ENTREGA CONCLUÍDA", "Não consegui entregar", "Ligar para a loja")) {
+        for (label in listOf("Abrir navegação", "Deslize para confirmar a entrega", "Não consegui entregar", "Ligar para a loja")) {
             compose.onNodeWithText(label).performScrollTo().assertIsDisplayed().assertHeightIsAtLeast(48.dp)
         }
         captureEvidence(compose, "work-08-actions-320-font150")

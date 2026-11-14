@@ -51,6 +51,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.rpmdelivery.courier.R
 import com.rpmdelivery.courier.ui.components.StationaryNotice
+import com.rpmdelivery.courier.ui.components.SwipeToConfirm
+import com.rpmdelivery.courier.ui.theme.Coral
 import com.rpmdelivery.courier.ui.theme.Green
 import com.rpmdelivery.courier.ui.theme.SoftCoral
 import com.rpmdelivery.courier.ui.theme.SoftGreen
@@ -276,7 +278,6 @@ private fun EndShift(shift: Shift, busy: Boolean, actions: WorkActions) {
 
 @Composable
 private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, actions: WorkActions) {
-    var confirming by remember(route.nextDeliveryId) { mutableStateOf(false) }
     var failing by remember(route.nextDeliveryId) { mutableStateOf(false) }
     val total = route.stops.size
     val storeName = route.store.name.ifBlank { shift?.restaurantName.orEmpty() }
@@ -286,7 +287,7 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
                 Heading("Rota em preparação", "$storeName · ${entregas(total)}", if (route.pickupReleased) "Liberada" else null)
                 if (route.pickupReleased) {
                     Banner("Retirada liberada. Pegue os pedidos e inicie a rota.", SoftGreen, Green)
-                    Primary("Iniciar rota", busy) { actions.startRoute(route) }
+                    SwipeToConfirm("Deslize para iniciar a rota", busy, SoftCoral, Coral, Coral) { actions.startRoute(route) }
                 } else {
                     Text("A loja está separando os pedidos. Aguarde a liberação da retirada.", style = MaterialTheme.typography.bodyLarge)
                 }
@@ -302,7 +303,7 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
                         actions.navigate(mapQuery(route.store.latitude, route.store.longitude, address))
                     }
                 }
-                Primary("Cheguei na loja", busy) { actions.arrive(route) }
+                SwipeToConfirm("Deslize quando chegar na loja", busy, SoftCoral, Coral, Coral) { actions.arrive(route) }
             }
             else -> {
                 val next = route.next
@@ -319,14 +320,8 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
                     NavigationButton("Abrir navegação", "Google Maps, Waze ou o aplicativo de mapas instalado") {
                         actions.navigate(mapQuery(next.latitude, next.longitude, listOfNotNull(next.address, next.neighborhood).joinToString(", ")))
                     }
-                    Button(onClick = { confirming = true }, enabled = !busy,
-                        colors = ButtonDefaults.buttonColors(containerColor = SoftGreen, contentColor = Green),
-                        shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp)) {
-                        Icon(painterResource(R.drawable.check_circle), contentDescription = null, modifier = Modifier.size(22.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("ENTREGA CONCLUÍDA", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
-                            modifier = Modifier.weight(1f, fill = false).padding(vertical = 6.dp))
-                    }
+                    // The swipe is the confirmation: no extra dialog between the courier and the next stop.
+                    SwipeToConfirm("Deslize para confirmar a entrega", busy, SoftGreen, Green, Green) { actions.complete(route, next) }
                     Secondary("Não consegui entregar", busy) { failing = true }
                 }
             }
@@ -336,16 +331,6 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
             TextButton(onClick = { actions.dial(phone) }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Ligar para a loja") }
         }
     }
-    val next = route.next
-    if (confirming && next != null) AlertDialog(
-        onDismissRequest = { confirming = false },
-        title = { Text("Confirmar entrega?") },
-        text = { Text("${next.customerName}\n${next.address}") },
-        confirmButton = {
-            TextButton(onClick = { confirming = false; actions.complete(route, next) }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Confirmar entrega") }
-        },
-        dismissButton = { TextButton(onClick = { confirming = false }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Voltar") } },
-    )
 }
 
 private fun entregas(count: Int) = if (count == 1) "1 entrega" else "$count entregas"

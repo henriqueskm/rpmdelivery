@@ -2,6 +2,7 @@ package com.rpmdelivery.courier.work
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.unit.dp
 import com.rpmdelivery.courier.auth.AuthController
 import com.rpmdelivery.courier.auth.AuthCopy
@@ -45,6 +46,11 @@ class WorkScreensTest {
     }
     private fun reload() { compose.runOnIdle { work.refresh() }; compose.waitForIdle() }
     private fun node(text: String) = compose.onNodeWithText(text).performScrollTo()
+    /** Drags the thumb from its resting place to [share] of the track width. */
+    private fun swipe(label: String, share: Float = 1f) {
+        node(label).performTouchInput { swipeRight(startX = left + 32f, endX = left + (width - 1) * share, durationMillis = 400) }
+        compose.waitForIdle()
+    }
 
     @Test fun courierAsksForShiftWaitsInLineRunsTheRouteAndComesBack() {
         show()
@@ -63,11 +69,14 @@ class WorkScreensTest {
         fake.assign(); reload()
         node("Rota em preparação").assertIsDisplayed()
         node("A loja está separando os pedidos. Aguarde a liberação da retirada.").assertIsDisplayed()
-        compose.onNodeWithText("Iniciar rota").assertDoesNotExist()
+        compose.onNodeWithText("Deslize para iniciar a rota").assertDoesNotExist()
 
         fake.release(); reload()
         captureEvidence(compose, "work-03-released-390")
-        node("Iniciar rota").performClick()
+        // Starting cannot be undone: a tap does nothing, the swipe starts.
+        node("Deslize para iniciar a rota").assertHeightIsAtLeast(64.dp).performClick()
+        assertFalse(fake.calls.any { it.startsWith("start_route") })
+        swipe("Deslize para iniciar a rota")
         node("Minha rota").assertIsDisplayed()
         node("Entrega 1 de 2").assertIsDisplayed()
         compose.onAllNodesWithText("Helena Prado").onFirst().performScrollTo().assertIsDisplayed()
@@ -77,19 +86,19 @@ class WorkScreensTest {
         assertEquals(1, fake.notified)
         captureEvidence(compose, "work-04-next-stop-390")
 
-        // Delivered needs a confirmation: a stray tap does nothing.
-        node("ENTREGA CONCLUÍDA").assertHeightIsAtLeast(56.dp).performClick()
-        compose.onNodeWithText("Confirmar entrega?").assertIsDisplayed()
-        compose.onNodeWithText("Voltar").performClick()
+        // Delivered: a stray tap or a swipe let go halfway does nothing; the full swipe delivers.
+        node("Deslize para confirmar a entrega").performClick()
+        swipe("Deslize para confirmar a entrega", share = 0.5f)
         assertFalse(fake.calls.any { it.startsWith("complete_delivery") })
-        node("ENTREGA CONCLUÍDA").performClick()
-        compose.onNodeWithText("Confirmar entrega").performClick()
+        node("Entrega 1 de 2").assertIsDisplayed()
+        swipe("Deslize para confirmar a entrega")
+        assertTrue(fake.calls.contains("complete_delivery:d-1"))
         node("Entrega 2 de 2").assertIsDisplayed()
         compose.onAllNodesWithText("Igor Nunes").onFirst().performScrollTo().assertIsDisplayed()
 
         // A failure needs a reason, and a written report for "Outro motivo".
         node("Não consegui entregar").performClick()
-        compose.onNodeWithText("ENTREGA CONCLUÍDA").assertDoesNotExist()
+        compose.onNodeWithText("Deslize para confirmar a entrega").assertDoesNotExist()
         node("Enviar para a loja").assertIsNotEnabled()
         node("Voltar").performClick()
         node("Não consegui entregar").performClick()
@@ -103,7 +112,8 @@ class WorkScreensTest {
         node("Volte para a loja").assertIsDisplayed()
         node("1 entregue · 1 para devolver na loja").assertIsDisplayed()
         captureEvidence(compose, "work-06-returning-390")
-        node("Cheguei na loja").performClick()
+        // TalkBack cannot swipe: its double tap runs the control's click action.
+        node("Deslize quando chegar na loja").assert(hasClickAction()).performSemanticsAction(SemanticsActions.OnClick)
         node("Você está na fila").assertIsDisplayed()
         node("2º").assertIsDisplayed()
         node("Chegada registrada. Você voltou para a fila.").assertIsDisplayed()
