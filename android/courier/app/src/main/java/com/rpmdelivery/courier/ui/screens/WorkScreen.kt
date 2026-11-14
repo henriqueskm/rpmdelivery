@@ -11,7 +11,11 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.widthIn
+import com.rpmdelivery.courier.ui.components.BrandMark
 import com.rpmdelivery.courier.ui.theme.Ink
+import com.rpmdelivery.courier.work.Today
 import com.rpmdelivery.courier.work.historyDate
 import com.rpmdelivery.courier.work.reais
 import androidx.activity.result.contract.ActivityResultContracts
@@ -140,18 +144,30 @@ fun WorkScreen(work: WorkController) {
 }
 
 /**
- * Money to receive today, fixed in the top corner over the screen, also on the route.
- * Tapping it opens the history; nothing about past days is read before that.
+ * The courier's fixed top line: the brand symbol, today's earnings in the middle and "Sair".
+ * The earnings only show with an open shift: off duty there is nothing to follow.
  */
 @Composable
-fun EarningsPill(work: WorkController, modifier: Modifier = Modifier) {
+fun WorkHeader(work: WorkController, busy: Boolean, onSignOut: () -> Unit) {
     val state by work.state.collectAsState()
-    val today = state.home?.today ?: return
-    if (state.historyOpen) return
+    Row(Modifier.widthIn(max = 480.dp).fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        BrandMark()
+        Box(Modifier.weight(1f).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+            val today = state.home?.today
+            if (today != null && state.home?.shift != null && !state.historyOpen) EarningsPill(today, work::openHistory)
+        }
+        TextButton(onClick = onSignOut, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text("Sair") }
+    }
+}
+
+/** Money to receive today. Tapping it opens the history; nothing about past days is read before that. */
+@Composable
+private fun EarningsPill(today: Today, onOpen: () -> Unit) {
     val deliveries = if (today.deliveries == 1) "1 entrega" else "${today.deliveries} entregas"
-    Surface(onClick = work::openHistory, shape = RoundedCornerShape(100.dp), color = Ink, contentColor = Color.White,
-        shadowElevation = 6.dp,
-        modifier = modifier.heightIn(min = 48.dp).semantics {
+    Surface(onClick = onOpen, shape = RoundedCornerShape(100.dp), color = Ink, contentColor = Color.White,
+        shadowElevation = 4.dp,
+        modifier = Modifier.heightIn(min = 48.dp).semantics {
             contentDescription = "A receber hoje: ${reais(today.totalCents)}, $deliveries. Abrir histórico"
         }) {
         Row(Modifier.padding(start = 18.dp, end = 14.dp, top = 10.dp, bottom = 10.dp),
