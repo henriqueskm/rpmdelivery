@@ -92,11 +92,16 @@ class WorkController(
         requestIds.remove(key)
     }
 
-    private suspend fun load() = reads.withLock {
+    /** [afterCommand]: the read that follows a command keeps its notice or refusal on screen. */
+    private suspend fun load(afterCommand: Boolean = false) = reads.withLock {
         try {
             val home = repository.home()
-            // The first screen replaces a failed first read's error; later, a command's message stays.
-            mutable.update { it.copy(home = home, loading = false, offline = false, message = if (it.home == null) null else it.message) }
+            mutable.update {
+                // Once the store changes something, an older notice or refusal no longer describes the screen.
+                val stale = it.home == null || (!afterCommand && home != it.home)
+                it.copy(home = home, loading = false, offline = false,
+                    message = if (stale) null else it.message, notice = if (stale) null else it.notice)
+            }
         } catch (error: CancellationException) { throw error }
         catch (error: WorkProblem) {
             if (error.expired) { expire(); return@withLock }
@@ -125,7 +130,7 @@ class WorkController(
             } catch (_: Exception) {
                 mutable.update { it.copy(message = WorkCopy.GENERIC) }
             } finally { mutable.update { it.copy(busy = false) } }
-            if (expired) expire() else load()
+            if (expired) expire() else load(afterCommand = true)
         }
     }
 

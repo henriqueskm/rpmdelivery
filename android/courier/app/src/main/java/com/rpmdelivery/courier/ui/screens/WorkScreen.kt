@@ -206,7 +206,8 @@ private fun StoresContent(stores: List<Store>, busy: Boolean, actions: WorkActio
             active.forEach { store ->
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Text(store.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Primary("Cheguei · pedir turno em ${store.name}", busy) { actions.requestShift(store) }
+                // With one store its name is right above; with several, each button names its store.
+                Primary(if (active.size == 1) "Cheguei · pedir turno" else "Pedir turno em ${store.name}", busy) { actions.requestShift(store) }
             }
         }
         waiting.forEach {

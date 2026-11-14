@@ -14,7 +14,7 @@ class WorkControllerTest {
     private var expired = 0
 
     @Test fun retryAfterLostAnswerReusesTheSameRequestId() = runTest {
-        val work = WorkController(fake, backgroundScope, onExpired = { expired++ })
+        val work = WorkController(fake, this, onExpired = { expired++ })
         fake.requestShift("r-1"); fake.approve(); fake.assign(); fake.release()
         fake.startRoute("route-1", 2)
         work.refresh(); advanceUntilIdle()
@@ -32,7 +32,7 @@ class WorkControllerTest {
     }
 
     @Test fun refusalShowsTheStoreSentenceAndReloads() = runTest {
-        val work = WorkController(fake, backgroundScope, onExpired = { expired++ })
+        val work = WorkController(fake, this, onExpired = { expired++ })
         fake.requestShift("r-1"); fake.approve(); fake.assign()
         work.refresh(); advanceUntilIdle()
         val reads = fake.calls.count { it == "home" }
@@ -43,7 +43,7 @@ class WorkControllerTest {
     }
 
     @Test fun startingNotifiesCustomersOnce() = runTest {
-        val work = WorkController(fake, backgroundScope, onExpired = { expired++ })
+        val work = WorkController(fake, this, onExpired = { expired++ })
         fake.requestShift("r-1"); fake.approve(); fake.assign(); fake.release()
         work.refresh(); advanceUntilIdle()
         work.startRoute(work.state.value.home!!.route!!); advanceUntilIdle()
@@ -52,7 +52,7 @@ class WorkControllerTest {
     }
 
     @Test fun droppedConnectionKeepsTheLastScreen() = runTest {
-        val work = WorkController(fake, backgroundScope, onExpired = { expired++ })
+        val work = WorkController(fake, this, onExpired = { expired++ })
         work.refresh(); advanceUntilIdle()
         fake.failOnce("home", WorkProblem.network())
         work.refresh(); advanceUntilIdle()
@@ -64,7 +64,7 @@ class WorkControllerTest {
     }
 
     @Test fun firstReadWithoutConnectionAsksToRetry() = runTest {
-        val work = WorkController(fake, backgroundScope, onExpired = { expired++ })
+        val work = WorkController(fake, this, onExpired = { expired++ })
         fake.failOnce("home", WorkProblem.network())
         work.refresh(); advanceUntilIdle()
         assertNull(work.state.value.home)
@@ -75,7 +75,7 @@ class WorkControllerTest {
     }
 
     @Test fun expiredSessionClearsTheScreenAndSignsOut() = runTest {
-        val work = WorkController(fake, backgroundScope, onExpired = { expired++ })
+        val work = WorkController(fake, this, onExpired = { expired++ })
         work.refresh(); advanceUntilIdle()
         fake.failOnce("request_shift", WorkProblem.expired())
         work.requestShift(fake.store); advanceUntilIdle()
@@ -84,10 +84,22 @@ class WorkControllerTest {
     }
 
     @Test fun busyCommandIgnoresASecondTap() = runTest {
-        val work = WorkController(fake, backgroundScope, onExpired = { expired++ })
+        val work = WorkController(fake, this, onExpired = { expired++ })
         work.refresh(); advanceUntilIdle()
         work.requestShift(fake.store); work.requestShift(fake.store); advanceUntilIdle()
         assertEquals(1, fake.calls.count { it == "request_shift" })
+    }
+
+    @Test fun noticeStaysUntilTheStoreChangesTheScreen() = runTest {
+        val work = WorkController(fake, this, onExpired = { expired++ })
+        work.refresh(); advanceUntilIdle()
+        work.requestShift(fake.store); advanceUntilIdle()
+        assertEquals("Turno pedido em Cozinha da Vila. Aguarde a loja aprovar.", work.state.value.notice)
+        work.refresh(); advanceUntilIdle()
+        assertNotNull("nothing changed yet", work.state.value.notice)
+        fake.approve()
+        work.refresh(); advanceUntilIdle()
+        assertNull("the approval makes the old notice stale", work.state.value.notice)
     }
 
     @Test fun homeContractIsParsedWithoutAnyCustomerPhone() {

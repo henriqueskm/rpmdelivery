@@ -5,6 +5,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.Density
@@ -54,7 +56,7 @@ class CompactWorkTest {
             CompositionLocalProvider(LocalDensity provides Density(1f, 1.5f)) { CourierTheme { CourierApp(controller, work) } }
         }
         compose.runOnIdle { controller.restore() }
-        compose.onNodeWithText("Maria Aparecida dos Santos Albuquerque de Vasconcelos").performScrollTo().assertIsDisplayed()
+        compose.onAllNodesWithText("Maria Aparecida dos Santos Albuquerque de Vasconcelos").onFirst().performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Vila Mariana · Prazo", substring = true).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("2ª tentativa", substring = true).performScrollTo().assertIsDisplayed()
         captureEvidence(compose, "work-07-next-stop-320-font150")

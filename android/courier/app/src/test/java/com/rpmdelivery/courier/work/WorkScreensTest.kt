@@ -50,7 +50,7 @@ class WorkScreensTest {
         show()
         node("Pronto para começar?").assertIsDisplayed()
         captureEvidence(compose, "work-01-stores-390")
-        node("Cheguei · pedir turno em Cozinha da Vila").assertHeightIsAtLeast(48.dp).performClick()
+        node("Cheguei · pedir turno").assertHeightIsAtLeast(48.dp).performClick()
         node("Aguardando a loja").assertIsDisplayed()
         node("Cancelar pedido de turno").assertIsDisplayed()
 
@@ -69,7 +69,7 @@ class WorkScreensTest {
         node("Iniciar rota").performClick()
         node("Minha rota").assertIsDisplayed()
         node("Entrega 1 de 2").assertIsDisplayed()
-        node("Helena Prado").assertIsDisplayed()
+        compose.onAllNodesWithText("Helena Prado").onFirst().performScrollTo().assertIsDisplayed()
         node("Pedido #1048").assertIsDisplayed()
         node("Observação: Portão azul, tocar duas vezes").assertIsDisplayed()
         assertTrue(fake.calls.contains("start_route:2"))
@@ -84,7 +84,7 @@ class WorkScreensTest {
         node("ENTREGA CONCLUÍDA").performClick()
         compose.onNodeWithText("Confirmar entrega").performClick()
         node("Entrega 2 de 2").assertIsDisplayed()
-        node("Igor Nunes").assertIsDisplayed()
+        compose.onAllNodesWithText("Igor Nunes").onFirst().performScrollTo().assertIsDisplayed()
 
         // A failure needs a reason, and a written report for "Outro motivo".
         node("Não consegui entregar").performClick()
@@ -116,7 +116,7 @@ class WorkScreensTest {
         fake.home = fake.home.copy(stores = listOf(fake.store))
         fake.failOnce("request_shift", WorkProblem.refused("RPM_SHIFT_OPEN_ELSEWHERE"))
         reload()
-        node("Cheguei · pedir turno em Cozinha da Vila").performClick()
+        node("Cheguei · pedir turno").performClick()
         node(WorkCopy.forCode("RPM_SHIFT_OPEN_ELSEWHERE")).assertIsDisplayed()
     }
 

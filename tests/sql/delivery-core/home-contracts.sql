@@ -1,6 +1,14 @@
 -- Contracts for the courier app's home read (get_courier_home).
 -- Runs after board-contracts.sql: W (9) is on route_w3 in store A; P (16)
 -- has an AVAILABLE shift in A after its route was cancelled.
+-- The PostgreSQL 17 runner opens one session per file, so the names are
+-- looked up again instead of trusting the previous file's settings.
+select set_config('core.route_w3',(select id::text from public.routes
+ where courier_id=core_test.id(209) and status='ON_ROUTE'),false);
+select set_config('core.t'||n,(select d.id::text from public.deliveries d join public.orders o on o.id=d.order_id
+ where o.client_request_id=core_test.id(9700+n)),false) from generate_series(1,4) n;
+select set_config('core.shift_r',(select id::text from public.courier_shifts
+ where courier_id=core_test.id(216) and status not in ('ENDED','REJECTED')),false);
 create function core_test.home(actor integer) returns jsonb language plpgsql as $$
 declare v jsonb;
 begin
