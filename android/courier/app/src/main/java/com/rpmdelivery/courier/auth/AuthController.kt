@@ -47,6 +47,10 @@ class AuthController(private val repository: CourierAuthRepository, private val 
         signedIn(repository.complete(input))
     }
     fun reload() = action { signedIn(repository.profile()) }
+    /** A route command found the session gone: back to login, as any expired action. */
+    fun sessionExpired() {
+        mutable.value = AuthState(AuthScreen.Login, message = AuthCopy.EXPIRED)
+    }
     fun logout() = action {
         val revoked = repository.logout()
         mutable.value = AuthState(AuthScreen.Welcome, message = if (revoked) null else

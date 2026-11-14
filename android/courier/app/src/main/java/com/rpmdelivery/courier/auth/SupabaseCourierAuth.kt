@@ -45,9 +45,11 @@ fun courierClient(url: String, key: String, store: SecretStore, engine: HttpClie
         install(Postgrest)
     }
 
-/** All commands share a mutex; no blind HTTP retries and no background polling. */
-class SupabaseCourierAuth(private val client: SupabaseClient) : CourierAuthRepository {
-    private val mutex = Mutex()
+/**
+ * All commands share a mutex; no blind HTTP retries and no background polling.
+ * The courier's route commands pass the same [mutex], so session refreshes never race.
+ */
+class SupabaseCourierAuth(private val client: SupabaseClient, private val mutex: Mutex = Mutex()) : CourierAuthRepository {
 
     private suspend fun <T> command(block: suspend () -> T): T = mutex.withLock {
         try { client.auth.awaitInitialization(); block() }

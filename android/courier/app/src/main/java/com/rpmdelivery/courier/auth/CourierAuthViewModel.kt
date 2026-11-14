@@ -4,14 +4,25 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rpmdelivery.courier.BuildConfig
+import com.rpmdelivery.courier.work.CourierWorkRepository
+import com.rpmdelivery.courier.work.SupabaseCourierWork
+import com.rpmdelivery.courier.work.UnconfiguredWork
+import com.rpmdelivery.courier.work.WorkController
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
 
 class CourierAuthViewModel(application: Application) : AndroidViewModel(application) {
     private val configured = BuildConfig.SUPABASE_URL.isNotBlank() && BuildConfig.SUPABASE_PUBLISHABLE_KEY.isNotBlank()
-    private val repository: CourierAuthRepository = if (configured)
-        SupabaseCourierAuth(courierClient(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_PUBLISHABLE_KEY, ProtectedStorage(application)))
-        else UnconfiguredAuth()
+    private val client = if (configured)
+        courierClient(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_PUBLISHABLE_KEY, ProtectedStorage(application)) else null
+    // One session, one gate: sign-in and route commands never refresh the session at the same time.
+    private val gate = Mutex()
+    private val repository: CourierAuthRepository = client?.let { SupabaseCourierAuth(it, gate) } ?: UnconfiguredAuth()
+    private val workRepository: CourierWorkRepository = client?.let {
+        SupabaseCourierWork(it, gate, BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_PUBLISHABLE_KEY)
+    } ?: UnconfiguredWork()
     val controller = AuthController(repository, viewModelScope).also { it.restore() }
+    val work = WorkController(workRepository, viewModelScope, onExpired = { controller.sessionExpired() })
     override fun onCleared() { runBlocking { repository.close() } }
 }
 

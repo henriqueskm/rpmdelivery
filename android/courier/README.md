@@ -2,7 +2,9 @@
 
 Aplicativo nativo Kotlin + Jetpack Compose + Material 3, isolado do Next.js.
 RPM-ANDROID-002 adiciona Auth real e conclusão do cadastro via RPC existente.
-**Minha rota permanece uma prévia independente**, sem operações reais.
+Com o cadastro completo, a tela inicial usa os dados reais: pedir turno, fila, rota, entregas,
+ocorrências e volta à loja (ver [fatia 6](../../docs/delivery-core-commands.md)). A prévia de Minha rota com dados
+fictícios continua disponível na tela de boas-vindas.
 
 Sem configuração, o APK abre, permite conhecer a prévia e informa que login/cadastro
 não estão conectados. Nenhum usuário remoto é criado pelos testes ou pelo build.
@@ -40,12 +42,14 @@ Wrapper e distribuição possuem SHA-256 verificado/fixado. Nenhuma versão din�
 
 Auth/PostgREST supabase-kt **3.6.0**, engine Ktor OkHttp **3.4.3**. Sem Storage,
 Realtime, mapas, GPS, Room, WorkManager, DI ou bibliotecas pesadas de navegação.
-INTERNET é a única permissão adicional; sem serviços/processos em segundo plano.
+INTERNET é a única permissão adicional; sem serviços/processos em segundo plano. A rota é lida
+a cada 15 s só com o app visível. GPS em primeiro plano fica para a próxima etapa.
 Tema claro, cores, raio minimalista, máscara de celular e catálogo da PR #22 preservados.
 
-Lint mantém `warningsAsErrors`; `OldTargetApi` continua informativo pela coorte
+Lint mantém `warningsAsErrors`; `OldTargetApi` e `AndroidGradlePluginVersion` (Gradle 8.14.7 saiu
+em nov/2026; o 8.14.6 segue fixado por SHA-256) continuam informativos pela coorte
 AGP8.13/SDK36 validada. Sem baseline ou supressão global. Reavaliar antes de release.
-Os cinco avisos locais de versões mais recentes da coorte Auth/Ktor são
+Os avisos locais de versões mais recentes da coorte Auth/Ktor e do Robolectric 4.17 são
 documentados em [autenticação](docs/authentication.md); não alteram os demais gates.
 [Compatibilidade oficial AGP](https://developer.android.com/build/releases/agp-8-13-0-release-notes).
 
@@ -56,10 +60,11 @@ app/src/main/java/com/rpmdelivery/courier/
   MainActivity.kt       # Activity, ciclo de vida e entrega do callback
   auth/                 # contratos, SDK, controller, ViewModel, storage Keystore
   registration/         # celular e catálogo locais, sem rede
+  work/                 # turno e rota reais: leitura, comandos, controller
   demo/                 # fixture separada de rota e validação de campos
   ui/CourierApp.kt      # navegação e estados do fluxo conectado
   ui/components/        # marca, campos, ações e sugestões
-  ui/screens/           # conta, perfil, boas-vindas e rota demonstrativa
+  ui/screens/           # conta, perfil, boas-vindas, turno/rota reais e rota demonstrativa
   ui/theme/             # design aprovado
 app/src/debug/          # previews puros, sem inicializar Auth
 app/src/test/           # mocks, contratos HTTP, domínio, segurança, Compose
