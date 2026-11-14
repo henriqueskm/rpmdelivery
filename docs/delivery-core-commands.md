@@ -228,7 +228,7 @@ Rotas canceladas não aparecem; as entregas delas voltam a aguardar.
 
 ### Fora desta fatia (escondido no painel real)
 
-Montagem automática e sugestão de sequência (otimização congelada até a simulação), edição de prazo do pedido e do prazo padrão, tempo de resposta das ocorrências pela tela, visão simulada do motoboy, cancelar rota em preparação, cancelar pedido e devolver à fila um pedido que voltou. O endereço do pedido ainda é texto livre, sem geocodificação; sem coordenadas, o mapa do cliente mostra só o entregador.
+Montagem automática e sugestão de sequência (otimização congelada até a simulação), edição de prazo do pedido e do prazo padrão, tempo de resposta das ocorrências pela tela e visão simulada do motoboy. Cancelar rota em preparação, cancelar pedido e devolver à fila um pedido que voltou entraram depois (ver "Ações da loja que faltavam"). O endereço do pedido ainda é texto livre, sem geocodificação; sem coordenadas, o mapa do cliente mostra só o entregador.
 
 ## Fatia 6 — App do motoboy com dados reais
 
@@ -314,3 +314,12 @@ Cada loja define uma **taxa de encosta** por dia e um **valor fixo por entrega**
 ### Fora desta fatia
 
 Marcar como pago, adiantamentos, taxa por distância ou por bairro, e gorjetas.
+
+## Ações da loja que faltavam no painel
+
+Comandos que já existiam no banco (fatias 1 a 3) e agora têm botão no `/dashboard`. Sem migration.
+
+- **Cancelar pedido** (`cancel_order`): botão "Cancelar" em cada pedido aguardando despacho. Pede confirmação. Pedido que já saiu da fila: "Esse pedido já saiu da fila de despacho".
+- **Cancelar rota em preparação** (`cancel_route`): "Cancelar rota" no cartão da rota, com confirmação. Os pedidos voltam a aguardar e o motoboy volta para a fila; uma retirada liberada é desfeita.
+- **Devolver à fila** (`requeue_delivery`): a seção "Voltaram para a loja", abaixo dos pedidos, lista os pedidos que o motoboy trouxe de volta. Com a rota encerrada, "Devolver à fila" põe o pedido de novo em despacho; com o motoboy ainda na rua, aparece "Volta com o motoboy". Para desistir de um pedido devolvido, devolva à fila e cancele.
+- O rótulo "— simulação" saiu do cancelamento de entrega em rota no painel real.

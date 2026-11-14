@@ -10,12 +10,15 @@ export function RoutesPanel({
   onCourierView,
   onRelease,
   onRevokeRelease,
+  onCancelRoute,
   onDeadline,
   now,
   onIssues, onCommand, highlightedRoute,
 }: {
   state: DemoState;
   onEdit: (id: string) => void;
+  /** Real data: undo a route still in preparation (asks first). */
+  onCancelRoute?: (id: string) => void;
   /** Demo only: real routes are driven from the courier's phone. */
   onCourierView?: (id: string) => void;
   onRelease: (id: string) => void;
@@ -78,7 +81,7 @@ export function RoutesPanel({
                         {o.delivery!=="ATTEMPT_FAILED"&&o.delivery!=="ASSIGNED"&&o.delivery!=="ON_ROUTE"&&o.delivery!=="NEXT"&&<Badge tone={o.delivery==="DELIVERED"?"green":"neutral"}>{deliveryLabels[o.delivery]}</Badge>}
                         {r.status==="ON_ROUTE"&&deliveryEligible(o.delivery)&&<details className="ops-route-cancel"><summary>Mais ações · #{o.reference}</summary><button onClick={()=>{
                           onCommand({type:"delivery-cancel",routeId:r.id,orderId:o.id,actorId:DEMO_STORE_ACTOR,now:Date.now(),commandId:`store:${o.id}:cancel`});
-                        }}>Cancelar entrega #{o.reference} — simulação</button></details>}
+                        }}>Cancelar entrega #{o.reference}{onCancelRoute ? "" : " — simulação"}</button></details>}
                       </li>
                     );
                   })}
@@ -103,6 +106,8 @@ export function RoutesPanel({
                     <button onClick={() => onEdit(r.id)}>
                       Editar montagem
                     </button>
+                    {onCancelRoute && <button className="ops-link-button" onClick={() => onCancelRoute(r.id)}
+                      aria-label={`Cancelar rota ${r.reference}`}>Cancelar rota</button>}
                     </>
                   )}
                   {onCourierView && r.status !== "COMPLETED" && (

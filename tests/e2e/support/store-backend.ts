@@ -113,6 +113,26 @@ export function storeBackend() {
       find(board.orders, "deliveryId", body.p_delivery_id)!.deliveryStatus = "CANCELLED";
       return ok({ deliveryId: body.p_delivery_id });
     },
+    cancel_route(body) {
+      const route = find(board.routes, "id", body.p_route_id);
+      if (!route || route.status !== "PREPARING") return { status: 400, json: { code: "P0001", message: "RPM_ROUTE_STATE" } };
+      board.routes = board.routes.filter(item => item !== route);
+      for (const id of route.deliveryIds) find(board.orders, "deliveryId", id)!.deliveryStatus = "WAITING";
+      return ok("CANCELLED");
+    },
+    cancel_order(body) {
+      const target = find(board.orders, "orderId", body.p_order_id);
+      if (!target || target.deliveryStatus !== "WAITING") return { status: 400, json: { code: "P0001", message: "RPM_ORDER_NOT_CANCELLABLE" } };
+      target.deliveryStatus = "CANCELLED"; target.orderStatus = "CANCELLED";
+      return ok("CANCELLED");
+    },
+    requeue_delivery(body) {
+      const target = find(board.orders, "deliveryId", body.p_delivery_id)!;
+      const moving = board.routes.some(route => route.deliveryIds.includes(target.deliveryId) && ["ON_ROUTE", "RETURNING"].includes(route.status));
+      if (moving) return { status: 400, json: { code: "P0001", message: "RPM_DELIVERY_IN_TRANSIT" } };
+      target.deliveryStatus = "WAITING"; target.orderStatus = "OPEN";
+      return ok({ deliveryId: target.deliveryId });
+    },
     get_courier_pay(body) {
       return ok({ day: body.p_day ?? new Date().toISOString().slice(0, 10), ...structuredClone(pay) });
     },

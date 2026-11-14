@@ -20,6 +20,7 @@ import { DeadlineDialog } from "./deadline-dialog";
 import { tabs, useOperationsController, type LiveSource } from "./use-operations-controller";
 import { useOperationsBoard } from "./live/use-operations-board";
 import { CourierPay } from "./live/courier-pay";
+import { ConfirmDialog, type Confirmation } from "./live/confirm-dialog";
 import { useOperationsClock } from "./use-operations-clock";
 import { Icon } from "./ui";
 import { courierLabel, plural } from "./model";
@@ -165,8 +166,21 @@ function OperationsWorkspace({
     notice, courierRouteId, setCourierRouteId, deadlineTarget, setDeadlineTarget,
     newDialog, courierDialog, deadlineDialog, issueDialog, tabRefs, pending: saving,
     assign, acceptAutomatic, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, issueCommand,
-    reviewShift, viewedAlerts, dismissAlerts, tabKey,
+    reviewShift, cancelRoute, cancelOrder, requeue, viewedAlerts, dismissAlerts, tabKey,
   } = useOperationsController(scenario, now, live);
+  const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  const askCancelOrder = (id: string) => {
+    const order = state.orders.find(o => o.id === id);
+    if (order) setConfirmation({ title: `Cancelar o pedido #${order.reference}?`,
+      body: `${order.customer} sai da fila de despacho. O cliente não é avisado pelo sistema.`,
+      action: "Cancelar pedido", run: () => void cancelOrder(id) });
+  };
+  const askCancelRoute = (id: string) => {
+    const route = state.routes.find(r => r.id === id);
+    if (route) setConfirmation({ title: `Cancelar a rota ${route.reference}?`,
+      body: "Os pedidos voltam a aguardar despacho e o motoboy volta para a fila. Uma retirada já liberada é desfeita.",
+      action: "Cancelar rota", run: () => void cancelRoute(id) });
+  };
   const [suggesting, setSuggesting] = useState(false);
   const [automatic,setAutomatic]=useState(false);
   const automaticTrigger=useRef<HTMLButtonElement>(null);
@@ -301,6 +315,9 @@ function OperationsWorkspace({
               state={state}
               now={now}
               onDeadline={live ? undefined : setDeadlineTarget}
+              onCancelOrder={live ? askCancelOrder : undefined}
+              onRequeue={live ? (id) => void requeue(id) : undefined}
+              pending={saving}
               selected={selected}
               editingId={editingId}
               onSelect={setSelected}
@@ -354,6 +371,7 @@ function OperationsWorkspace({
             onDeadline={live ? undefined : setDeadlineTarget}
             onRelease={release}
             onRevokeRelease={revokeRelease}
+            onCancelRoute={live ? askCancelRoute : undefined}
             onEdit={edit}
             onCourierView={live ? undefined : (id) => {
               setCourierRouteId(id);
@@ -367,6 +385,7 @@ function OperationsWorkspace({
         </footer>
       </div>
       <NewOrderDialog dialogRef={newDialog} now={now} defaultPromiseMinutes={state.defaultPromiseMinutes} onAdd={add} live={!!live} />
+      {live && <ConfirmDialog request={confirmation} onClose={() => setConfirmation(null)} />}
       {automatic&&<AutomaticDialog state={state} scenario={scenario} now={now} onAccept={acceptAutomatic}
         onClose={accepted=>{setAutomatic(false);if(accepted)routesTarget.current?.focus();else automaticTrigger.current?.focus();}}/>}
       {suggesting && <OptimizationDialog state={state} selected={selected} editingId={editingId} scenario={scenario}

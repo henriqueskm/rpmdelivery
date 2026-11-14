@@ -9,6 +9,9 @@ export function OrdersPanel({
   editingId,
   onSelect,
   onDeadline,
+  onCancelOrder,
+  onRequeue,
+  pending = false,
   now,
 }: {
   state: DemoState;
@@ -17,8 +20,16 @@ export function OrdersPanel({
   onSelect: (ids: string[]) => void;
   /** Absent with real data: promises are set when the order is created. */
   onDeadline?: (id: string) => void;
+  /** Real data: drop a waiting order (asks first). */
+  onCancelOrder?: (id: string) => void;
+  /** Real data: a stop the courier brought back goes to the queue again. */
+  onRequeue?: (id: string) => void;
+  pending?: boolean;
   now: number;
 }) {
+  // Brought back to the store: they wait for the store's choice, out of the dispatch list.
+  const returned = state.orders.filter(o => o.delivery === "RETURN_TO_STORE" && o.status !== "CANCELLED");
+  const inTransit = (id: string) => state.routes.some(r => r.orderIds.includes(id) && (r.status === "ON_ROUTE" || r.status === "RETURNING"));
   const checkboxPrefix = useId();
   const [search, setSearch] = useState("");
   const [notesOnly, setNotesOnly] = useState(false);
@@ -144,6 +155,8 @@ export function OrdersPanel({
                 </span>
               </label>
               {onDeadline && <button className="ops-order-edit-promise" aria-label={`Editar prazo do pedido ${o.reference}`} title="Editar horário original e prazo prometido" onClick={() => onDeadline(o.id)}>Prazo</button>}
+              {onCancelOrder && o.delivery === "WAITING" && <button className="ops-order-edit-promise" disabled={pending}
+                aria-label={`Cancelar pedido ${o.reference}`} onClick={() => onCancelOrder(o.id)}>Cancelar</button>}
               {o.notes && (
                   <label htmlFor={`${checkboxPrefix}-${o.id}`} className="ops-order-note">
                     <span aria-hidden="true">!</span>
@@ -155,6 +168,20 @@ export function OrdersPanel({
           ))
         )}
       </div>
+      {onRequeue && returned.length > 0 && (
+        <section className="ops-returned" aria-labelledby="ops-returned-title">
+          <h3 id="ops-returned-title">Voltaram para a loja · {returned.length}</h3>
+          {returned.map(o => (
+            <div className="ops-returned-row" key={o.id}>
+              <span dir="auto"><strong>#{o.reference}</strong> {o.customer}</span>
+              {inTransit(o.id)
+                ? <small>Volta com o motoboy</small>
+                : <button disabled={pending} aria-label={`Devolver pedido ${o.reference} à fila`} onClick={() => onRequeue(o.id)}>
+                    Devolver à fila</button>}
+            </div>
+          ))}
+        </section>
+      )}
       {lastPage > 0 && (
         <div className="ops-panel-footer">
           <span>{plural(filtered.length, "pedido", "pedidos")}</span>

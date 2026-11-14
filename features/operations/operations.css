@@ -1275,3 +1275,62 @@
     display: none;
   }
 }
+
+/* Orders brought back by the courier, waiting for the store's choice. */
+.ops-returned {
+  margin: 0 14px 12px;
+  padding: 12px 14px;
+  border: 1px solid #efc6b5;
+  border-radius: 10px;
+  background: #fff0e9;
+}
+.ops-returned h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #8e331c;
+}
+.ops-returned-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 4px 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.ops-returned-row small {
+  color: var(--muted);
+}
+.operations .ops-returned-row button {
+  min-height: 44px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* Confirmation before canceling a route or an order. */
+.ops-confirm {
+  width: min(440px, calc(100% - 32px));
+}
+.ops-confirm h2 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+.ops-confirm p {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.ops-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+.operations .ops-danger {
+  border-color: #a1260f;
+  background: #a1260f;
+  color: white;
+}
