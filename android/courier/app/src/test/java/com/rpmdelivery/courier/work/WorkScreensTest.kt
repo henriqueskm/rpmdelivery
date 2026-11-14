@@ -57,6 +57,7 @@ class WorkScreensTest {
         fake.approve(); reload()
         node("1º").assertIsDisplayed()
         node("Você é o próximo da fila").assertIsDisplayed()
+        compose.onNodeWithText("Turno pedido em Cozinha da Vila. Aguarde a loja aprovar.").assertDoesNotExist()
         captureEvidence(compose, "work-02-queue-390")
 
         fake.assign(); reload()
@@ -104,7 +105,15 @@ class WorkScreensTest {
         node("2º").assertIsDisplayed()
         node("Chegada registrada. Você voltou para a fila.").assertIsDisplayed()
 
+        // Ending the shift is a quiet link that asks first: a stray tap keeps the courier in line.
+        node("Encerrar turno").assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithText("Encerrar o turno?").assertIsDisplayed()
+        captureEvidence(compose, "work-09-end-shift-390")
+        compose.onNodeWithText("Continuar na fila").performClick()
+        assertFalse(fake.calls.contains("end_shift"))
+        node("Você está na fila").assertIsDisplayed()
         node("Encerrar turno").performClick()
+        compose.onNodeWithText("Sim, encerrar").performClick()
         node("Pronto para começar?").assertIsDisplayed()
     }
 

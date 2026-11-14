@@ -237,13 +237,39 @@ private fun ShiftContent(shift: Shift, busy: Boolean, actions: WorkActions) {
                     }
                 }
                 Text("Quando a loja montar sua rota, ela aparece aqui sozinha.", style = MaterialTheme.typography.bodyLarge)
-                Secondary("Encerrar turno", busy) { actions.endShift(shift) }
+                EndShift(shift, busy, actions)
             }
             else -> {
                 Heading("Atualizando seu turno…", shift.restaurantName)
             }
         }
     }
+}
+
+/**
+ * Ending the shift happens once, at the end of the day: a quiet link at the foot of the card,
+ * confirmed in a dialog, so a stray tap never takes the courier out of line.
+ */
+@Composable
+private fun EndShift(shift: Shift, busy: Boolean, actions: WorkActions) {
+    var confirming by remember { mutableStateOf(false) }
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    TextButton(onClick = { confirming = true }, enabled = !busy,
+        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+        modifier = Modifier.heightIn(min = 48.dp)) {
+        Text("Encerrar turno", style = MaterialTheme.typography.bodyMedium)
+    }
+    if (confirming) AlertDialog(
+        onDismissRequest = { confirming = false },
+        title = { Text("Encerrar o turno?") },
+        text = { Text("Você sai da fila de ${shift.restaurantName}. Para voltar, peça um novo turno na loja.") },
+        confirmButton = {
+            TextButton(onClick = { confirming = false; actions.endShift(shift) }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Sim, encerrar") }
+        },
+        dismissButton = {
+            TextButton(onClick = { confirming = false }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Continuar na fila") }
+        },
+    )
 }
 
 // ---------------------------------------------------------------- route
