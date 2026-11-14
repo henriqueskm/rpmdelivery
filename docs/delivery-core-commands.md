@@ -2,7 +2,7 @@
 
 Objetivo: permitir a **simulação familiar** de ponta a ponta — loja cria pedido, monta rota, motoboy sai, entrega (ou falha), retorna e volta à fila; cliente acompanha pelo link.
 
-Hoje o painel `/preview/operacao` e o app Android usam dados fictícios. Este documento define os comandos reais do banco que vão substituí-los. Toda escrita continua passando somente por RPCs `SECURITY DEFINER`; nenhuma tabela operacional recebe `INSERT/UPDATE/DELETE` direto.
+O painel da loja (`/dashboard`) usa dados reais desde a fatia 5; o `/preview/operacao` e o app Android ainda usam dados fictícios. Este documento define os comandos reais do banco que vão substituí-los. Toda escrita continua passando somente por RPCs `SECURITY DEFINER`; nenhuma tabela operacional recebe `INSERT/UPDATE/DELETE` direto.
 
 ## Princípios
 
@@ -21,7 +21,8 @@ Hoje o painel `/preview/operacao` e o app Android usam dados fictícios. Este do
 | 1. Pedidos e turnos | `create_order`, `cancel_order`, `request_shift`, `review_shift`, `end_shift` | no `main` (PR #24) |
 | 2. Montagem de rota | `create_route`, `update_route_composition`, `release_route_pickup`, `revoke_route_pickup`, `cancel_route` | no `main` (PR #25) |
 | 3. Execução da rota | `start_route`, `complete_delivery`, `report_delivery_failure`, `decide_delivery_failure`, `cancel_delivery_on_route`, `requeue_delivery`, `arrive_at_store`, `record_courier_locations` | no `main` (PR #26) |
-| 4. Rastreamento público | `get_tracking(token)` (anon, dados mínimos) + link WhatsApp `wa.me` (`lib/tracking/links.ts`) | **em revisão** |
+| 4. Rastreamento público | `get_tracking(token)` (anon, dados mínimos) + link WhatsApp `wa.me` (`lib/tracking/links.ts`) | no `main` (PR #27) |
+| 5. Painel da loja | `get_operations_board(restaurant)` (leitura agregada) e o `/dashboard` ligado aos comandos das fatias 1–3 | **em revisão** |
 
 Fora do caminho até a simulação: otimização/planejamento automático, push, WhatsApp/SMS por API, taxa por km, ofertas externas.
 
@@ -193,3 +194,35 @@ Antes, o motoboy com rota ativa lia a linha inteira de `orders` pela RLS, telefo
 - `deliveries`, `routes` e `route_deliveries` continuam legíveis pelo motoboy dono da rota; nenhuma tem telefone.
 
 Problema na porta passa pela loja: o motoboy registra a falha e a loja liga para o cliente.
+
+## Fatia 5 — Painel da loja com dados reais
+
+O `/dashboard` deixa de usar dados fictícios. O `/preview/operacao` continua com os cenários de demonstração.
+
+### `get_operations_board(restaurant)` (membros da loja, inclusive OPERATOR)
+
+Uma leitura só, num retrato consistente, a cada 5 s com a aba visível e logo depois de cada comando. É `stable`, não trava nada e não muda nada. Fora da loja, inativo, motoboy ou `anon`: `RPM_MEMBER_REQUIRED` (42501).
+
+| Campo | Conteúdo |
+| --- | --- |
+| `restaurant` | Prazo padrão e tempo de resposta das ocorrências |
+| `couriers` | Turnos abertos (PENDING, AVAILABLE, ON_ROUTE, RETURNING), na ordem da fila (`available_since`), com nome e se o vínculo está ativo |
+| `routes` | Rotas ativas e as concluídas nas últimas 12 h enquanto o turno do motoboy segue aberto. Referência `R-n` pela ordem na loja, versão da composição, liberação, paradas na ordem planejada e fila de nova tentativa |
+| `orders` | Entregas em aberto, as encerradas nas últimas 12 h e todas as das rotas mostradas. Referência da loja ou, sem ela, o número do pedido na loja. Inclui o telefone (a loja já o lê pela policy de `orders`) |
+| `issues` | Falhas das rotas mostradas, abertas e decididas, com relato, prazo e quem decidiu |
+| `serverNow` | Relógio do servidor, para a tela calcular prazos sem depender do relógio do computador |
+
+Rotas canceladas não aparecem; as entregas delas voltam a aguardar.
+
+### O que a tela faz
+
+- **Comandos:** cadastrar pedido (`create_order`), aprovar ou recusar turno (`review_shift`), montar e editar rota (`create_route`, `update_route_composition` com a versão vista), liberar e cancelar a liberação, decidir ocorrência e cancelar entrega em rota. Cada comando recarrega o painel em seguida.
+- **Idempotência:** se a rede cair no meio do cadastro de um pedido ou da criação de uma rota, repetir a mesma ação reaproveita o `request_id` e o banco devolve o que já criou, sem duplicar.
+- **Conflitos:** erros `RPM_*` viram frases para o balcão (ex.: "A rota mudou em outro aparelho") e o painel recarrega.
+- **Prazo das ocorrências:** sem agendador, uma ocorrência vencida continua aberta no banco até o próximo comando da rota. A tela já a mostra encerrada por prazo, com o pedido voltando para a loja, e não deixa mais decidir.
+- **Sem conexão:** se a primeira leitura falhar, a tela oferece "Tentar novamente". Depois disso, uma queda mantém o último painel com o aviso "Sem conexão" e o painel tenta de novo sozinho.
+- **Avisos vistos/fechados** ficam neste aparelho (`localStorage`), como o som.
+
+### Fora desta fatia (escondido no painel real)
+
+Montagem automática e sugestão de sequência (otimização congelada até a simulação), edição de prazo do pedido e do prazo padrão, tempo de resposta das ocorrências pela tela, visão simulada do motoboy, cancelar rota em preparação, cancelar pedido e devolver à fila um pedido que voltou. O endereço do pedido ainda é texto livre, sem geocodificação; sem coordenadas, o mapa do cliente mostra só o entregador.

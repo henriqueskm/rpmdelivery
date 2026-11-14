@@ -6,7 +6,7 @@ import { calendarTime } from "./deadlines";
 
 export function IssueCard({issue,state,now,onCommand,onFollow}:{
   issue: DemoIssue; state: DemoState; now: number;
-  onCommand: (command: Command) => boolean; onFollow: (id: string) => void;
+  onCommand: (command: Command) => boolean | Promise<boolean>; onFollow: (id: string) => void;
 }) {
   const [confirmCancel,setConfirmCancel] = useState(false);
   const order = state.orders.find(o => o.id === issue.orderId)!,route = state.routes.find(r => r.id === issue.routeId)!,

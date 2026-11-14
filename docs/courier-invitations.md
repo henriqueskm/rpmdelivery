@@ -7,7 +7,7 @@ sintéticas em PostgreSQL 17 descartável.
 
 ## Fluxo
 
-1. Dashboard autenticado → Motoboys → **Convites e vínculos reais** →
+1. Dashboard autenticado → Motoboys → **Convites e vínculos** →
    `/motoboys`. Somente OWNER/MANAGER ativo carrega a gestão da própria loja.
 2. Gerar convite: validade 1–168 horas, limite 1–100 solicitações novas;
    padrões 72h/20 usos. QR local, código ou copiar link para colar manualmente

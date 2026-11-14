@@ -1,0 +1,153 @@
+import { test, expect, type Page } from "@playwright/test";
+import { mockSupabase, testRestaurant } from "./support/supabase";
+import { storeBackend } from "./support/store-backend";
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+async function signIn(page: Page) {
+  await page.goto("/login");
+  await page.getByLabel("E-mail", { exact: true }).fill("operador@example.test");
+  await page.getByLabel("Senha", { exact: true }).fill("Test-only-password-123!");
+  await page.getByRole("button", { name: "Entrar na minha conta" }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+}
+
+async function openPanel(page: Page) {
+  await signIn(page);
+  await expect(page.getByRole("heading", { name: "Central de operações" })).toBeVisible();
+}
+
+/** On phones each area is a tab; on desktop all are visible. */
+async function showArea(page: Page, name: RegExp) {
+  const tab = page.getByRole("tab", { name });
+  if (await tab.isVisible()) await tab.click();
+}
+
+function watchErrors(page: Page) {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  page.on("console", message => {
+    // Refused commands and dropped reads are logged by the browser as resource errors.
+    if (message.type() === "error" && !/Failed to load resource|ERR_INTERNET_DISCONNECTED/.test(message.text()))
+      errors.push(message.text());
+  });
+  return errors;
+}
+
+test("painel real: aprova turno, cadastra pedido, monta e libera rota pelo banco", async ({ page }) => {
+  const errors = watchErrors(page);
+  const backend = storeBackend();
+  const calls = await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  await openPanel(page);
+  await expect(page.getByText("Demonstração com dados fictícios.", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Montagem automática" })).toHaveCount(0);
+  await expect(page.getByRole("checkbox", { name: "Selecionar pedido 1048", exact: true })).toBeVisible();
+  expect(backend.calls[0]).toEqual({ fn: "get_operations_board", body: { p_restaurant_id: testRestaurant.id } });
+
+  // A courier arrived and asked for a shift; on phones the Motoboys tab says so.
+  const couriersTab = page.getByRole("tab", { name: /^Motoboys/ });
+  const phone = await couriersTab.isVisible();
+  if (phone) await expect(couriersTab).toHaveAccessibleName("Motoboys 1 turno pendente");
+  await showArea(page, /^Motoboys/);
+  const approve = page.getByRole("button", { name: "Aprovar turno de Carla Dias" });
+  expect((await approve.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await approve.click();
+  await expect(page.getByRole("status").filter({ hasText: "Turno de Carla Dias aprovado." })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Aprovar turno de Carla Dias" })).toHaveCount(0);
+  if (phone) await expect(couriersTab).toHaveAccessibleName("Motoboys");
+
+  // New order, saved with the normalized phone and a request id.
+  await page.getByRole("button", { name: "Novo pedido" }).click();
+  const form = page.locator("dialog[open]");
+  await expect(form).toContainText("O cliente recebe o link de acompanhamento quando a rota sair.");
+  await form.locator('input[name="customer"]').fill("Marina Teixeira");
+  await form.locator('input[name="phone"]').fill("(11) 91234-5678");
+  await form.locator('input[name="address"]').fill("Rua das Acácias, 55");
+  await form.locator('input[name="neighborhood"]').fill("Vila Mariana");
+  await form.locator('input[name="reference"]').fill("2001");
+  await form.getByRole("button", { name: "Cadastrar pedido" }).click();
+  await expect(form).toHaveCount(0);
+  await showArea(page, /^Pedidos/);
+  await expect(page.getByRole("checkbox", { name: "Selecionar pedido 2001", exact: true })).toBeVisible();
+  const created = backend.commandCalls().find(call => call.fn === "create_order")!.body;
+  expect(created).toMatchObject({ p_restaurant_id: testRestaurant.id, p_customer_name: "Marina Teixeira",
+    p_customer_phone: "+5511912345678", p_delivery_address: "Rua das Acácias, 55", p_neighborhood: "Vila Mariana",
+    p_reference: "2001", p_promised_minutes: 60 });
+  expect(created.p_request_id).toMatch(UUID);
+
+  // Route with two waiting orders for the first courier in line (Bruno, waiting longest after Dani's route).
+  await page.getByRole("checkbox", { name: "Selecionar pedido 1048", exact: true }).check();
+  await page.getByRole("checkbox", { name: "Selecionar pedido 2001", exact: true }).check();
+  await showArea(page, /^Montagem/);
+  await expect(page.getByRole("button", { name: "Sugerir sequência" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Atribuir rota", exact: false }).click();
+  const route8 = page.locator("#ops-route-r-8");
+  await expect(route8).toBeVisible();
+  await expect(route8).toContainText("Bruno Alves");
+  expect(backend.commandCalls().find(call => call.fn === "create_route")!.body).toMatchObject({
+    p_restaurant_id: testRestaurant.id, p_shift_id: "s-bruno", p_delivery_ids: ["d-1048", "d-2001"] });
+  await expect(route8.getByRole("button", { name: "Visão do motoboy (demo)" })).toHaveCount(0);
+
+  await route8.getByRole("button", { name: "Liberar retirada" }).click();
+  await expect(route8.getByRole("button", { name: "Cancelar liberação" })).toBeVisible();
+  expect(backend.commandCalls().at(-1)).toEqual({ fn: "release_route_pickup",
+    body: { p_restaurant_id: testRestaurant.id, p_route_id: "r-8", p_expected_version: 1 } });
+
+  expect(calls.unexpected).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
+test("ocorrência decidida pela Central e rota mudada em outro aparelho", async ({ page }) => {
+  const errors = watchErrors(page);
+  const backend = storeBackend();
+  await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  await openPanel(page);
+
+  await showArea(page, /^Rotas/);
+  await page.locator("#ops-route-r-7").getByRole("button", { name: "! Decisão pendente" }).click();
+  const center = page.getByRole("dialog", { name: "Central de ocorrências" });
+  await expect(center).toBeVisible();
+  await expect(center.getByText("Demonstração em memória.", { exact: false })).toHaveCount(0);
+  await expect(center.getByText("Toquei três vezes")).toBeVisible();
+  await center.getByRole("button", { name: "Tentar novamente" }).click();
+  await expect(center.getByText("Nenhuma ocorrência pendente. A operação pode seguir.")).toBeVisible();
+  expect(backend.commandCalls().at(-1)).toEqual({ fn: "decide_delivery_failure",
+    body: { p_restaurant_id: testRestaurant.id, p_delivery_id: "d-1050", p_decision: "RETRY" } });
+  await center.getByRole("button", { name: "Fechar Central de ocorrências" }).click();
+
+  // Someone changed R-6 on another device: the panel says so and reloads.
+  backend.failOnce("release_route_pickup", { status: 400, json: { code: "P0001", message: "RPM_ROUTE_STALE" } });
+  const reads = backend.boardReads();
+  await page.locator("#ops-route-r-6").getByRole("button", { name: "Liberar retirada" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "A rota mudou em outro aparelho" })).toBeVisible();
+  expect(backend.boardReads()).toBeGreaterThan(reads);
+  await expect(page.locator("#ops-route-r-6").getByRole("button", { name: "Liberar retirada" })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("sem conexão: primeira leitura permite tentar de novo e queda depois mantém o painel", async ({ page }) => {
+  const backend = storeBackend();
+  await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  backend.setOffline(true);
+  await signIn(page);
+  await expect(page.getByRole("alert").filter({ hasText: "Não foi possível carregar a operação." })).toBeVisible();
+  // The store can still see which account is signed in and leave.
+  await expect(page.getByText(testRestaurant.name, { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sair" })).toBeVisible();
+
+  backend.setOffline(false);
+  await page.getByRole("button", { name: "Tentar novamente" }).click();
+  await expect(page.getByRole("heading", { name: "Central de operações" })).toBeVisible();
+
+  // The panel reads again every 5 s; a drop keeps the last board on screen.
+  backend.setOffline(true);
+  await expect(page.getByText("Sem conexão.", { exact: true })).toBeVisible({ timeout: 8_000 });
+  await expect(page.getByRole("checkbox", { name: "Selecionar pedido 1048", exact: true })).toBeVisible();
+
+  // The courier finished a stop meanwhile; the next read shows it.
+  backend.board.orders.find(item => item.deliveryId === "d-1051")!.deliveryStatus = "DELIVERED";
+  backend.setOffline(false);
+  await expect(page.getByText("Sem conexão.", { exact: true })).toHaveCount(0, { timeout: 8_000 });
+  await showArea(page, /^Rotas/);
+  await expect(page.locator('#ops-route-r-7 li[data-delivery="DELIVERED"]')).toHaveCount(1);
+});

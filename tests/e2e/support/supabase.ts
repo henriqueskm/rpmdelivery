@@ -16,7 +16,20 @@ export const testRestaurant = {
   phone: null,
 };
 
+/** Answer of a store RPC: the JSON body, or a PostgREST error. */
+export type RpcReply = { status?: number; json: unknown } | "abort";
+export type RpcHandler = (body: Record<string, unknown>) => RpcReply | Promise<RpcReply>;
+
+/** Empty operations board: the store has nothing going on. */
+export const emptyBoard = () => ({
+  serverNow: new Date().toISOString(),
+  restaurant: { defaultPromiseMinutes: 60, issueTimeoutMinutes: 10 },
+  couriers: [], routes: [], orders: [], issues: [],
+});
+
 type Options = {
+  /** Store RPCs by name (get_operations_board answers an empty board by default). */
+  rpc?: Record<string, RpcHandler>;
   existing?: boolean;
   invalidLogin?: boolean;
   queryError?: boolean;
@@ -94,6 +107,18 @@ export async function mockSupabase(page: Page, options: Options = {}) {
       );
     } else if (path === "/rest/v1/restaurants") {
       await reply(testRestaurant);
+    } else if (path.startsWith("/rest/v1/rpc/") && path !== "/rest/v1/rpc/create_restaurant") {
+      const name = path.slice("/rest/v1/rpc/".length);
+      const handler = options.rpc?.[name]
+        ?? (name === "get_operations_board" ? (): RpcReply => ({ json: emptyBoard() }) : undefined);
+      if (!handler) {
+        calls.unexpected.push(path);
+        await reply({ message: "Unexpected mock endpoint" }, 500);
+        return;
+      }
+      const answer = await handler(route.request().postDataJSON() ?? {});
+      if (answer === "abort") await route.abort("internetdisconnected");
+      else await reply(answer.json, answer.status ?? 200);
     } else if (path === "/rest/v1/rpc/create_restaurant") {
       calls.rpc.push(route.request().postDataJSON());
       if (!options.rpcError) existing = true;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode, type RefObject } from "react";
+import { useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import dynamic from "next/dynamic";
 import { Brand } from "@/components/brand";
 import { optimizationScenarios, automaticScenarios, issueScenarios, type Scenario } from "./fixtures";
@@ -17,9 +17,11 @@ import { RoutesPanel } from "./routes-panel";
 import { NewOrderDialog } from "./dialogs";
 import { CourierDialog } from "./courier-dialog";
 import { DeadlineDialog } from "./deadline-dialog";
-import { tabs, useOperationsController } from "./use-operations-controller";
+import { tabs, useOperationsController, type LiveSource } from "./use-operations-controller";
+import { useOperationsBoard } from "./live/use-operations-board";
 import { useOperationsClock } from "./use-operations-clock";
 import { Icon } from "./ui";
+import { courierLabel, plural } from "./model";
 import "./operations.css";
 import "./operations-deadlines.css";
 import "./automatic.css";
@@ -38,7 +40,10 @@ export function Operations({
   courierManagementHref,
   preview = false,
   initialScenario = "demo",
+  restaurantId,
 }: {
+  /** With a store id the panel runs on the store's real data. */
+  restaurantId?: string;
   restaurantName: string;
   email?: string;
   accountAction?: ReactNode;
@@ -58,7 +63,18 @@ export function Operations({
       window.requestAnimationFrame(() => scenarioRef.current?.focus());
     }
   }
-  if (!now) return <main className="operations"><p role="status">Carregando demonstração operacional…</p></main>;
+  if (!now) return <main className="operations"><p role="status">{restaurantId ? "Carregando a operação da loja…" : "Carregando demonstração operacional…"}</p></main>;
+  if (restaurantId) return (
+    <LiveOperations
+      restaurantId={restaurantId}
+      now={now}
+      restaurantName={restaurantName}
+      email={email}
+      accountAction={accountAction}
+      courierManagementHref={courierManagementHref}
+      scenarioRef={scenarioRef}
+    />
+  );
   return (
     <OperationsWorkspace
       key={scenario}
@@ -75,6 +91,49 @@ export function Operations({
   );
 }
 
+function LiveOperations({ restaurantId, ...props }: {
+  restaurantId: string;
+  now: number;
+  restaurantName: string;
+  email?: string;
+  accountAction?: ReactNode;
+  courierManagementHref?: string;
+  scenarioRef: RefObject<HTMLSelectElement | null>;
+}) {
+  const { state, refresh, retry } = useOperationsBoard(restaurantId);
+  const board = state.status === "ready" ? state.board : undefined;
+  const receivedAt = state.status === "ready" ? state.receivedAt : 0;
+  const live = useMemo(() => board && { restaurantId, board, receivedAt, refresh }, [board, receivedAt, restaurantId, refresh]);
+  // Before the first board arrives the store still sees who is signed in and can leave.
+  const shell = (content: ReactNode) => (
+    <main className="operations">
+      <header className="ops-header">
+        <Brand />
+        <div className="ops-account">
+          <div>
+            <strong>{props.restaurantName}</strong>
+            {props.email && <small>{props.email}</small>}
+          </div>
+          {props.accountAction}
+        </div>
+      </header>
+      {content}
+    </main>
+  );
+  if (state.status === "error") return shell(
+    <div className="ops-load-error" role="alert">
+      <strong>Não foi possível carregar a operação.</strong>
+      <span>Confira a conexão e tente de novo.</span>
+      <button className="ops-primary" onClick={retry}>Tentar novamente</button>
+    </div>
+  );
+  if (!live) return shell(<p className="ops-load-error" role="status">Carregando a operação da loja…</p>);
+  return (
+    <OperationsWorkspace {...props} preview={false} scenario="empty" onScenario={() => {}}
+      live={live} offline={state.status === "ready" && state.offline} />
+  );
+}
+
 function OperationsWorkspace({
   now,
   restaurantName,
@@ -85,7 +144,11 @@ function OperationsWorkspace({
   scenario,
   onScenario,
   scenarioRef,
+  live,
+  offline = false,
 }: {
+  live?: LiveSource;
+  offline?: boolean;
   now: number;
   restaurantName: string;
   email?: string;
@@ -99,9 +162,10 @@ function OperationsWorkspace({
   const {
     state, selected, setSelected, editingId, courierId, setCourierId, activeTab, setActiveTab,
     notice, courierRouteId, setCourierRouteId, deadlineTarget, setDeadlineTarget,
-    newDialog, courierDialog, deadlineDialog, issueDialog, tabRefs,
-    assign, acceptAutomatic, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, issueCommand, viewedAlerts, dismissAlerts, tabKey,
-  } = useOperationsController(scenario, now);
+    newDialog, courierDialog, deadlineDialog, issueDialog, tabRefs, pending: saving,
+    assign, acceptAutomatic, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, issueCommand,
+    reviewShift, viewedAlerts, dismissAlerts, tabKey,
+  } = useOperationsController(scenario, now, live);
   const [suggesting, setSuggesting] = useState(false);
   const [automatic,setAutomatic]=useState(false);
   const automaticTrigger=useRef<HTMLButtonElement>(null);
@@ -109,6 +173,7 @@ function OperationsWorkspace({
   const [highlightedRoute,setHighlightedRoute]=useState<string>();
   const alerts=useIssueAlerts(state,viewedAlerts);
   const pending=pendingIssues(state);
+  const pendingShifts=state.couriers.filter(c=>courierLabel(state,c)==="Turno pendente").length;
   function followRoute(id?:string) {
     setActiveTab("routes");setHighlightedRoute(id);
     window.requestAnimationFrame(()=>{
@@ -141,9 +206,9 @@ function OperationsWorkspace({
             <h1>Central de operações</h1>
             <p>Organize o despacho. Acompanhe cada saída.</p>
           </div>
-          <div className="ops-page-actions"><button ref={automaticTrigger} disabled={!!editingId}
+          <div className="ops-page-actions">{!live && <button ref={automaticTrigger} disabled={!!editingId}
             title={editingId?"Conclua ou cancele a edição da rota atual antes de usar a montagem automática.":undefined}
-            onClick={()=>setAutomatic(true)}>Montagem automática</button>
+            onClick={()=>setAutomatic(true)}>Montagem automática</button>}
           <button
             className="ops-primary"
             onClick={openNewOrder}
@@ -151,7 +216,11 @@ function OperationsWorkspace({
             <Icon name="plus" /> Novo pedido
           </button></div>
         </div>
-        <div className="ops-demo-banner">
+        {live ? offline && (
+          <div className="ops-demo-banner ops-offline-banner" role="status">
+            <span><strong>Sem conexão.</strong> Mostrando os últimos dados; o painel tenta atualizar sozinho.</span>
+          </div>
+        ) : <div className="ops-demo-banner">
           <span>
             <strong>Demonstração com dados fictícios.</strong><span className="ops-demo-explanation"> Ações locais, sem
             persistência. Recarregar restaura o exemplo.</span>
@@ -175,7 +244,7 @@ function OperationsWorkspace({
               </select>
             </label>
           )}
-        </div>
+        </div>}
         {preview&&scenario.startsWith("issues-")&&<IssueDemoControls state={state} onCommand={courierCommand}/>}
         <NewIssueBanner issues={alerts.alerts} state={state} now={now} onDismiss={ids=>{
           dismissAlerts(ids);window.requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(".ops-alert-count")?.focus());
@@ -211,6 +280,12 @@ function OperationsWorkspace({
               {tab.id === "builder" && selected.length > 0 && (
                 <span className="ops-tab-count">{selected.length}</span>
               )}
+              {tab.id === "couriers" && pendingShifts > 0 && (<>
+                {" "}
+                <span className="ops-tab-count" aria-label={plural(pendingShifts, "turno pendente", "turnos pendentes")}>
+                  {pendingShifts}
+                </span>
+              </>)}
             </button>
           ))}
         </nav>
@@ -224,7 +299,7 @@ function OperationsWorkspace({
             <OrdersPanel
               state={state}
               now={now}
-              onDeadline={setDeadlineTarget}
+              onDeadline={live ? undefined : setDeadlineTarget}
               selected={selected}
               editingId={editingId}
               onSelect={setSelected}
@@ -241,7 +316,9 @@ function OperationsWorkspace({
               selected={selected}
               editingId={editingId}
               courierId={courierId}
-              onSuggest={() => setSuggesting(true)}
+              onSuggest={live ? undefined : () => setSuggesting(true)}
+              live={!!live}
+              pending={saving}
               onCourier={setCourierId}
               onSelect={setSelected}
               onAssign={assign}
@@ -254,7 +331,8 @@ function OperationsWorkspace({
             className={`ops-panel ${activeTab === "couriers" ? "is-active" : ""}`}
             aria-labelledby="ops-tab-couriers"
           >
-            <CouriersPanel state={state} managementHref={courierManagementHref} />
+            <CouriersPanel state={state} managementHref={courierManagementHref}
+              onReviewShift={live ? reviewShift : undefined} pending={saving} />
           </section>
         </div>
         <section
@@ -271,11 +349,11 @@ function OperationsWorkspace({
             highlightedRoute={highlightedRoute}
             onIssues={openIssues}
             onCommand={issueCommand}
-            onDeadline={setDeadlineTarget}
+            onDeadline={live ? undefined : setDeadlineTarget}
             onRelease={release}
             onRevokeRelease={revokeRelease}
             onEdit={edit}
-            onCourierView={(id) => {
+            onCourierView={live ? undefined : (id) => {
               setCourierRouteId(id);
               courierDialog.current?.showModal();
             }}
@@ -283,24 +361,24 @@ function OperationsWorkspace({
         </section>
         <footer className="ops-footer">
           <span>RpmDelivery · Operação em movimento.</span>
-          <span>Protótipo de despacho • sem conexão operacional ao banco</span>
+          <span>{live ? "Atualiza sozinho a cada 5 segundos" : "Protótipo de despacho • sem conexão operacional ao banco"}</span>
         </footer>
       </div>
-      <NewOrderDialog dialogRef={newDialog} now={now} defaultPromiseMinutes={state.defaultPromiseMinutes} onAdd={add} />
+      <NewOrderDialog dialogRef={newDialog} now={now} defaultPromiseMinutes={state.defaultPromiseMinutes} onAdd={add} live={!!live} />
       {automatic&&<AutomaticDialog state={state} scenario={scenario} now={now} onAccept={acceptAutomatic}
         onClose={accepted=>{setAutomatic(false);if(accepted)routesTarget.current?.focus();else automaticTrigger.current?.focus();}}/>}
       {suggesting && <OptimizationDialog state={state} selected={selected} editingId={editingId} scenario={scenario}
         now={now} onApply={setSelected} onClose={()=>setSuggesting(false)} />}
-      <DeadlineDialog dialogRef={deadlineDialog} state={state} target={deadlineTarget} onSave={saveDeadline} onClose={() => setDeadlineTarget(undefined)} />
-      <CourierDialog
+      {!live && <DeadlineDialog dialogRef={deadlineDialog} state={state} target={deadlineTarget} onSave={saveDeadline} onClose={() => setDeadlineTarget(undefined)} />}
+      {!live && <CourierDialog
         now={now}
         dialogRef={courierDialog}
         state={state}
         routeId={courierRouteId}
         onCommand={courierCommand}
         onCompletedClose={followRoute}
-      />
-      <IssueCenter dialogRef={issueDialog} state={state} now={now} onCommand={issueCommand} onFollow={followRoute}/>
+      />}
+      <IssueCenter dialogRef={issueDialog} state={state} now={now} onCommand={issueCommand} onFollow={followRoute} live={!!live}/>
     </main>
   );
 }

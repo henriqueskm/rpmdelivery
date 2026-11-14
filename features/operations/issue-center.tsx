@@ -4,9 +4,11 @@ import { DEMO_STORE_ACTOR } from "./issue-types";
 import { pendingIssues } from "./issue-presentation";
 import { IssueCard } from "./issue-card";
 
-export function IssueCenter({dialogRef,state,now,onCommand,onFollow}:{
+export function IssueCenter({dialogRef,state,now,onCommand,onFollow,live=false}:{
   dialogRef: RefObject<HTMLDialogElement | null>; state: DemoState; now: number;
-  onCommand: (command: Command) => boolean; onFollow: (id: string) => void;
+  onCommand: (command: Command) => boolean | Promise<boolean>; onFollow: (id: string) => void;
+  /** Real data: decisions are saved; the response time is the store setting. */
+  live?: boolean;
 }) {
   const [view,setView] = useState<"pending"|"history">("pending"), [page,setPage] = useState(0);
   const [error,setError] = useState("");
@@ -17,7 +19,7 @@ export function IssueCenter({dialogRef,state,now,onCommand,onFollow}:{
   function switchView(next: "pending"|"history") {setView(next);setPage(0);}
   return <dialog ref={dialogRef} className="ops-dialog ops-issue-center" aria-labelledby="ops-issue-center-title" onClose={()=>{switchView("pending");setError("");}}>
     <div className="ops-dialog-heading"><h2 id="ops-issue-center-title">Central de ocorrências</h2><button aria-label="Fechar Central de ocorrências" onClick={() => dialogRef.current?.close()}>×</button></div>
-    <p className="ops-dialog-notice">Demonstração em memória. Decisões atualizam apenas os dados fictícios desta página.</p>
+    {!live && <p className="ops-dialog-notice">Demonstração em memória. Decisões atualizam apenas os dados fictícios desta página.</p>}
     <div role="tablist" aria-label="Ocorrências">
       <button ref={pendingRef} role="tab" aria-selected={view==="pending"} tabIndex={view==="pending"?0:-1} aria-controls="ops-issues-list"
         onClick={() => switchView("pending")} onKeyDown={e => {if(["ArrowLeft","ArrowRight","End"].includes(e.key)){e.preventDefault();switchView("history");historyRef.current?.focus();}}}>Pendentes ({pending.length})</button>
@@ -25,7 +27,7 @@ export function IssueCenter({dialogRef,state,now,onCommand,onFollow}:{
         onClick={() => switchView("history")} onKeyDown={e => {if(["ArrowLeft","ArrowRight","Home"].includes(e.key)){e.preventDefault();switchView("pending");pendingRef.current?.focus();}}}>Histórico ({closed.length})</button>
     </div>
     <div className="ops-issue-center-body" id="ops-issues-list" role="tabpanel" aria-label={view==="pending"?"Ocorrências pendentes":"Histórico de ocorrências"} tabIndex={0}>
-      {!issues.length&&<p className="ops-issue-empty" role="status">{view==="pending"?"Nenhuma ocorrência pendente. A operação pode seguir.":"Nenhuma ocorrência encerrada nesta demonstração."}</p>}
+      {!issues.length&&<p className="ops-issue-empty" role="status">{view==="pending"?"Nenhuma ocorrência pendente. A operação pode seguir.":live?"Nenhuma ocorrência encerrada hoje.":"Nenhuma ocorrência encerrada nesta demonstração."}</p>}
       {issues.slice(current*20,(current+1)*20).map(issue => <IssueCard key={issue.id} issue={issue} state={state} now={now} onCommand={command=>{
         const result=onCommand(command);window.requestAnimationFrame(()=>{
           if(dialogRef.current?.open&&!dialogRef.current.contains(document.activeElement))pendingRef.current?.focus();
@@ -34,7 +36,7 @@ export function IssueCenter({dialogRef,state,now,onCommand,onFollow}:{
         onFollow={id => {dialogRef.current?.close();onFollow(id);}}/>)}
     </div>
     {issues.length>20&&<div className="ops-auto-pagination"><button aria-label="Ocorrências anteriores" disabled={current===0} onClick={() => setPage(current-1)}>←</button><span>{current+1}/{last+1} · 20 por página</span><button aria-label="Próximas ocorrências" disabled={current===last} onClick={() => setPage(current+1)}>→</button></div>}
-    <details className="ops-issue-settings"><summary>Tempo de resposta da loja · {state.issueTimeoutMinutes} min</summary>
+    {!live && <details className="ops-issue-settings"><summary>Tempo de resposta da loja · {state.issueTimeoutMinutes} min</summary>
       <form onSubmit={e => {
         e.preventDefault();const data = new FormData(e.currentTarget);setError("");
         const minutes = Number(data.get("minutes"));
@@ -42,6 +44,6 @@ export function IssueCenter({dialogRef,state,now,onCommand,onFollow}:{
         if(minutes!==state.issueTimeoutMinutes)onCommand({type:"issue-timeout-config",minutes,actorId:DEMO_STORE_ACTOR,now:Date.now(),commandId:`timeout-config:${state.events.length}:${minutes}`});
       }}><label>Minutos para decidir<input key={state.issueTimeoutMinutes} name="minutes" type="number" min={1} max={60} required defaultValue={state.issueTimeoutMinutes}/></label><button>Salvar prazo demonstrativo</button></form>
       <p>Vale para novas ocorrências. As atuais mantêm o limite definido no registro da falha.</p>{error&&<p role="alert">{error}</p>}
-    </details>
+    </details>}
   </dialog>;
 }

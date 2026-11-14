@@ -16,12 +16,13 @@ export function RoutesPanel({
 }: {
   state: DemoState;
   onEdit: (id: string) => void;
-  onCourierView: (id: string) => void;
+  /** Demo only: real routes are driven from the courier's phone. */
+  onCourierView?: (id: string) => void;
   onRelease: (id: string) => void;
   onRevokeRelease: (id: string) => void;
-  onDeadline: (id: string) => void;
+  onDeadline?: (id: string) => void;
   now: number;
-  onIssues: () => void; onCommand: (command: Command) => boolean; highlightedRoute?: string;
+  onIssues: () => void; onCommand: (command: Command) => boolean | Promise<boolean>; highlightedRoute?: string;
 }) {
   const issues = pendingIssues(state);
   return (
@@ -70,7 +71,7 @@ export function RoutesPanel({
                         <span className="ops-route-destination">
                           #{o.reference} · {o.neighborhood}
                         </span>
-                        <DeadlineButton order={o} now={now} onEdit={() => onDeadline(o.id)} />
+                        <DeadlineButton order={o} now={now} onEdit={onDeadline && (() => onDeadline(o.id))} />
                         {o.delivery === "ATTEMPT_FAILED" && (
                           <button className="ops-route-issue-link" onClick={onIssues}>! Decisão pendente</button>
                         )}
@@ -104,7 +105,7 @@ export function RoutesPanel({
                     </button>
                     </>
                   )}
-                  {r.status !== "COMPLETED" && (
+                  {onCourierView && r.status !== "COMPLETED" && (
                     <button
                       className="ops-link-button"
                       onClick={() => onCourierView(r.id)}
