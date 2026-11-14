@@ -643,7 +643,14 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
                     }
                     // The swipe is the confirmation: no extra dialog between the courier and the next stop.
                     SwipeToConfirm("Deslize para confirmar a entrega", busy, SoftGreen, Green, Green) { actions.complete(route, next) }
-                    Secondary("Não consegui entregar", busy) { failing = true }
+                    // A quiet link, set apart from the swipe: the exception never competes with "delivered".
+                    // A stray tap only opens the reason form, which still needs "Enviar para a loja".
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    TextButton(onClick = { failing = true }, enabled = !busy,
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                        modifier = Modifier.heightIn(min = 48.dp)) {
+                        Text("Não consegui entregar", style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
             }
         }
