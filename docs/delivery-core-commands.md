@@ -287,7 +287,7 @@ O motoboy espera na loja com o celular no bolso. Um serviço em primeiro plano a
 
 ## Fatia 8 — Ganhos do motoboy
 
-Cada loja define uma **taxa de encosta** por dia e um **valor fixo por entrega**. O motoboy vê no topo do app quantas entregas fez hoje e quanto tem a receber; a loja vê o acerto do dia por motoboy.
+Cada loja define uma **taxa de encosta** por dia e um **valor fixo por entrega**. O motoboy vê num botão fixo no canto do app quanto tem a receber hoje; a loja vê o acerto do dia por motoboy.
 
 ### Regras
 
@@ -309,7 +309,7 @@ Cada loja define uma **taxa de encosta** por dia e um **valor fixo por entrega**
 ### Nas telas
 
 - **Painel:** "Pagamento dos motoboys", na área de Motoboys, abre as taxas (editáveis por dono e gerente) e o acerto do dia, com troca de data e total do dia.
-- **App:** dois círculos sobrepostos no topo da tela inicial (entregas de hoje e valor a receber hoje). Tocar abre o histórico dos últimos 30 dias, com o total do período.
+- **App:** um botão escuro fixo no canto superior ("R$ 51,00 ▾"), por cima da tela e também durante a rota, com o valor a receber hoje. Tocar abre o histórico dos últimos 30 dias; os dias anteriores só são lidos nesse momento. A leitura a cada 15 s traz apenas os totais de hoje.
 
 ### Fora desta fatia
 
