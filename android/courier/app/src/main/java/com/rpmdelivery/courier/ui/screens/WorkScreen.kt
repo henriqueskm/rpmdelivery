@@ -9,18 +9,9 @@ import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.semantics.contentDescription
 import com.rpmdelivery.courier.ui.theme.Ink
-import com.rpmdelivery.courier.work.Today
 import com.rpmdelivery.courier.work.historyDate
 import com.rpmdelivery.courier.work.reais
 import androidx.activity.result.contract.ActivityResultContracts
@@ -143,10 +134,32 @@ fun WorkScreen(work: WorkController) {
         navigate = { query -> open(Intent(Intent.ACTION_VIEW, query.toUri()), "Nenhum aplicativo de mapas encontrado neste aparelho.") },
         dial = { phone -> open(Intent(Intent.ACTION_DIAL, "tel:$phone".toUri()), "Nenhum aplicativo de telefone encontrado neste aparelho.") },
     )
-    var showHistory by remember { mutableStateOf(false) }
-    BackHandler(enabled = showHistory) { showHistory = false }
-    if (showHistory) HistoryContent(state, onBack = { showHistory = false }, onRetry = work::loadHistory)
-    else WorkContent(state, actions, onToday = { showHistory = true; work.loadHistory() })
+    BackHandler(enabled = state.historyOpen) { work.closeHistory() }
+    if (state.historyOpen) HistoryContent(state, onBack = work::closeHistory, onRetry = work::loadHistory)
+    else WorkContent(state, actions)
+}
+
+/**
+ * Money to receive today, fixed in the top corner over the screen, also on the route.
+ * Tapping it opens the history; nothing about past days is read before that.
+ */
+@Composable
+fun EarningsPill(work: WorkController, modifier: Modifier = Modifier) {
+    val state by work.state.collectAsState()
+    val today = state.home?.today ?: return
+    if (state.historyOpen) return
+    val deliveries = if (today.deliveries == 1) "1 entrega" else "${today.deliveries} entregas"
+    Surface(onClick = work::openHistory, shape = RoundedCornerShape(100.dp), color = Ink, contentColor = Color.White,
+        shadowElevation = 6.dp,
+        modifier = modifier.heightIn(min = 48.dp).semantics {
+            contentDescription = "A receber hoje: ${reais(today.totalCents)}, $deliveries. Abrir histórico"
+        }) {
+        Row(Modifier.padding(start = 18.dp, end = 14.dp, top = 10.dp, bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(reais(today.totalCents), fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text("▾", fontSize = 14.sp)
+        }
+    }
 }
 
 fun hasLocation(context: Context): Boolean =
@@ -175,10 +188,9 @@ fun mapQuery(latitude: Double?, longitude: Double?, address: String): String =
     else "geo:0,0?q=${Uri.encode(address)}"
 
 @Composable
-fun WorkContent(state: WorkState, actions: WorkActions, onToday: () -> Unit = {}) {
+fun WorkContent(state: WorkState, actions: WorkActions) {
     val home = state.home
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        home?.today?.let { TodayBadges(it, onToday) }
         if (state.offline) Banner("Sem conexão. Mostrando os últimos dados; o aplicativo tenta de novo sozinho.", SoftCoral)
         state.notice?.let { Banner(it, SoftGreen, Green) }
         state.message?.let {
@@ -193,45 +205,6 @@ fun WorkContent(state: WorkState, actions: WorkActions, onToday: () -> Unit = {}
             else -> StoresContent(home.stores, state.busy, actions)
         }
         StationaryNotice()
-    }
-}
-
-/**
- * Today at a glance: two round badges that overlap, deliveries and money to receive.
- * Tapping either opens the history. Long values shrink to fit; nothing is cut.
- */
-@Composable
-private fun TodayBadges(today: Today, onOpen: () -> Unit) {
-    BoxWithConstraints(
-        Modifier.fillMaxWidth()
-            .semantics(mergeDescendants = true) { }
-            .clickable(onClickLabel = "Ver histórico", role = Role.Button, onClick = onOpen),
-        contentAlignment = Alignment.Center,
-    ) {
-        val overlap = 24.dp
-        val size = minOf((maxWidth + overlap) / 2, 148.dp)
-        Box(Modifier.width(size * 2 - overlap).height(size)) {
-            RoundStat("${today.deliveries}", if (today.deliveries == 1) "entrega hoje" else "entregas hoje", Ink,
-                Modifier.size(size).align(Alignment.CenterStart))
-            RoundStat(reais(today.totalCents), "a receber hoje", Coral, Modifier.size(size).align(Alignment.CenterEnd))
-        }
-    }
-}
-
-@Composable
-private fun RoundStat(value: String, caption: String, color: Color, modifier: Modifier) {
-    // The page-colored ring separates the overlapping circles.
-    Surface(shape = CircleShape, color = color, contentColor = Color.White,
-        border = BorderStroke(4.dp, MaterialTheme.colorScheme.background), modifier = modifier) {
-        Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally) {
-            BasicText(value, maxLines = 1,
-                style = TextStyle(color = Color.White, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center),
-                autoSize = TextAutoSize.StepBased(minFontSize = 14.sp, maxFontSize = 32.sp))
-            BasicText(caption, maxLines = 2,
-                style = TextStyle(color = Color.White, textAlign = TextAlign.Center),
-                autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = 13.sp))
-        }
     }
 }
 

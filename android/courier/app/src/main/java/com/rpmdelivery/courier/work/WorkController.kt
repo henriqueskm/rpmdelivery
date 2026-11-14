@@ -23,7 +23,8 @@ data class WorkState(
     val message: String? = null,
     /** What just worked. */
     val notice: String? = null,
-    /** Earnings history: null until asked; [historyError] when it could not be read. */
+    /** Earnings history: read only when the courier opens it; [historyError] when it could not be read. */
+    val historyOpen: Boolean = false,
     val history: List<HistoryDay>? = null,
     val historyLoading: Boolean = false,
     val historyError: String? = null,
@@ -63,7 +64,14 @@ class WorkController(
     fun clear() { requestIds.clear(); mutable.value = WorkState() }
     fun inform(message: String) = mutable.update { it.copy(message = message, notice = null) }
 
-    /** Reads the last 30 days each time the history opens: the store may have paid or changed nothing, it is cheap. */
+    /** Opens the history and reads it then; nothing about past days is read before that. */
+    fun openHistory() {
+        mutable.update { it.copy(historyOpen = true) }
+        loadHistory()
+    }
+    fun closeHistory() = mutable.update { it.copy(historyOpen = false) }
+
+    /** Reads the last 30 days, each time the history opens or the courier retries. */
     fun loadHistory() {
         if (mutable.value.historyLoading) return
         mutable.update { it.copy(historyLoading = true, historyError = null) }
