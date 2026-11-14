@@ -73,7 +73,9 @@ fun CourierApp(controller: AuthController, work: WorkController? = null) {
           // The courier's home has a fixed top line: symbol, today's earnings (open shift only) and "Sair".
           if (working && work != null) WorkHeader(work, state.busy, controller::logout)
           Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
-            key(state.screen) {
+            // The courier's day scrolls on its own terms: the queue scrolls, the route stays put.
+            if (working && work != null) WorkScreen(work)
+            else key(state.screen) {
                 Column(Modifier.widthIn(max = 480.dp).fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp)) {
                     if (state.screen != AuthScreen.Welcome && !working) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -106,9 +108,7 @@ fun CourierApp(controller: AuthController, work: WorkController? = null) {
                         }
                         AuthScreen.Profile -> CourierProfileScreen(state.registration, state.busy, controller::complete,
                             onLater = { controller.navigate(AuthScreen.Home) })
-                        AuthScreen.Home -> if (work != null && state.registration.complete) {
-                            WorkScreen(work)
-                        } else {
+                        AuthScreen.Home -> {
                             Brand()
                             ScreenHeading(if (state.registration.complete) "Cadastro de motoboy concluído" else "Conta criada · cadastro pendente",
                                 if (state.registration.complete) "Seus dados de motoboy estão salvos com segurança."

@@ -5,8 +5,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.Density
@@ -58,13 +60,20 @@ class CompactWorkTest {
             CompositionLocalProvider(LocalDensity provides Density(1f, 1.5f)) { CourierTheme { CourierApp(controller, work) } }
         }
         compose.runOnIdle { controller.restore() }
-        compose.onAllNodesWithText("Maria Aparecida dos Santos Albuquerque de Vasconcelos").onFirst().performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Maria Aparecida dos Santos Albuquerque de Vasconcelos") and hasAnyAncestor(hasTestTag("next-stop")))
+            .performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Vila Mariana · Prazo", substring = true).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("2ª tentativa", substring = true).performScrollTo().assertIsDisplayed()
         captureEvidence(compose, "work-07-next-stop-320-font150")
-        for (label in listOf("Abrir navegação", "Deslize para confirmar a entrega", "Não consegui entregar", "Ligar para a loja")) {
+        // With large text on a small phone the top part scrolls, so every action stays reachable.
+        for (label in listOf("Abrir navegação", "Deslize para confirmar a entrega", "Não consegui entregar")) {
             compose.onNodeWithText(label).performScrollTo().assertIsDisplayed().assertHeightIsAtLeast(48.dp)
         }
         captureEvidence(compose, "work-08-actions-320-font150")
+        // The store's phone is in the sheet at the bottom.
+        compose.onNodeWithText("Entregas da rota").assertIsDisplayed().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Ligar para a loja").performScrollTo().assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+        captureEvidence(compose, "work-09-sheet-320-font150")
     }
 }
