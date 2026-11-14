@@ -72,5 +72,10 @@ internal class FakeWork : CourierWorkRepository {
         record("arrive_at_store")
         home = home.copy(route = null, shift = home.shift!!.copy(status = "AVAILABLE", queuePosition = 2))
     }
+    val sentPoints = mutableListOf<GpsPoint>()
+    override suspend fun recordLocations(routeId: String, points: List<GpsPoint>) {
+        record("record_courier_locations")
+        sentPoints += points
+    }
     override suspend fun notifyCustomers(routeId: String) { notified++ }
 }

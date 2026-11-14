@@ -46,6 +46,8 @@ import com.rpmdelivery.courier.ui.screens.AuthAction
 import com.rpmdelivery.courier.ui.screens.CourierProfileScreen
 import com.rpmdelivery.courier.ui.screens.RouteScreen
 import com.rpmdelivery.courier.ui.screens.WelcomeScreen
+import androidx.compose.ui.platform.LocalContext
+import com.rpmdelivery.courier.shift.ShiftService
 import com.rpmdelivery.courier.ui.screens.WorkScreen
 import com.rpmdelivery.courier.work.WorkController
 
@@ -53,7 +55,14 @@ import com.rpmdelivery.courier.work.WorkController
 fun CourierApp(controller: AuthController, work: WorkController? = null) {
     val state by controller.state.collectAsState()
     // Another account must never see the previous courier's shift or route.
-    LaunchedEffect(state.authenticated) { if (!state.authenticated) work?.clear() }
+    val context = LocalContext.current
+    LaunchedEffect(state.authenticated) {
+        if (!state.authenticated && work != null) {
+            work.clear()
+            // Signed out or expired: no more alerts or GPS from this phone.
+            ShiftService.stop(context)
+        }
+    }
     var previewMessage by remember { mutableStateOf(false) }
     val back = { controller.navigate(if (state.authenticated) AuthScreen.Home else AuthScreen.Welcome) }
     BackHandler(state.screen !in setOf(AuthScreen.Welcome, AuthScreen.Home, AuthScreen.Loading), onBack = back)

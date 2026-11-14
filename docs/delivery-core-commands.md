@@ -23,7 +23,8 @@ O painel da loja (`/dashboard`) usa dados reais desde a fatia 5; o `/preview/ope
 | 3. Execução da rota | `start_route`, `complete_delivery`, `report_delivery_failure`, `decide_delivery_failure`, `cancel_delivery_on_route`, `requeue_delivery`, `arrive_at_store`, `record_courier_locations` | no `main` (PR #26) |
 | 4. Rastreamento público | `get_tracking(token)` (anon, dados mínimos) + link WhatsApp `wa.me` (`lib/tracking/links.ts`) | no `main` (PR #27) |
 | 5. Painel da loja | `get_operations_board(restaurant)` (leitura agregada) e o `/dashboard` ligado aos comandos das fatias 1–3 | no `main` (PR #32) |
-| 6. App do motoboy | `get_courier_home()` (leitura da tela inicial) e o app Android ligado aos comandos do motoboy | **em revisão** |
+| 6. App do motoboy | `get_courier_home()` (leitura da tela inicial) e o app Android ligado aos comandos do motoboy | no `main` (PR #33) |
+| 7. Turno no bolso | Serviço do turno no Android: avisos da fila e GPS da rota (`record_courier_locations`) | **em revisão** |
 
 Fora do caminho até a simulação: otimização/planejamento automático, push, WhatsApp/SMS por API, taxa por km, ofertas externas.
 
@@ -257,4 +258,28 @@ Uma leitura só, `stable`, a cada 15 s com o app aberto e logo depois de cada co
 
 ### Fora desta fatia
 
-GPS (`record_courier_locations`) com serviço em primeiro plano e permissão de localização fica para a próxima PR; até lá o cliente que é o próximo não vê o motoboy no mapa. Sem notificações push: com o app fechado, a tela só se atualiza ao abrir.
+GPS e avisos com o celular no bolso: fatia 7. Sem notificações push: com o processo do app encerrado, nada avisa até abrir.
+
+## Fatia 7 — Turno no bolso: avisos e GPS
+
+O motoboy espera na loja com o celular no bolso. Um serviço em primeiro plano acompanha o turno aberto, sem banco novo.
+
+### O que o serviço faz
+
+- **Quando roda:** do pedido de turno até o fim do turno. O app o inicia ao ver um turno aberto (o Android só deixa iniciar com o app visível) e o encerra ao ver o turno fechado, ao sair da conta ou com a sessão expirada.
+- **Notificação fixa "Em turno · loja":** mostra "Aguardando aprovação", "2º da fila", "Rota pronta para retirada", "Rota em andamento · localização ativa" ou "Voltando para a loja". Nunca mostra dado de cliente.
+- **Avisos com som** (canal "Avisos da loja"), um por momento: turno aprovado, você é o próximo da fila, rota pronta para retirada. A primeira leitura depois de iniciar não avisa nada: o motoboy acabou de ver aquela tela.
+- **Leitura:** `get_courier_home()` a cada 30 s esperando e a cada 15 s na rota.
+- **GPS só com a rota em andamento** (ON_ROUTE e RETURNING): pontos a cada 5 s ou 10 m, enviados em lotes de até 100 por `record_courier_locations`. Sem sinal, os pontos esperam (até 1.000, os mais antigos saem primeiro). Rota encerrada ou pontos recusados: descartados. Na fila, nenhuma localização é lida.
+
+### Permissões
+
+- **Notificações** (Android 13+): pedidas ao tocar "Cheguei · pedir turno". Recusar não impede o turno; só não toca o aviso.
+- **Localização "durante o uso"**, precisa ou aproximada: pedida ao deslizar "Iniciar rota". Recusar não impede a rota; a tela avisa "Localização desligada: o cliente que é o próximo não vê você no mapa" com "Permitir localização". Nunca a localização em segundo plano.
+- **Tipos do serviço:** `specialUse` esperando na fila (Android 14+), `location` só durante a rota.
+
+### Limites
+
+- Se o Android encerrar o processo do app, o serviço não volta sozinho: volta ao abrir o app. Pontos ainda não enviados se perdem.
+- `specialUse` serve para o APK da simulação; para publicar na Play Store, os avisos da fila devem migrar para push.
+- Consumo de bateria: leitura a cada 30 s com a tela apagada durante o turno; GPS só na rota.

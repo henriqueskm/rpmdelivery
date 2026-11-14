@@ -38,6 +38,8 @@ class CompactWorkTest {
     @After fun cleanup() { scope.cancel() }
 
     @Test fun longStopAndLargeFontKeepEveryActionReachableAt320() {
+        org.robolectric.Shadows.shadowOf(androidx.test.core.app.ApplicationProvider.getApplicationContext<android.app.Application>())
+            .grantPermissions(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.POST_NOTIFICATIONS)
         val fake = FakeWork()
         fake.home = fake.home.copy(shift = Shift("shift-1", "r-1", "Cozinha da Vila", "ON_ROUTE", null))
         fake.assign()

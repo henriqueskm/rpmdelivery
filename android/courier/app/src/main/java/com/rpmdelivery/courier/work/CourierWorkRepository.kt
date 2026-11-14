@@ -14,6 +14,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.io.IOException
@@ -28,6 +29,8 @@ interface CourierWorkRepository {
     suspend fun completeDelivery(requestId: String, routeId: String, deliveryId: String)
     suspend fun reportFailure(requestId: String, routeId: String, deliveryId: String, reason: FailureReason, notes: String)
     suspend fun arriveAtStore(routeId: String)
+    /** Sends 1 to 100 readings of the route in progress. */
+    suspend fun recordLocations(routeId: String, points: List<GpsPoint>)
     /** Best effort: asks the server to send the customers' "saiu para entrega" messages. */
     suspend fun notifyCustomers(routeId: String)
 }
@@ -103,6 +106,20 @@ class SupabaseCourierWork(
     override suspend fun arriveAtStore(routeId: String) {
         rpc("arrive_at_store", buildJsonObject { put("p_route_id", routeId) })
     }
+    override suspend fun recordLocations(routeId: String, points: List<GpsPoint>) {
+        require(points.size in 1..100)
+        rpc("record_courier_locations", buildJsonObject {
+            put("p_route_id", routeId)
+            put("p_points", buildJsonArray {
+                points.forEach { point ->
+                    add(buildJsonObject {
+                        put("latitude", point.latitude); put("longitude", point.longitude)
+                        put("accuracy", point.accuracy); put("recordedAt", point.recordedAt)
+                    })
+                }
+            })
+        })
+    }
 
     override suspend fun notifyCustomers(routeId: String) {
         val token = client.auth.currentSessionOrNull()?.accessToken ?: return
@@ -167,5 +184,6 @@ class UnconfiguredWork : CourierWorkRepository {
     override suspend fun completeDelivery(requestId: String, routeId: String, deliveryId: String) = refuse()
     override suspend fun reportFailure(requestId: String, routeId: String, deliveryId: String, reason: FailureReason, notes: String) = refuse()
     override suspend fun arriveAtStore(routeId: String) = refuse()
+    override suspend fun recordLocations(routeId: String, points: List<GpsPoint>) = refuse()
     override suspend fun notifyCustomers(routeId: String) = Unit
 }
