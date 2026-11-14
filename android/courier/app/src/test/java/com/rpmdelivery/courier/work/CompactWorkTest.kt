@@ -73,7 +73,7 @@ class CompactWorkTest {
         // The store's phone is in the sheet at the bottom.
         compose.onNodeWithText("Entregas da rota").assertIsDisplayed().performClick()
         compose.waitForIdle()
-        compose.onNodeWithText("Ligar para a loja").assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+        compose.onNodeWithText("Ligar para a loja").performScrollTo().assertIsDisplayed().assertHeightIsAtLeast(48.dp)
         captureEvidence(compose, "work-09-sheet-320-font150")
     }
 }

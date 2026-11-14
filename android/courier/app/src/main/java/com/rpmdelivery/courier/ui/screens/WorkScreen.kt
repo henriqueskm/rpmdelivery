@@ -200,7 +200,8 @@ private fun RouteSheetScreen(state: WorkState, route: CourierRoute, actions: Wor
         val sheetMax = maxHeight * 0.75f
         BottomSheetScaffold(
             scaffoldState = sheet,
-            sheetPeekHeight = 84.dp,
+            // Closed it shows the handle and the title line only, never half a stop.
+            sheetPeekHeight = 74.dp,
             sheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
             sheetContainerColor = MaterialTheme.colorScheme.surface,
             sheetShadowElevation = 10.dp,
