@@ -2,6 +2,17 @@ import { useRef, useState, type FormEvent, type RefObject } from "react";
 import { isValidBrazilianMobilePhone } from "@/lib/brazilian-mobile-phone";
 import { type NewOrder } from "./model";
 import { localDateTime, parseLocalDateTime, MAX_PROMISE_MINUTES } from "./deadlines";
+import { AddressAutocomplete, type AddressHints } from "@/components/address-autocomplete";
+import type { ResolvedAddress } from "@/services/geocoding/types";
+
+// A customer's address may be saved as typed: the search helps, it never blocks the order.
+const ORDER_ADDRESS_HINTS: AddressHints = {
+  idle: "Digite rua, número e cidade e escolha na lista: o cliente vê a casa no mapa. Sem escolher, o pedido é salvo só com o texto.",
+  results: "Escolha o endereço na lista.",
+  empty: "Nenhum endereço encontrado. Dá para salvar só com o texto.",
+  error: "Não foi possível buscar agora. Dá para salvar só com o texto.",
+  confirmed: "Localização confirmada: o cliente vê a casa no mapa. Ao editar, escolha de novo.",
+};
 
 export function NewOrderDialog({
   dialogRef,
@@ -20,6 +31,9 @@ export function NewOrderDialog({
   const phoneRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  // Real data: an address picked from the search carries its coordinates; a new form starts empty.
+  const [geocode, setGeocode] = useState<ResolvedAddress | null>(null);
+  const [formKey, setFormKey] = useState(0);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -49,11 +63,15 @@ export function NewOrderDialog({
       notes: value("notes"),
       orderedAt: parseLocalDateTime(value("orderedAt")),
       promisedMinutes: Number(value("promisedMinutes")),
+      geocode: live && geocode
+        ? { latitude: geocode.latitude, longitude: geocode.longitude, providerId: geocode.providerId } : undefined,
     });
     setSaving(false);
     if (!added) { setError(live ? "Não foi possível salvar. Confira os dados e tente de novo." : "Confira o horário original e o prazo prometido."); return; }
     dialogRef.current?.close();
     form.reset();
+    setGeocode(null);
+    setFormKey(key => key + 1);
   }
   return (
     <dialog
@@ -105,16 +123,22 @@ export function NewOrderDialog({
           <input name="promisedMinutes" type="number" inputMode="numeric" required min={1} max={MAX_PROMISE_MINUTES} step={1} defaultValue={defaultPromiseMinutes} />
         </label>
         <p className="ops-form-wide ops-deadline-help">Conte a partir do horário original do pedido, mesmo se recebido antes do cadastro. Horários deste dispositivo; sem previsão de chegada.</p>
-        <label className="ops-form-wide">
-          Endereço
-          <input
-            name="address"
-            required
-            maxLength={240}
-            autoComplete="off"
-            placeholder="Rua e número"
-          />
-        </label>
+        {live ? (
+          <AddressAutocomplete key={formKey} onChange={setGeocode} className="ops-form-wide ops-order-address"
+            placeholder="Rua, número e cidade" mapAlt="Mapa do endereço do cliente, com marcador"
+            hints={ORDER_ADDRESS_HINTS} />
+        ) : (
+          <label className="ops-form-wide">
+            Endereço
+            <input
+              name="address"
+              required
+              maxLength={240}
+              autoComplete="off"
+              placeholder="Rua e número"
+            />
+          </label>
+        )}
         <label>
           Bairro
           <input

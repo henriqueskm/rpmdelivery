@@ -1276,6 +1276,23 @@
   }
 }
 
+/* Customer address search in "Novo pedido" (real data). */
+.ops-order-address {
+  min-width: 0;
+}
+.ops-order-address > label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+}
+.ops-order-address input {
+  margin-top: 6px;
+  font-weight: 400;
+}
+.ops-order-address .field-hint {
+  margin: 6px 0 0;
+}
+
 /* Orders brought back by the courier, waiting for the store's choice. */
 .ops-returned {
   margin: 0 14px 12px;
