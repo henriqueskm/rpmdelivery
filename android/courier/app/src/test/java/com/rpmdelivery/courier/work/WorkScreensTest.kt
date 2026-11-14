@@ -157,10 +157,18 @@ class WorkScreensTest {
     @Test fun earningsButtonStaysInTheCornerAndOpensTheHistory() {
         fake.home = fake.home.copy(today = Today(3, 3000, 2100, 5100))
         show()
-        // Fixed over the screen, not part of the scrolling content; "Início" gives it the corner.
+        // Off duty: the top line has the symbol and "Sair", and no earnings to follow.
         val pill = compose.onNodeWithContentDescription("A receber hoje: R$ 51,00, 3 entregas. Abrir histórico")
-        pill.assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+        pill.assertDoesNotExist()
+        compose.onNodeWithContentDescription("RpmDelivery").assertIsDisplayed()
+        compose.onNodeWithText("Sair").assertIsDisplayed()
         compose.onNodeWithText("Início").assertDoesNotExist()
+        compose.onNodeWithText("RpmDelivery").assertDoesNotExist()
+
+        // On shift the earnings sit in the middle of the fixed top line.
+        fake.home = fake.home.copy(shift = Shift("shift-1", "r-1", "Cozinha da Vila", "AVAILABLE", 1))
+        reload()
+        pill.assertIsDisplayed().assertHeightIsAtLeast(48.dp)
         assertFalse("past days are read only when the history opens", fake.calls.contains("history"))
         captureEvidence(compose, "work-11-today-390")
         pill.performClick()
@@ -173,7 +181,7 @@ class WorkScreensTest {
         captureEvidence(compose, "work-12-history-390")
         compose.onNodeWithContentDescription("A receber hoje: R$ 51,00, 3 entregas. Abrir histórico").assertDoesNotExist()
         node("Voltar").performClick()
-        node("Pronto para começar?").assertIsDisplayed()
+        node("Você está na fila").assertIsDisplayed()
 
         // An empty month says so.
         fake.historyDays = emptyList()

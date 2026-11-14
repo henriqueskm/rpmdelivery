@@ -48,7 +48,7 @@ import com.rpmdelivery.courier.ui.screens.RouteScreen
 import com.rpmdelivery.courier.ui.screens.WelcomeScreen
 import androidx.compose.ui.platform.LocalContext
 import com.rpmdelivery.courier.shift.ShiftService
-import com.rpmdelivery.courier.ui.screens.EarningsPill
+import com.rpmdelivery.courier.ui.screens.WorkHeader
 import com.rpmdelivery.courier.ui.screens.WorkScreen
 import com.rpmdelivery.courier.work.WorkController
 
@@ -69,14 +69,15 @@ fun CourierApp(controller: AuthController, work: WorkController? = null) {
     val back ={ controller.navigate(if (state.authenticated) AuthScreen.Home else AuthScreen.Welcome) }
     BackHandler(state.screen !in setOf(AuthScreen.Welcome, AuthScreen.Home, AuthScreen.Loading), onBack = back)
     Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-        Box(Modifier.fillMaxSize().safeDrawingPadding().imePadding(), contentAlignment = Alignment.TopCenter) {
+        Column(Modifier.fillMaxSize().safeDrawingPadding().imePadding(), horizontalAlignment = Alignment.CenterHorizontally) {
+          // The courier's home has a fixed top line: symbol, today's earnings (open shift only) and "Sair".
+          if (working && work != null) WorkHeader(work, state.busy, controller::logout)
+          Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
             key(state.screen) {
                 Column(Modifier.widthIn(max = 480.dp).fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                    if (state.screen != AuthScreen.Welcome) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        // On the courier's home "Início" leads nowhere: the earnings button takes its corner.
-                        if (!working) TextButton(onClick = back, enabled = !state.busy, modifier = Modifier.heightIn(min = 48.dp)) { Text("Início") }
-                        else Box(Modifier.heightIn(min = 48.dp))
+                    if (state.screen != AuthScreen.Welcome && !working) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        TextButton(onClick = back, enabled = !state.busy, modifier = Modifier.heightIn(min = 48.dp)) { Text("Início") }
                         if (state.authenticated) TextButton(onClick = controller::logout, enabled = !state.busy, modifier = Modifier.heightIn(min = 48.dp)) { Text("Sair") }
                     }
                     if (state.busy) {
@@ -106,7 +107,6 @@ fun CourierApp(controller: AuthController, work: WorkController? = null) {
                         AuthScreen.Profile -> CourierProfileScreen(state.registration, state.busy, controller::complete,
                             onLater = { controller.navigate(AuthScreen.Home) })
                         AuthScreen.Home -> if (work != null && state.registration.complete) {
-                            Brand()
                             WorkScreen(work)
                         } else {
                             Brand()
@@ -134,8 +134,7 @@ fun CourierApp(controller: AuthController, work: WorkController? = null) {
                     }
                 }
             }
-            // Fixed over the scrolling screen, also on the route.
-            if (working && work != null) EarningsPill(work, Modifier.align(Alignment.TopStart).padding(start = 20.dp, top = 20.dp))
+          }
         }
     }
     if (previewMessage) AlertDialog(onDismissRequest = { previewMessage = false },
