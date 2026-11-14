@@ -63,6 +63,8 @@ export function supportedLive(command: Command | StoreCommand) {
 }
 
 const MESSAGES: Record<string, string> = {
+  RPM_MANAGER_REQUIRED: "Só o dono ou o gerente da loja altera o pagamento dos motoboys.",
+  RPM_PAY_FIELDS: "Informe valores de R$ 0 a R$ 1.000.",
   RPM_ROUTE_STALE: "A rota mudou em outro aparelho. O painel foi atualizado; confira e tente de novo.",
   RPM_ROUTE_STATE: "A rota já mudou de situação. O painel foi atualizado.",
   RPM_ROUTE_NOT_FOUND: "Essa rota não existe mais. O painel foi atualizado.",

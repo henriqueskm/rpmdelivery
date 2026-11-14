@@ -154,6 +154,31 @@ class WorkScreensTest {
         node(WorkCopy.forCode("RPM_SHIFT_OPEN_ELSEWHERE")).assertIsDisplayed()
     }
 
+    @Test fun todayBadgesOpenTheHistory() {
+        fake.home = fake.home.copy(today = Today(3, 3000, 2100, 5100))
+        show()
+        node("3").assertIsDisplayed()
+        node("entregas hoje").assertIsDisplayed()
+        node("R$ 51,00").assertIsDisplayed()
+        node("a receber hoje").assertIsDisplayed()
+        captureEvidence(compose, "work-11-today-390")
+        node("R$ 51,00").performClick()
+        node("Histórico").assertIsDisplayed()
+        node("R$ 116,00").assertIsDisplayed()
+        node("8 entregas em 30 dias").assertIsDisplayed()
+        node("sex., 14/11 · Cozinha da Vila").assertIsDisplayed()
+        node("3 entregas · encosta R$ 30,00 · entregas R$ 21,00").assertIsDisplayed()
+        assertTrue(fake.calls.contains("history"))
+        captureEvidence(compose, "work-12-history-390")
+        node("Voltar").performClick()
+        node("Pronto para começar?").assertIsDisplayed()
+
+        // An empty month says so.
+        fake.historyDays = emptyList()
+        node("entregas hoje").performClick()
+        node("Nenhum ganho nos últimos 30 dias.").assertIsDisplayed()
+    }
+
     @Test fun routeWithoutLocationGoesOnAndSaysTheCustomerCannotSeeTheCourier() {
         fake.home = fake.home.copy(shift = Shift("shift-1", "r-1", "Cozinha da Vila", "ON_ROUTE", null))
         fake.assign()

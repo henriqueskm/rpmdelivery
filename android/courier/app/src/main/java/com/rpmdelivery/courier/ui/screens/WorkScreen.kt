@@ -7,7 +7,22 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import com.rpmdelivery.courier.ui.theme.Ink
+import com.rpmdelivery.courier.work.Today
+import com.rpmdelivery.courier.work.historyDate
+import com.rpmdelivery.courier.work.reais
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.rpmdelivery.courier.shift.ShiftService
@@ -128,7 +143,10 @@ fun WorkScreen(work: WorkController) {
         navigate = { query -> open(Intent(Intent.ACTION_VIEW, query.toUri()), "Nenhum aplicativo de mapas encontrado neste aparelho.") },
         dial = { phone -> open(Intent(Intent.ACTION_DIAL, "tel:$phone".toUri()), "Nenhum aplicativo de telefone encontrado neste aparelho.") },
     )
-    WorkContent(state, actions)
+    var showHistory by remember { mutableStateOf(false) }
+    BackHandler(enabled = showHistory) { showHistory = false }
+    if (showHistory) HistoryContent(state, onBack = { showHistory = false }, onRetry = work::loadHistory)
+    else WorkContent(state, actions, onToday = { showHistory = true; work.loadHistory() })
 }
 
 fun hasLocation(context: Context): Boolean =
@@ -157,9 +175,10 @@ fun mapQuery(latitude: Double?, longitude: Double?, address: String): String =
     else "geo:0,0?q=${Uri.encode(address)}"
 
 @Composable
-fun WorkContent(state: WorkState, actions: WorkActions) {
+fun WorkContent(state: WorkState, actions: WorkActions, onToday: () -> Unit = {}) {
     val home = state.home
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        home?.today?.let { TodayBadges(it, onToday) }
         if (state.offline) Banner("Sem conexão. Mostrando os últimos dados; o aplicativo tenta de novo sozinho.", SoftCoral)
         state.notice?.let { Banner(it, SoftGreen, Green) }
         state.message?.let {
@@ -176,6 +195,91 @@ fun WorkContent(state: WorkState, actions: WorkActions) {
         StationaryNotice()
     }
 }
+
+/**
+ * Today at a glance: two round badges that overlap, deliveries and money to receive.
+ * Tapping either opens the history. Long values shrink to fit; nothing is cut.
+ */
+@Composable
+private fun TodayBadges(today: Today, onOpen: () -> Unit) {
+    BoxWithConstraints(
+        Modifier.fillMaxWidth()
+            .semantics(mergeDescendants = true) { }
+            .clickable(onClickLabel = "Ver histórico", role = Role.Button, onClick = onOpen),
+        contentAlignment = Alignment.Center,
+    ) {
+        val overlap = 24.dp
+        val size = minOf((maxWidth + overlap) / 2, 148.dp)
+        Box(Modifier.width(size * 2 - overlap).height(size)) {
+            RoundStat("${today.deliveries}", if (today.deliveries == 1) "entrega hoje" else "entregas hoje", Ink,
+                Modifier.size(size).align(Alignment.CenterStart))
+            RoundStat(reais(today.totalCents), "a receber hoje", Coral, Modifier.size(size).align(Alignment.CenterEnd))
+        }
+    }
+}
+
+@Composable
+private fun RoundStat(value: String, caption: String, color: Color, modifier: Modifier) {
+    // The page-colored ring separates the overlapping circles.
+    Surface(shape = CircleShape, color = color, contentColor = Color.White,
+        border = BorderStroke(4.dp, MaterialTheme.colorScheme.background), modifier = modifier) {
+        Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            BasicText(value, maxLines = 1,
+                style = TextStyle(color = Color.White, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center),
+                autoSize = TextAutoSize.StepBased(minFontSize = 14.sp, maxFontSize = 32.sp))
+            BasicText(caption, maxLines = 2,
+                style = TextStyle(color = Color.White, textAlign = TextAlign.Center),
+                autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = 13.sp))
+        }
+    }
+}
+
+/** The courier's last 30 days, one line per day and store. */
+@Composable
+private fun HistoryContent(state: WorkState, onBack: () -> Unit, onRetry: () -> Unit) {
+    val history = state.history
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Card {
+            Heading("Histórico", "Últimos 30 dias")
+            when {
+                history == null && state.historyError != null -> {
+                    Text(state.historyError, color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+                    Secondary("Tentar novamente", state.historyLoading, onRetry)
+                }
+                history == null -> Text("Carregando seus ganhos…")
+                history.isEmpty() -> Text("Nenhum ganho nos últimos 30 dias.", style = MaterialTheme.typography.bodyLarge)
+                else -> {
+                    Surface(color = SoftGreen, contentColor = Green, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text(reais(history.sumOf { it.totalCents }), fontSize = 28.sp, fontWeight = FontWeight.SemiBold)
+                            Text("${entregasTotal(history.sumOf { it.deliveries })} em 30 dias", style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                    history.forEach { day ->
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) { },
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text("${historyDate(day.day)} · ${day.restaurantName}", style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold)
+                                Text("${entregasTotal(day.deliveries)} · encosta ${reais(day.shiftFeeCents)} · entregas ${reais(day.deliveryFeesCents)}",
+                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Text(reais(day.totalCents), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+            Text("Valores pelas taxas da loja: encosta uma vez por dia e só entregas concluídas. O pagamento é combinado com a loja.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Secondary("Voltar", false, onBack)
+        }
+    }
+}
+
+private fun entregasTotal(count: Int) = if (count == 1) "1 entrega" else "$count entregas"
 
 @Composable
 private fun Banner(text: String, color: androidx.compose.ui.graphics.Color, content: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface) {

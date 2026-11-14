@@ -19,6 +19,7 @@ import { CourierDialog } from "./courier-dialog";
 import { DeadlineDialog } from "./deadline-dialog";
 import { tabs, useOperationsController, type LiveSource } from "./use-operations-controller";
 import { useOperationsBoard } from "./live/use-operations-board";
+import { CourierPay } from "./live/courier-pay";
 import { useOperationsClock } from "./use-operations-clock";
 import { Icon } from "./ui";
 import { courierLabel, plural } from "./model";
@@ -332,7 +333,8 @@ function OperationsWorkspace({
             aria-labelledby="ops-tab-couriers"
           >
             <CouriersPanel state={state} managementHref={courierManagementHref}
-              onReviewShift={live ? reviewShift : undefined} pending={saving} />
+              onReviewShift={live ? reviewShift : undefined} pending={saving}
+              pay={live ? <CourierPay restaurantId={live.restaurantId} /> : undefined} />
           </section>
         </div>
         <section

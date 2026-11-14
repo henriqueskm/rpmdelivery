@@ -23,6 +23,8 @@ import java.net.URL
 
 interface CourierWorkRepository {
     suspend fun home(): CourierHome
+    /** The courier's own earnings by day and store, newest first. */
+    suspend fun history(days: Int = 30): List<HistoryDay>
     suspend fun requestShift(restaurantId: String)
     suspend fun endShift(shiftId: String)
     suspend fun startRoute(routeId: String, version: Int)
@@ -83,6 +85,8 @@ class SupabaseCourierWork(
 ) : CourierWorkRepository {
 
     override suspend fun home(): CourierHome = parseHome(rpc("get_courier_home"))
+    override suspend fun history(days: Int): List<HistoryDay> =
+        parseHistory(rpc("get_courier_history", buildJsonObject { put("p_days", days) }))
     override suspend fun requestShift(restaurantId: String) {
         rpc("request_shift", buildJsonObject { put("p_restaurant_id", restaurantId) })
     }
@@ -178,6 +182,7 @@ class SupabaseCourierWork(
 class UnconfiguredWork : CourierWorkRepository {
     private fun refuse(): Nothing = throw WorkProblem(AuthCopy.CONFIG)
     override suspend fun home(): CourierHome = refuse()
+    override suspend fun history(days: Int): List<HistoryDay> = refuse()
     override suspend fun requestShift(restaurantId: String) = refuse()
     override suspend fun endShift(shiftId: String) = refuse()
     override suspend fun startRoute(routeId: String, version: Int) = refuse()

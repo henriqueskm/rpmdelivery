@@ -50,7 +50,7 @@ class SupabaseCourierWorkTest {
             path.startsWith("/rest/v1/rpc/") -> {
                 val name = path.removePrefix("/rest/v1/rpc/")
                 bodies[name] = (request.body as TextContent).text
-                override?.invoke(name) ?: ((if (name == "get_courier_home") home else "{}") to HttpStatusCode.OK)
+                override?.invoke(name) ?: ((if (name == "get_courier_home") home else if (name == "get_courier_history") "[]" else "{}") to HttpStatusCode.OK)
             }
             else -> throw AssertionError("Unexpected mock request: $path")
         }
@@ -85,6 +85,8 @@ class SupabaseCourierWorkTest {
             work.arriveAtStore("route-1")
             work.endShift("shift-1")
             assertEquals(setOf("p_shift_id"), body("end_shift").keys)
+            assertTrue(work.history(30).isEmpty())
+            assertEquals("30", body("get_courier_history")["p_days"]!!.jsonPrimitive.content)
             assertTrue("no request may carry a user or courier id",
                 bodies.values.none { it.contains("user_id") || it.contains("courier_id") || it.contains(uid) })
             assertTrue(requests.filter { it.url.encodedPath.startsWith("/rest/v1/rpc/") }

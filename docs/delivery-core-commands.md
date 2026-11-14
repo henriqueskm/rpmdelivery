@@ -24,7 +24,8 @@ O painel da loja (`/dashboard`) usa dados reais desde a fatia 5; o `/preview/ope
 | 4. Rastreamento público | `get_tracking(token)` (anon, dados mínimos) + link WhatsApp `wa.me` (`lib/tracking/links.ts`) | no `main` (PR #27) |
 | 5. Painel da loja | `get_operations_board(restaurant)` (leitura agregada) e o `/dashboard` ligado aos comandos das fatias 1–3 | no `main` (PR #32) |
 | 6. App do motoboy | `get_courier_home()` (leitura da tela inicial) e o app Android ligado aos comandos do motoboy | no `main` (PR #33) |
-| 7. Turno no bolso | Serviço do turno no Android: avisos da fila e GPS da rota (`record_courier_locations`) | **em revisão** |
+| 7. Turno no bolso | Serviço do turno no Android: avisos da fila e GPS da rota (`record_courier_locations`) | no `main` (PR #34) |
+| 8. Ganhos do motoboy | `set_courier_pay`, `get_courier_pay`, `get_courier_history` e `today` em `get_courier_home` | **em revisão** |
 
 Fora do caminho até a simulação: otimização/planejamento automático, push, WhatsApp/SMS por API, taxa por km, ofertas externas.
 
@@ -283,3 +284,33 @@ O motoboy espera na loja com o celular no bolso. Um serviço em primeiro plano a
 - Se o Android encerrar o processo do app, o serviço não volta sozinho: volta ao abrir o app. Pontos ainda não enviados se perdem.
 - `specialUse` serve para o APK da simulação; para publicar na Play Store, os avisos da fila devem migrar para push.
 - Consumo de bateria: leitura a cada 30 s com a tela apagada durante o turno; GPS só na rota.
+
+## Fatia 8 — Ganhos do motoboy
+
+Cada loja define uma **taxa de encosta** por dia e um **valor fixo por entrega**. O motoboy vê no topo do app quantas entregas fez hoje e quanto tem a receber; a loja vê o acerto do dia por motoboy.
+
+### Regras
+
+- **Encosta:** uma vez por dia por loja, com o valor da loja quando ela aprovou o **primeiro** turno do dia. Um segundo turno no mesmo dia não paga outra encosta.
+- **Entrega:** só entregas concluídas (`DELIVERED`), com o valor da loja no momento da conclusão. Tentativa sem sucesso, devolução e cancelamento não pagam.
+- **Valores congelados:** a encosta é copiada para o turno na aprovação (`courier_shifts.shift_fee_cents`) e o valor da entrega para a tentativa concluída (`delivery_attempts.courier_fee_cents`), por gatilhos. Mudar as taxas não altera o que já foi ganho. Linhas anteriores a esta fatia contam R$ 0.
+- **Dia:** de meia-noite a meia-noite em `America/Sao_Paulo`.
+- **Limites:** de R$ 0 a R$ 1.000 por taxa, em centavos. Sem taxa definida, vale R$ 0.
+
+### Comandos e leituras
+
+| RPC | Quem | O que faz |
+| --- | --- | --- |
+| `set_courier_pay(restaurant, shift_fee_cents, delivery_fee_cents)` | dono ou gerente | Muda as taxas da loja. Operador ou outra loja: `RPM_MANAGER_REQUIRED` (42501); valor fora do limite: `RPM_PAY_FIELDS` (22023). |
+| `get_courier_pay(restaurant, day?)` | membro ativo, inclusive OPERATOR | Taxas atuais, se quem lê pode editar, e o acerto do dia (hoje por padrão): por motoboy, entregas, encosta, valor das entregas e total. |
+| `get_courier_history(days = 30)` | o próprio motoboy | Os dias com ganho, do mais novo ao mais antigo, por loja. De 1 a 90 dias (`RPM_HISTORY_FIELDS`). |
+| `get_courier_home()` | o próprio motoboy | Agora traz `today`: entregas, encosta, valor das entregas e total de hoje, somando as lojas. |
+
+### Nas telas
+
+- **Painel:** "Pagamento dos motoboys", na área de Motoboys, abre as taxas (editáveis por dono e gerente) e o acerto do dia, com troca de data e total do dia.
+- **App:** dois círculos sobrepostos no topo da tela inicial (entregas de hoje e valor a receber hoje). Tocar abre o histórico dos últimos 30 dias, com o total do período.
+
+### Fora desta fatia
+
+Marcar como pago, adiantamentos, taxa por distância ou por bairro, e gorjetas.

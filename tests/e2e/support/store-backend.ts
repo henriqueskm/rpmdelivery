@@ -18,6 +18,14 @@ const order = (reference: string, customer: string, neighborhood: string, delive
 });
 
 export function storeBackend() {
+  // Courier pay of the day: R$ 30 encosta, R$ 7 per delivery.
+  const pay = {
+    shiftFeeCents: 3000, deliveryFeeCents: 700, canEdit: true,
+    couriers: [
+      { name: "Ana Souza", deliveries: 3, shiftFeeCents: 3000, deliveryFeesCents: 2100, totalCents: 5100 },
+      { name: "Maria Aparecida dos Santos Albuquerque de Vasconcelos", deliveries: 1, shiftFeeCents: 3000, deliveryFeesCents: 700, totalCents: 3700 },
+    ],
+  };
   const board = {
     restaurant: { defaultPromiseMinutes: 60, issueTimeoutMinutes: 10 },
     couriers: [
@@ -105,6 +113,15 @@ export function storeBackend() {
       find(board.orders, "deliveryId", body.p_delivery_id)!.deliveryStatus = "CANCELLED";
       return ok({ deliveryId: body.p_delivery_id });
     },
+    get_courier_pay(body) {
+      return ok({ day: body.p_day ?? new Date().toISOString().slice(0, 10), ...structuredClone(pay) });
+    },
+    set_courier_pay(body) {
+      if (!pay.canEdit) return { status: 403, json: { code: "42501", message: "RPM_MANAGER_REQUIRED" } };
+      pay.shiftFeeCents = Number(body.p_shift_fee_cents);
+      pay.deliveryFeeCents = Number(body.p_delivery_fee_cents);
+      return ok({ shiftFeeCents: pay.shiftFeeCents, deliveryFeeCents: pay.deliveryFeeCents });
+    },
   };
 
   const handlers: Record<string, RpcHandler> = {
@@ -123,7 +140,7 @@ export function storeBackend() {
   }
 
   return {
-    board, calls, handlers,
+    board, calls, handlers, pay,
     /** The next call of `fn` answers this instead (e.g. a stale version). */
     failOnce(fn: string, reply: RpcReply) { failures.set(fn, reply); },
     setOffline(value: boolean) { offline = value; },

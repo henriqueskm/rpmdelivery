@@ -151,3 +151,52 @@ test("sem conexão: primeira leitura permite tentar de novo e queda depois mant�
   await showArea(page, /^Rotas/);
   await expect(page.locator('#ops-route-r-7 li[data-delivery="DELIVERED"]')).toHaveCount(1);
 });
+
+test("pagamento dos motoboys: valores da loja e acerto do dia", async ({ page }) => {
+  const errors = watchErrors(page);
+  const backend = storeBackend();
+  await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  await openPanel(page);
+  await showArea(page, /^Motoboys/);
+  await page.getByRole("button", { name: "Pagamento dos motoboys" }).click();
+  const dialog = page.getByRole("dialog", { name: "Pagamento dos motoboys" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("row", { name: /Ana Souza/ })).toContainText("R$ 51,00");
+  await expect(dialog.getByRole("row", { name: /Total do dia/ })).toContainText("R$ 88,00");
+  expect(backend.commandCalls().at(-1)).toMatchObject({ fn: "get_courier_pay", body: { p_restaurant_id: testRestaurant.id } });
+
+  // Long names wrap inside the dialog, never widening the page.
+  const width = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
+  expect(width[0]).toBeLessThanOrEqual(width[1]);
+
+  const encosta = dialog.getByLabel("Taxa de encosta (por dia)");
+  await expect(encosta).toHaveValue("30,00");
+  await encosta.fill("abc");
+  await dialog.getByRole("button", { name: "Salvar valores" }).click();
+  await expect(dialog.getByRole("alert")).toContainText("Informe valores de R$ 0 a R$ 1.000");
+  await encosta.fill("35");
+  await dialog.getByLabel("Valor por entrega").fill("7,50");
+  await dialog.getByRole("button", { name: "Salvar valores" }).click();
+  await expect(dialog.getByRole("status")).toContainText("Valores salvos");
+  expect(backend.commandCalls().find(call => call.fn === "set_courier_pay")!.body).toEqual({
+    p_restaurant_id: testRestaurant.id, p_shift_fee_cents: 3500, p_delivery_fee_cents: 750 });
+  await expect(encosta).toHaveValue("35,00");
+  await dialog.getByRole("button", { name: "Fechar pagamento dos motoboys" }).click();
+  await expect(dialog).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+test("pagamento dos motoboys: operador vê o acerto sem alterar valores", async ({ page }) => {
+  const backend = storeBackend();
+  backend.pay.canEdit = false;
+  backend.pay.couriers = [];
+  await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  await openPanel(page);
+  await showArea(page, /^Motoboys/);
+  await page.getByRole("button", { name: "Pagamento dos motoboys" }).click();
+  const dialog = page.getByRole("dialog", { name: "Pagamento dos motoboys" });
+  await expect(dialog.getByText("Nenhum motoboy trabalhou neste dia.")).toBeVisible();
+  await expect(dialog.getByText("Só o dono ou o gerente da loja altera estes valores.")).toBeVisible();
+  await expect(dialog.getByLabel("Taxa de encosta (por dia)")).toHaveAttribute("readonly", "");
+  await expect(dialog.getByRole("button", { name: "Salvar valores" })).toHaveCount(0);
+});
