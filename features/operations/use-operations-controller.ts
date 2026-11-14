@@ -218,6 +218,24 @@ export function useOperationsController(scenario: Scenario, seedTime: number, li
     setNotice(approve ? `Turno de ${courier.name} aprovado. Entrou no fim da fila de disponíveis.`
       : `Turno de ${courier.name} recusado.`);
   }
+  // Real data only: undo a route before pickup, drop a waiting order, send a returned one back to the queue.
+  async function cancelRoute(routeId: string) {
+    const route = state.routes.find(r => r.id === routeId && r.status === "PREPARING");
+    if (!route || !(await run({ type: "cancel-route", routeId }))) return;
+    if (editingId === routeId) cancel();
+    setNotice(`${route.reference} cancelada. Os pedidos voltaram a aguardar despacho e o motoboy voltou para a fila.`);
+  }
+  async function cancelOrder(orderId: string) {
+    const order = state.orders.find(o => o.id === orderId);
+    if (!order || !(await run({ type: "cancel-order", orderId }))) return;
+    setSelected(selected.filter(id => id !== orderId));
+    setNotice(`Pedido #${order.reference} cancelado.`);
+  }
+  async function requeue(orderId: string) {
+    const order = state.orders.find(o => o.id === orderId);
+    if (!order || !(await run({ type: "requeue", orderId }))) return;
+    setNotice(`Pedido #${order.reference} voltou para a fila de despacho.`);
+  }
   function viewedAlerts(ids: string[]) {
     void run({type:"alert-view",issueIds:ids,actorId:DEMO_STORE_ACTOR,now:Date.now(),commandId:`ui:view:${uiCommand.current++}`});
   }
@@ -235,5 +253,5 @@ export function useOperationsController(scenario: Scenario, seedTime: number, li
     notice, courierRouteId, setCourierRouteId, deadlineTarget, setDeadlineTarget,
     newDialog, courierDialog, deadlineDialog, issueDialog, tabRefs, pending,
     assign, acceptAutomatic, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, issueCommand,
-    reviewShift, viewedAlerts, dismissAlerts, tabKey };
+    reviewShift, cancelRoute, cancelOrder, requeue, viewedAlerts, dismissAlerts, tabKey };
 }

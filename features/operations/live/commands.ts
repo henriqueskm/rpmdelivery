@@ -8,7 +8,9 @@ import { parseBrazilianMobilePhone } from "../../../lib/brazilian-mobile-phone.t
 /** Panel commands that only exist with real data. */
 export type StoreCommand =
   | { type: "review-shift"; shiftId: string; approve: boolean }
-  | { type: "cancel-route"; routeId: string };
+  | { type: "cancel-route"; routeId: string }
+  | { type: "cancel-order"; orderId: string }
+  | { type: "requeue"; orderId: string };
 
 export type RpcCall = { fn: string; args: Record<string, unknown> };
 
@@ -51,6 +53,13 @@ export function rpcFor(command: Command | StoreCommand, restaurantId: string, bo
       return { fn: "cancel_delivery_on_route", args: { ...restaurant, p_delivery_id: command.orderId } };
     case "review-shift":
       return { fn: "review_shift", args: { ...restaurant, p_shift_id: command.shiftId, p_approve: command.approve } };
+    case "cancel-order": {
+      // The panel knows deliveries; cancel_order takes the order behind it.
+      const orderId = board.orderIds[command.orderId];
+      return orderId ? { fn: "cancel_order", args: { ...restaurant, p_order_id: orderId } } : null;
+    }
+    case "requeue":
+      return { fn: "requeue_delivery", args: { ...restaurant, p_delivery_id: command.orderId } };
     default:
       return null;
   }
@@ -59,11 +68,13 @@ export function rpcFor(command: Command | StoreCommand, restaurantId: string, bo
 /** Commands of the prototype that real data does not support yet. */
 export function supportedLive(command: Command | StoreCommand) {
   return ["add", "assign", "release", "revoke-release", "cancel-route", "issue-decide", "delivery-cancel",
-    "review-shift", "alert-view", "alert-dismiss"].includes(command.type);
+    "review-shift", "cancel-order", "requeue", "alert-view", "alert-dismiss"].includes(command.type);
 }
 
 const MESSAGES: Record<string, string> = {
   RPM_MANAGER_REQUIRED: "Só o dono ou o gerente da loja altera o pagamento dos motoboys.",
+  RPM_ORDER_NOT_CANCELLABLE: "Esse pedido já saiu da fila de despacho. O painel foi atualizado.",
+  RPM_DELIVERY_IN_TRANSIT: "O pedido volta para a fila quando o motoboy chegar na loja.",
   RPM_PAY_FIELDS: "Informe valores de R$ 0 a R$ 1.000.",
   RPM_ROUTE_STALE: "A rota mudou em outro aparelho. O painel foi atualizado; confira e tente de novo.",
   RPM_ROUTE_STATE: "A rota já mudou de situação. O painel foi atualizado.",

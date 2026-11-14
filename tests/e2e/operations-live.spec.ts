@@ -152,6 +152,54 @@ test("sem conexão: primeira leitura permite tentar de novo e queda depois mant�
   await expect(page.locator('#ops-route-r-7 li[data-delivery="DELIVERED"]')).toHaveCount(1);
 });
 
+test("cancelar pedido e rota em preparação pedem confirmação; pedido devolvido volta à fila", async ({ page }) => {
+  const errors = watchErrors(page);
+  const backend = storeBackend();
+  // Brought back on a route already closed, and one still on the street (decided RETURN).
+  backend.board.orders.push({ ...backend.board.orders[0], deliveryId: "d-1046", orderId: "o-1046", reference: "1046",
+    customer: "Nina Prado", deliveryStatus: "RETURN_TO_STORE", orderStatus: "DELIVERING", failedAttempts: 1 });
+  backend.board.orders.find(item => item.deliveryId === "d-1050")!.deliveryStatus = "RETURN_TO_STORE";
+  backend.board.issues[0].decision = "RETURN";
+  await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  await openPanel(page);
+  await showArea(page, /^Pedidos/);
+
+  // Cancel a waiting order: "Voltar" keeps it.
+  await page.getByRole("button", { name: "Cancelar pedido 1049" }).click();
+  const confirm = page.getByRole("dialog", { name: "Cancelar o pedido #1049?" });
+  await expect(confirm).toContainText("Igor Nunes sai da fila de despacho.");
+  await confirm.getByRole("button", { name: "Voltar" }).click();
+  expect(backend.commandCalls().some(call => call.fn === "cancel_order")).toBe(false);
+  await page.getByRole("button", { name: "Cancelar pedido 1049" }).click();
+  await confirm.getByRole("button", { name: "Cancelar pedido" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Pedido #1049 cancelado." })).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: "Selecionar pedido 1049", exact: true })).toHaveCount(0);
+  expect(backend.commandCalls().find(call => call.fn === "cancel_order")!.body).toEqual({
+    p_restaurant_id: testRestaurant.id, p_order_id: "o-1049" });
+
+  // Brought back: the closed route's order goes back to the queue; the one still on the street waits.
+  const returned = page.getByRole("region", { name: /Voltaram para a loja/ });
+  await expect(returned).toContainText("Volta com o motoboy");
+  await returned.getByRole("button", { name: "Devolver pedido 1046 à fila" }).click();
+  await expect(page.getByRole("checkbox", { name: "Selecionar pedido 1046", exact: true })).toBeVisible();
+  expect(backend.commandCalls().find(call => call.fn === "requeue_delivery")!.body).toEqual({
+    p_restaurant_id: testRestaurant.id, p_delivery_id: "d-1046" });
+
+  // Cancel a route still in preparation: its order waits again.
+  await showArea(page, /^Rotas/);
+  await page.locator("#ops-route-r-6").getByRole("button", { name: "Cancelar rota R-6" }).click();
+  await page.getByRole("dialog", { name: "Cancelar a rota R-6?" }).getByRole("button", { name: "Cancelar rota" }).click();
+  await expect(page.locator("#ops-route-r-6")).toHaveCount(0);
+  expect(backend.commandCalls().find(call => call.fn === "cancel_route")!.body).toEqual({
+    p_restaurant_id: testRestaurant.id, p_route_id: "r-6" });
+  await showArea(page, /^Pedidos/);
+  await expect(page.getByRole("checkbox", { name: "Selecionar pedido 1047", exact: true })).toBeVisible();
+  // On the street, no "simulação" label on real routes.
+  await showArea(page, /^Rotas/);
+  await expect(page.getByText(/— simulação/)).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test("pagamento dos motoboys: valores da loja e acerto do dia", async ({ page }) => {
   const errors = watchErrors(page);
   const backend = storeBackend();
