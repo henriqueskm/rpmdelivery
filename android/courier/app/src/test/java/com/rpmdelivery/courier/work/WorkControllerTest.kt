@@ -147,7 +147,7 @@ class WorkControllerTest {
         assertEquals("R$ 51,00", reais(5100))
         assertEquals("R$ 1.234,05", reais(123405))
         assertEquals("R$ 0,00", reais(0))
-        assertEquals("sex., 14/11", historyDate("2026-11-14"))
+        assertEquals("sáb., 14/11", historyDate("2026-11-14"))
     }
 
     @Test fun historyLoadsAndAnExpiredSessionSignsOut() = runTest {
