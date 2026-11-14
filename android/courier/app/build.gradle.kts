@@ -62,6 +62,9 @@ android {
         // API 36 is intentional for the validated AGP 8.13 demo cohort.
         // Keep the newer-target advisory visible; reassess before a release.
         informational += "OldTargetApi"
+        // Gradle 8.14.6 (SHA-256 pinned) and AGP 8.13 are the validated cohort. A newer patch
+        // release on the server is an upgrade to plan, not a reason to fail every build.
+        informational += "AndroidGradlePluginVersion"
     }
 }
 kotlin { jvmToolchain(17) }
@@ -88,6 +91,8 @@ dependencies {
 
     testImplementation(composeBom)
     testImplementation("junit:junit:4.13.2")
+    // Validated runner for the SDK 36 / Java 17 cohort; a newer Robolectric is its own upgrade.
+    //noinspection NewerVersionAvailable
     testImplementation("org.robolectric:robolectric:4.17")
     testImplementation("androidx.test:core:1.7.0")
     testImplementation("androidx.compose.ui:ui-test-junit4")

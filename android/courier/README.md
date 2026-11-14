@@ -46,9 +46,10 @@ INTERNET é a única permissão adicional; sem serviços/processos em segundo pl
 a cada 15 s só com o app visível. GPS em primeiro plano fica para a próxima etapa.
 Tema claro, cores, raio minimalista, máscara de celular e catálogo da PR #22 preservados.
 
-Lint mantém `warningsAsErrors`; `OldTargetApi` continua informativo pela coorte
+Lint mantém `warningsAsErrors`; `OldTargetApi` e `AndroidGradlePluginVersion` (Gradle 8.14.7 saiu
+em nov/2026; o 8.14.6 segue fixado por SHA-256) continuam informativos pela coorte
 AGP8.13/SDK36 validada. Sem baseline ou supressão global. Reavaliar antes de release.
-Os cinco avisos locais de versões mais recentes da coorte Auth/Ktor são
+Os avisos locais de versões mais recentes da coorte Auth/Ktor e do Robolectric 4.17 são
 documentados em [autenticação](docs/authentication.md); não alteram os demais gates.
 [Compatibilidade oficial AGP](https://developer.android.com/build/releases/agp-8-13-0-release-notes).
 
