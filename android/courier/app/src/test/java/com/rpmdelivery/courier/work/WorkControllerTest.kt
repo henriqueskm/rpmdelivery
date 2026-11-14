@@ -133,6 +133,36 @@ class WorkControllerTest {
         assertEquals("12:30", clockTime(route.stops[0].deadlineAt, ZoneId.of("America/Sao_Paulo")))
     }
 
+    @Test fun todayAndHistoryAreParsedAndFormattedInReais() {
+        val home = parseHome(Json.parseToJsonElement("""{"stores":[],"shift":null,"route":null,
+            "today":{"deliveries":3,"shiftFeeCents":3000,"deliveryFeesCents":2100,"totalCents":5100}}"""))
+        assertEquals(Today(3, 3000, 2100, 5100), home.today)
+        assertNull(parseHome(Json.parseToJsonElement("""{"stores":[],"shift":null,"route":null}""")).today)
+        assertTrue(runCatching { parseHome(Json.parseToJsonElement("""{"stores":[],"today":{"deliveries":-1,"shiftFeeCents":0,"deliveryFeesCents":0,"totalCents":0}}""")) }
+            .exceptionOrNull() is WorkProblem)
+        val history = parseHistory(Json.parseToJsonElement("""[{"day":"2026-11-14","restaurantName":"Cozinha da Vila",
+            "deliveries":3,"shiftFeeCents":3000,"deliveryFeesCents":2100,"totalCents":5100}]"""))
+        assertEquals(HistoryDay("2026-11-14", "Cozinha da Vila", 3, 3000, 2100, 5100), history.single())
+        assertTrue(runCatching { parseHistory(Json.parseToJsonElement("{}")) }.exceptionOrNull() is WorkProblem)
+        assertEquals("R$ 51,00", reais(5100))
+        assertEquals("R$ 1.234,05", reais(123405))
+        assertEquals("R$ 0,00", reais(0))
+        assertEquals("sáb., 14/11", historyDate("2026-11-14"))
+    }
+
+    @Test fun historyLoadsAndAnExpiredSessionSignsOut() = runTest {
+        val work = WorkController(fake, this, onExpired = { expired++ })
+        work.loadHistory(); advanceUntilIdle()
+        assertEquals(2, work.state.value.history!!.size)
+        fake.failOnce("history", WorkProblem.network())
+        work.loadHistory(); advanceUntilIdle()
+        assertEquals(WorkProblem.network().safeMessage, work.state.value.historyError)
+        assertEquals("the last good list stays", 2, work.state.value.history!!.size)
+        fake.failOnce("history", WorkProblem.expired())
+        work.loadHistory(); advanceUntilIdle()
+        assertEquals(1, expired)
+    }
+
     @Test fun emptyHomeAndBrokenAnswers() {
         val empty = parseHome(Json.parseToJsonElement("""{"serverNow":"x","stores":[],"shift":null,"route":null}"""))
         assertTrue(empty.stores.isEmpty()); assertNull(empty.shift); assertNull(empty.route)

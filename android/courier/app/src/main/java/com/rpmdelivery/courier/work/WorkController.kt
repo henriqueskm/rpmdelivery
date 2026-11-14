@@ -23,6 +23,11 @@ data class WorkState(
     val message: String? = null,
     /** What just worked. */
     val notice: String? = null,
+    /** Earnings history: read only when the courier opens it; [historyError] when it could not be read. */
+    val historyOpen: Boolean = false,
+    val history: List<HistoryDay>? = null,
+    val historyLoading: Boolean = false,
+    val historyError: String? = null,
 )
 
 /**
@@ -58,6 +63,31 @@ class WorkController(
     /** A new account starts from an empty screen. */
     fun clear() { requestIds.clear(); mutable.value = WorkState() }
     fun inform(message: String) = mutable.update { it.copy(message = message, notice = null) }
+
+    /** Opens the history and reads it then; nothing about past days is read before that. */
+    fun openHistory() {
+        mutable.update { it.copy(historyOpen = true) }
+        loadHistory()
+    }
+    fun closeHistory() = mutable.update { it.copy(historyOpen = false) }
+
+    /** Reads the last 30 days, each time the history opens or the courier retries. */
+    fun loadHistory() {
+        if (mutable.value.historyLoading) return
+        mutable.update { it.copy(historyLoading = true, historyError = null) }
+        scope.launch {
+            try {
+                val days = repository.history(30)
+                mutable.update { it.copy(history = days, historyLoading = false) }
+            } catch (error: CancellationException) { throw error }
+            catch (error: WorkProblem) {
+                if (error.expired) { expire(); return@launch }
+                mutable.update { it.copy(historyLoading = false, historyError = error.safeMessage) }
+            } catch (_: Exception) {
+                mutable.update { it.copy(historyLoading = false, historyError = WorkCopy.GENERIC) }
+            }
+        }
+    }
 
     fun requestShift(store: Store) = act("Turno pedido em ${store.name}. Aguarde a loja aprovar.") {
         repository.requestShift(store.restaurantId)

@@ -1157,3 +1157,121 @@
   margin: 48px auto;
   padding: 0 16px;
 }
+
+/* Courier pay: rates and the day's settlement (real data only). */
+.ops-courier-links {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 12px;
+}
+/* Same look as the "Convites e vínculos" link next to it. */
+.operations .ops-courier-links button.text-button {
+  min-height: 44px;
+  padding: 10px 5px;
+  border: 0;
+  background: transparent;
+  color: #8e331c;
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: underline;
+}
+.ops-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.ops-pay-rates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+  align-items: end;
+}
+.ops-pay-rates label,
+.ops-pay-day label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 0;
+}
+.ops-pay-rates input,
+.ops-pay-day input {
+  margin-top: 6px;
+  font-weight: 400;
+}
+.ops-pay-rates input[readonly] {
+  background: #f1f3ee;
+  color: var(--muted);
+}
+.ops-pay-rates p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.ops-pay-rates button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+.ops-pay-day {
+  margin-top: 22px;
+  max-width: 220px;
+}
+.ops-pay-table {
+  width: 100%;
+  margin-top: 14px;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.ops-pay-table th,
+.ops-pay-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+}
+.ops-pay-table td {
+  white-space: nowrap;
+}
+.ops-pay-table th:first-child {
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.ops-pay-table thead th {
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--muted);
+}
+.ops-pay-table tfoot th,
+.ops-pay-table tfoot td {
+  border-bottom: 0;
+  font-weight: 650;
+}
+.ops-pay-empty,
+.ops-pay-error,
+.ops-pay-notice {
+  margin: 14px 0 0;
+  font-size: 13px;
+}
+.ops-pay-error {
+  color: #a1260f;
+}
+.ops-pay-notice {
+  color: #1f6b3a;
+}
+@media (max-width: 560px) {
+  .ops-pay-rates {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Phones: name, deliveries and total; the split stays on wider screens. */
+  .ops-pay-table thead th:nth-child(3),
+  .ops-pay-table thead th:nth-child(4),
+  .ops-pay-table tbody td:nth-child(3),
+  .ops-pay-table tbody td:nth-child(4),
+  .ops-pay-table tfoot td:nth-child(2),
+  .ops-pay-table tfoot td:nth-child(3) {
+    display: none;
+  }
+}

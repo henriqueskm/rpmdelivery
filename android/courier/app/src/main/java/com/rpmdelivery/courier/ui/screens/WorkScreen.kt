@@ -7,7 +7,17 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.widthIn
+import com.rpmdelivery.courier.ui.components.BrandMark
+import com.rpmdelivery.courier.ui.theme.Ink
+import com.rpmdelivery.courier.work.Today
+import com.rpmdelivery.courier.work.historyDate
+import com.rpmdelivery.courier.work.reais
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.rpmdelivery.courier.shift.ShiftService
@@ -128,7 +138,44 @@ fun WorkScreen(work: WorkController) {
         navigate = { query -> open(Intent(Intent.ACTION_VIEW, query.toUri()), "Nenhum aplicativo de mapas encontrado neste aparelho.") },
         dial = { phone -> open(Intent(Intent.ACTION_DIAL, "tel:$phone".toUri()), "Nenhum aplicativo de telefone encontrado neste aparelho.") },
     )
-    WorkContent(state, actions)
+    BackHandler(enabled = state.historyOpen) { work.closeHistory() }
+    if (state.historyOpen) HistoryContent(state, onBack = work::closeHistory, onRetry = work::loadHistory)
+    else WorkContent(state, actions)
+}
+
+/**
+ * The courier's fixed top line: the brand symbol, today's earnings in the middle and "Sair".
+ * The earnings only show with an open shift: off duty there is nothing to follow.
+ */
+@Composable
+fun WorkHeader(work: WorkController, busy: Boolean, onSignOut: () -> Unit) {
+    val state by work.state.collectAsState()
+    Row(Modifier.widthIn(max = 480.dp).fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        BrandMark()
+        Box(Modifier.weight(1f).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+            val today = state.home?.today
+            if (today != null && state.home?.shift != null && !state.historyOpen) EarningsPill(today, work::openHistory)
+        }
+        TextButton(onClick = onSignOut, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text("Sair") }
+    }
+}
+
+/** Money to receive today. Tapping it opens the history; nothing about past days is read before that. */
+@Composable
+private fun EarningsPill(today: Today, onOpen: () -> Unit) {
+    val deliveries = if (today.deliveries == 1) "1 entrega" else "${today.deliveries} entregas"
+    Surface(onClick = onOpen, shape = RoundedCornerShape(100.dp), color = Ink, contentColor = Color.White,
+        shadowElevation = 4.dp,
+        modifier = Modifier.heightIn(min = 48.dp).semantics {
+            contentDescription = "A receber hoje: ${reais(today.totalCents)}, $deliveries. Abrir histórico"
+        }) {
+        Row(Modifier.padding(start = 18.dp, end = 14.dp, top = 10.dp, bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(reais(today.totalCents), fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text("▾", fontSize = 14.sp)
+        }
+    }
 }
 
 fun hasLocation(context: Context): Boolean =
@@ -176,6 +223,52 @@ fun WorkContent(state: WorkState, actions: WorkActions) {
         StationaryNotice()
     }
 }
+
+/** The courier's last 30 days, one line per day and store. */
+@Composable
+private fun HistoryContent(state: WorkState, onBack: () -> Unit, onRetry: () -> Unit) {
+    val history = state.history
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Card {
+            Heading("Histórico", "Últimos 30 dias")
+            when {
+                history == null && state.historyError != null -> {
+                    Text(state.historyError, color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+                    Secondary("Tentar novamente", state.historyLoading, onRetry)
+                }
+                history == null -> Text("Carregando seus ganhos…")
+                history.isEmpty() -> Text("Nenhum ganho nos últimos 30 dias.", style = MaterialTheme.typography.bodyLarge)
+                else -> {
+                    Surface(color = SoftGreen, contentColor = Green, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
+                        Column(Modifier.padding(16.dp)) {
+                            Text(reais(history.sumOf { it.totalCents }), fontSize = 28.sp, fontWeight = FontWeight.SemiBold)
+                            Text("${entregasTotal(history.sumOf { it.deliveries })} em 30 dias", style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                    history.forEach { day ->
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) { },
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text("${historyDate(day.day)} · ${day.restaurantName}", style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold)
+                                Text("${entregasTotal(day.deliveries)} · encosta ${reais(day.shiftFeeCents)} · entregas ${reais(day.deliveryFeesCents)}",
+                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Text(reais(day.totalCents), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                }
+            }
+            Text("Valores pelas taxas da loja: encosta uma vez por dia e só entregas concluídas. O pagamento é combinado com a loja.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Secondary("Voltar", false, onBack)
+        }
+    }
+}
+
+private fun entregasTotal(count: Int) = if (count == 1) "1 entrega" else "$count entregas"
 
 @Composable
 private fun Banner(text: String, color: androidx.compose.ui.graphics.Color, content: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface) {

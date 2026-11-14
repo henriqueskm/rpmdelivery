@@ -154,6 +154,53 @@ class WorkScreensTest {
         node(WorkCopy.forCode("RPM_SHIFT_OPEN_ELSEWHERE")).assertIsDisplayed()
     }
 
+    @Test fun earningsButtonStaysInTheCornerAndOpensTheHistory() {
+        fake.home = fake.home.copy(today = Today(3, 3000, 2100, 5100))
+        show()
+        // Off duty: the top line has the symbol and "Sair", and no earnings to follow.
+        val pill = compose.onNodeWithContentDescription("A receber hoje: R$ 51,00, 3 entregas. Abrir histórico")
+        pill.assertDoesNotExist()
+        compose.onNodeWithContentDescription("RpmDelivery").assertIsDisplayed()
+        compose.onNodeWithText("Sair").assertIsDisplayed()
+        compose.onNodeWithText("Início").assertDoesNotExist()
+        compose.onNodeWithText("RpmDelivery").assertDoesNotExist()
+
+        // On shift the earnings sit in the middle of the fixed top line.
+        fake.home = fake.home.copy(shift = Shift("shift-1", "r-1", "Cozinha da Vila", "AVAILABLE", 1))
+        reload()
+        pill.assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+        assertFalse("past days are read only when the history opens", fake.calls.contains("history"))
+        captureEvidence(compose, "work-11-today-390")
+        pill.performClick()
+        node("Histórico").assertIsDisplayed()
+        node("R$ 116,00").assertIsDisplayed()
+        node("8 entregas em 30 dias").assertIsDisplayed()
+        node("sáb., 14/11 · Cozinha da Vila").assertIsDisplayed()
+        node("3 entregas · encosta R$ 30,00 · entregas R$ 21,00").assertIsDisplayed()
+        assertTrue(fake.calls.contains("history"))
+        captureEvidence(compose, "work-12-history-390")
+        compose.onNodeWithContentDescription("A receber hoje: R$ 51,00, 3 entregas. Abrir histórico").assertDoesNotExist()
+        node("Voltar").performClick()
+        node("Você está na fila").assertIsDisplayed()
+
+        // An empty month says so.
+        fake.historyDays = emptyList()
+        compose.onNodeWithContentDescription("A receber hoje: R$ 51,00, 3 entregas. Abrir histórico").performClick()
+        node("Nenhum ganho nos últimos 30 dias.").assertIsDisplayed()
+        node("Voltar").performClick()
+
+        // On the route it is still there.
+        fake.home = fake.home.copy(today = Today(4, 3000, 2800, 5800),
+            shift = Shift("shift-1", "r-1", "Cozinha da Vila", "ON_ROUTE", null))
+        fake.assign()
+        fake.home = fake.home.copy(route = fake.home.route!!.copy(status = "ON_ROUTE", pickupReleased = true, nextDeliveryId = "d-1",
+            stops = fake.home.route!!.stops.mapIndexed { i, stop -> stop.copy(status = if (i == 0) "NEXT" else "ON_ROUTE") }))
+        reload()
+        node("Minha rota").assertIsDisplayed()
+        compose.onNodeWithContentDescription("A receber hoje: R$ 58,00, 4 entregas. Abrir histórico").assertIsDisplayed()
+        captureEvidence(compose, "work-13-route-with-earnings-390")
+    }
+
     @Test fun routeWithoutLocationGoesOnAndSaysTheCustomerCannotSeeTheCourier() {
         fake.home = fake.home.copy(shift = Shift("shift-1", "r-1", "Cozinha da Vila", "ON_ROUTE", null))
         fake.assign()

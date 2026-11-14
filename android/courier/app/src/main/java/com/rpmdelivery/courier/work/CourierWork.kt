@@ -65,7 +65,41 @@ data class CourierRoute(
     val toReturn: Int get() = stops.count { it.status in setOf("ATTEMPT_FAILED", "RETURN_TO_STORE") }
 }
 
-data class CourierHome(val stores: List<Store>, val shift: Shift?, val route: CourierRoute?)
+/** What the courier did and earned today, across stores (encosta + deliveries). */
+data class Today(val deliveries: Int, val shiftFeeCents: Int, val deliveryFeesCents: Int, val totalCents: Int)
+
+/** One day at one store in the history. */
+data class HistoryDay(
+    val day: String,
+    val restaurantName: String,
+    val deliveries: Int,
+    val shiftFeeCents: Int,
+    val deliveryFeesCents: Int,
+    val totalCents: Int,
+)
+
+data class CourierHome(val stores: List<Store>, val shift: Shift?, val route: CourierRoute?, val today: Today? = null)
+
+/** 3700 → "R$ 37,00". */
+fun reais(cents: Int): String = "R$ " + java.text.NumberFormat.getNumberInstance(java.util.Locale.forLanguageTag("pt-BR")).apply {
+    minimumFractionDigits = 2; maximumFractionDigits = 2
+}.format(cents / 100.0)
+
+/** "2026-11-14" → "sex., 14/11" in Portuguese. */
+fun historyDate(day: String): String = runCatching {
+    java.time.LocalDate.parse(day).format(DateTimeFormatter.ofPattern("EEE, dd/MM", java.util.Locale.forLanguageTag("pt-BR")))
+}.getOrDefault(day)
+
+private fun JsonObject.cents(key: String): Int = text(key)?.toIntOrNull()?.takeIf { it >= 0 } ?: throw WorkProblem(WorkCopy.UNEXPECTED)
+
+fun parseHistory(element: JsonElement): List<HistoryDay> {
+    val days = element as? JsonArray ?: throw WorkProblem(WorkCopy.UNEXPECTED)
+    return days.map { item ->
+        val day = item as? JsonObject ?: throw WorkProblem(WorkCopy.UNEXPECTED)
+        HistoryDay(day.required("day"), day.text("restaurantName").orEmpty(), day.cents("deliveries"),
+            day.cents("shiftFeeCents"), day.cents("deliveryFeesCents"), day.cents("totalCents"))
+    }
+}
 
 enum class FailureReason(val label: String) {
     CUSTOMER_NOT_FOUND("Cliente não estava no local"),
@@ -107,6 +141,9 @@ fun parseHome(element: JsonElement): CourierHome {
                 it.required("status"), it.text("queuePosition")?.toIntOrNull())
         },
         route = root.child("route")?.let(::parseRoute),
+        today = root.child("today")?.let {
+            Today(it.cents("deliveries"), it.cents("shiftFeeCents"), it.cents("deliveryFeesCents"), it.cents("totalCents"))
+        },
     )
 }
 

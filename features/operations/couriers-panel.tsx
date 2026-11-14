@@ -6,11 +6,14 @@ import {
 } from "./model";
 import { Badge, Empty, Icon } from "./ui";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
-export function CouriersPanel({ state, managementHref, onReviewShift, pending }: {
+export function CouriersPanel({ state, managementHref, onReviewShift, pending, pay }: {
   state: DemoState; managementHref?: string;
   /** Real data: the counter approves the shift of a courier who arrived. */
   onReviewShift?: (shiftId: string, approve: boolean) => void; pending?: boolean;
+  /** Real data: rates and the day's settlement. */
+  pay?: ReactNode;
 }) {
   const available = availableCouriers(state);
   const rest = state.couriers.filter(
@@ -24,7 +27,10 @@ export function CouriersPanel({ state, managementHref, onReviewShift, pending }:
         </h2>
         <Badge>{plural(available.length, "disponível", "disponíveis")}</Badge>
       </div>
-      {managementHref && <Link href={managementHref} className="text-button">Convites e vínculos</Link>}
+      {(managementHref || pay) && <div className="ops-courier-links">
+        {managementHref && <Link href={managementHref} className="text-button">Convites e vínculos</Link>}
+        {pay}
+      </div>}
       <div className="ops-courier-caption">Fila por ordem de chegada</div>
       <div
         className="ops-panel-scroll"

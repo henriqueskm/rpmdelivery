@@ -46,6 +46,11 @@ internal class FakeWork : CourierWorkRepository {
     }
 
     override suspend fun home(): CourierHome { record("home"); return home }
+    var historyDays = listOf(
+        HistoryDay("2026-11-14", "Cozinha da Vila", 3, 3000, 2100, 5100),
+        HistoryDay("2026-11-13", "Cozinha da Vila", 5, 3000, 3500, 6500),
+    )
+    override suspend fun history(days: Int): List<HistoryDay> { record("history"); return historyDays }
     override suspend fun requestShift(restaurantId: String) {
         record("request_shift")
         home = home.copy(shift = Shift("shift-1", restaurantId, "Cozinha da Vila", "PENDING", null))

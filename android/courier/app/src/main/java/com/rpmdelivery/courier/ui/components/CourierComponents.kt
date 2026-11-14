@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +37,15 @@ fun Brand() {
             Image(painterResource(R.drawable.brand_bolt), contentDescription = null, modifier = Modifier.fillMaxSize())
         }
         Text(stringResource(R.string.brand), fontSize = 24.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 3.dp))
+    }
+}
+
+/** The brand symbol alone, for lines too narrow for the name. Read as "RpmDelivery". */
+@Composable
+fun BrandMark() {
+    Surface(color = androidx.compose.ui.graphics.Color(0xFFFB673B), shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.size(40.dp).semantics { contentDescription = "RpmDelivery" }) {
+        Image(painterResource(R.drawable.brand_bolt), contentDescription = null, modifier = Modifier.fillMaxSize())
     }
 }
 
