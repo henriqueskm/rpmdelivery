@@ -310,7 +310,7 @@ Cada loja define uma **taxa de encosta** por dia e um **valor fixo por entrega**
 
 ### Nas telas
 
-- **Painel:** "Pagamento dos motoboys", na área de Motoboys, abre as taxas (editáveis por dono e gerente) e o acerto do dia, com troca de data e total do dia.
+- **Painel:** "Pagamentos", na área de Motoboys, abre as taxas (editáveis por dono e gerente) e o acerto do dia, com troca de data e total do dia.
 - **App:** um botão escuro ("R$ 51,00 ▾") no centro da linha fixa do topo, entre o símbolo do RpmDelivery e "Sair", com o valor a receber hoje. Só aparece com turno aberto, inclusive durante a rota. Tocar abre o histórico dos últimos 30 dias; os dias anteriores só são lidos nesse momento. A leitura a cada 15 s traz apenas os totais de hoje.
 
 ### Fora desta fatia

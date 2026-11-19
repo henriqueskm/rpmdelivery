@@ -19,7 +19,7 @@ Duração sugerida: 1 h a 1 h 30, numa tarde de fim de semana, no bairro (entreg
 - [ ] Token público do Mapbox corrigido (mapa do cliente e mapinha do endereço aparecem).
 - [ ] WhatsApp: números da família verificados, modelo "saiu para entrega" aprovado, segredos no Supabase e a função `dispatch-notifications` publicada (com autorização).
 - [ ] App Android compilado com `auth.local.properties` e instalado no(s) celular(es) do motoboy.
-- [ ] Conta da loja criada, endereço confirmado, e em **Pagamento dos motoboys**: encosta e valor por entrega (ex.: R$ 30,00 e R$ 7,00).
+- [ ] Conta da loja criada, endereço confirmado, e em **Pagamentos** (área Motoboys): encosta e valor por entrega (ex.: R$ 30,00 e R$ 7,00).
 - [ ] Cada motoboy: conta criada no app, cadastro da moto completo, convite da loja aberto no navegador do celular e vínculo **aprovado** no painel.
 - [ ] No celular do motoboy, em "Pronto para os avisos": notificações, localização e economia de bateria **ligadas**.
 
@@ -68,7 +68,7 @@ Marque o horário de cada passo; o que não acontecer como descrito vai para a t
 ### 6. Fechamento
 
 1. Motoboy **encerra o turno** (link discreto + confirmação).
-2. Loja abre **Pagamento dos motoboys**: o acerto do dia bate com o que o motoboy vê no histórico.
+2. Loja abre **Pagamentos** (área Motoboys): o acerto do dia bate com o que o motoboy vê no histórico.
 
 ## Tabela de problemas
 

@@ -251,11 +251,11 @@ test("pagamento dos motoboys: valores da loja e acerto do dia", async ({ page })
   await mockSupabase(page, { existing: true, rpc: backend.handlers });
   await openPanel(page);
   await showArea(page, /^Motoboys/);
-  // "Convites e vínculos" and "Pagamento dos motoboys" sit on one line.
+  // "Convites e vínculos" and "Pagamentos" sit on one line.
   const invites = (await page.getByRole("link", { name: "Convites e vínculos" }).boundingBox())!;
-  const payButton = (await page.getByRole("button", { name: "Pagamento dos motoboys" }).boundingBox())!;
+  const payButton = (await page.getByRole("button", { name: "Pagamentos", exact: true }).boundingBox())!;
   expect(Math.abs(invites.y + invites.height / 2 - (payButton.y + payButton.height / 2))).toBeLessThan(2);
-  await page.getByRole("button", { name: "Pagamento dos motoboys" }).click();
+  await page.getByRole("button", { name: "Pagamentos", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Pagamento dos motoboys" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("row", { name: /Ana Souza/ })).toContainText("R$ 51,00");
@@ -290,7 +290,7 @@ test("pagamento dos motoboys: operador vê o acerto sem alterar valores", async 
   await mockSupabase(page, { existing: true, rpc: backend.handlers });
   await openPanel(page);
   await showArea(page, /^Motoboys/);
-  await page.getByRole("button", { name: "Pagamento dos motoboys" }).click();
+  await page.getByRole("button", { name: "Pagamentos", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Pagamento dos motoboys" });
   await expect(dialog.getByText("Nenhum motoboy trabalhou neste dia.")).toBeVisible();
   await expect(dialog.getByText("Só o dono ou o gerente da loja altera estes valores.")).toBeVisible();

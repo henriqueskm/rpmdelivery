@@ -55,7 +55,7 @@ export function CourierPay({ restaurantId }: { restaurantId: string }) {
 
   const total = pay?.couriers.reduce((sum, courier) => sum + courier.totalCents, 0) ?? 0;
   return (<>
-    <button type="button" className="text-button" onClick={open}>Pagamento dos motoboys</button>
+    <button type="button" className="text-button" onClick={open}>Pagamentos</button>
     <dialog ref={dialogRef} className="ops-dialog ops-pay-dialog" aria-labelledby="ops-pay-title"
       onClose={() => { setError(""); setNotice(""); }}>
       <div className="ops-dialog-heading">
