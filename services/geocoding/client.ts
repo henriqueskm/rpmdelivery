@@ -15,7 +15,7 @@ async function post(path: string, body: object, signal: AbortSignal) {
 export async function suggestAddress(query: string, signal: AbortSignal): Promise<AddressSuggestion[]> {
   const suggestions: AddressSuggestion[] = await post("suggest", { query }, signal);
   if (!Array.isArray(suggestions)) throw new Error("Busca indisponível.");
-  return suggestions.slice(0, 5);
+  return suggestions.slice(0, 5).map((item) => ({ ...item, kind: item.kind === "street" ? "street" : "address" }));
 }
 
 export async function resolveAddress(mapboxId: string, signal: AbortSignal) {

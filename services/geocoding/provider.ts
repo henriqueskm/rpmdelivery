@@ -1,9 +1,10 @@
 import "server-only";
 import { mapboxProvider } from "./mapbox-provider.ts";
-import type { AddressSuggestion, ResolvedAddress } from "./types.ts";
+import type { AddressSuggestion, GeoPoint, ResolvedAddress } from "./types.ts";
 
 export type GeocodingProvider = {
-  suggest(query: string, signal?: AbortSignal): Promise<AddressSuggestion[]>;
+  /** `near` biases results toward a place (the store), never filters them out. */
+  suggest(query: string, signal?: AbortSignal, near?: GeoPoint): Promise<AddressSuggestion[]>;
   resolve(id: string, signal?: AbortSignal): Promise<ResolvedAddress>;
 };
 

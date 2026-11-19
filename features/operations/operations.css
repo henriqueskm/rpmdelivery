@@ -1159,20 +1159,26 @@
 }
 
 /* Courier pay: rates and the day's settlement (real data only). */
+/* Link and button side by side on one line, text lined up with the caption below (16px). */
 .ops-courier-links {
   display: flex;
   flex-wrap: wrap;
-  column-gap: 12px;
+  align-items: center;
+  column-gap: 8px;
+  padding: 0 12px;
 }
-/* Same look as the "Convites e vínculos" link next to it. */
-.operations .ops-courier-links button.text-button {
+.operations .ops-courier-links .text-button {
+  display: inline-flex;
+  align-items: center;
   min-height: 44px;
-  padding: 10px 5px;
+  padding: 0 4px;
   border: 0;
   background: transparent;
   color: #8e331c;
+  font: inherit;
   font-size: 12px;
   font-weight: 650;
+  line-height: 1.2;
   text-decoration: underline;
 }
 .ops-visually-hidden {

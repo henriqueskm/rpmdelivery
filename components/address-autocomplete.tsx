@@ -13,6 +13,7 @@ const messages = {
   error: "Não foi possível confirmar o endereço. Edite a busca e tente novamente.",
   resolving: "Confirmando localização…",
   confirmed: "Localização confirmada. Ao editar, selecione o endereço novamente.",
+  street: "Agora digite o número e escolha o endereço na lista.",
 };
 
 export type AddressHints = Partial<typeof messages>;
