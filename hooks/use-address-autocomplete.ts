@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { resolveAddress, suggestAddress } from "@/services/geocoding/client";
 import type { AddressSuggestion, ResolvedAddress } from "@/services/geocoding/types";
 
-type Status = "idle" | "searching" | "results" | "empty" | "error" | "resolving" | "confirmed";
+type Status = "idle" | "searching" | "results" | "empty" | "error" | "resolving" | "confirmed" | "street";
 
 export function useAddressAutocomplete(onChange: (address: ResolvedAddress | null) => void) {
   const [query, setQuery] = useState("");
@@ -13,10 +13,12 @@ export function useAddressAutocomplete(onChange: (address: ResolvedAddress | nul
   const [resolved, setResolved] = useState<ResolvedAddress | null>(null);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
+  // Text set by picking a street ("Rua X, "): wait for the number instead of searching again.
+  const [street, setStreet] = useState<string | null>(null);
   const controller = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (query.trim().length < 3 || resolved) return;
+    if (query.trim().length < 3 || resolved || query === street) return;
     const request = new AbortController();
     controller.current = request;
     const timer = setTimeout(async () => {
@@ -33,7 +35,7 @@ export function useAddressAutocomplete(onChange: (address: ResolvedAddress | nul
       }
     }, 300);
     return () => { clearTimeout(timer); request.abort(); };
-  }, [query, resolved]);
+  }, [query, resolved, street]);
 
   useEffect(() => () => controller.current?.abort(), []);
 
@@ -50,6 +52,16 @@ export function useAddressAutocomplete(onChange: (address: ResolvedAddress | nul
 
   async function select(suggestion: AddressSuggestion) {
     controller.current?.abort();
+    if (suggestion.kind === "street") {
+      const text = `${suggestion.label}, `;
+      setQuery(text);
+      setStreet(text);
+      setSuggestions([]);
+      setActive(-1);
+      setOpen(false);
+      setStatus("street");
+      return;
+    }
     const request = new AbortController();
     controller.current = request;
     setOpen(false);

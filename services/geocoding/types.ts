@@ -1,7 +1,11 @@
+export type GeoPoint = { latitude: number; longitude: number };
+
 export type AddressSuggestion = {
   id: string;
   label: string;
   secondaryLabel: string;
+  /** A street without a house number: picking it asks for the number instead of confirming. */
+  kind?: "address" | "street";
 };
 
 export type ResolvedAddress = {
@@ -10,6 +14,8 @@ export type ResolvedAddress = {
   longitude: number;
   provider: "mapbox";
   providerId: string;
+  /** Bairro, when the provider or the CEP lookup knows it; the store can still edit it. */
+  neighborhood?: string;
 };
 
 export function isResolvedAddress(value: unknown): value is ResolvedAddress {
@@ -23,5 +29,7 @@ export function isResolvedAddress(value: unknown): value is ResolvedAddress {
     && address.longitude >= -180 && address.longitude <= 180
     && address.provider === "mapbox"
     && typeof address.providerId === "string"
-    && /^[A-Za-z0-9_-]{1,255}$/.test(address.providerId);
+    && /^[A-Za-z0-9_-]{1,255}$/.test(address.providerId)
+    && (address.neighborhood === undefined
+      || (typeof address.neighborhood === "string" && address.neighborhood.length <= 120));
 }

@@ -50,3 +50,43 @@ test("API verifica token no Auth e não retorna detalhes privados do upstream", 
     keys.forEach((key, i) => { if (previous[i] === undefined) delete process.env[key]; else process.env[key] = previous[i]; });
   }
 });
+
+test("busca puxa para a cidade da loja do usuário, lida com o token dele (RLS)", async () => {
+  const originalFetch = globalThis.fetch;
+  const keys = ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "MAPBOX_ACCESS_TOKEN"];
+  const previous = keys.map((key) => process.env[key]);
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://supabase.invalid";
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "public-test-placeholder";
+  process.env.MAPBOX_ACCESS_TOKEN = "private-test-placeholder";
+  let mapbox: URL | undefined;
+  let storeRead: Headers | undefined;
+  const run = (stores: unknown) => {
+    globalThis.fetch = async (url, init) => {
+      const href = String(url);
+      if (href.includes("/rest/v1/restaurants")) {
+        storeRead = new Headers(init?.headers);
+        return Response.json(stores);
+      }
+      if (href.includes("supabase.invalid")) return Response.json({ id: "11111111-1111-4111-8111-111111111111" });
+      mapbox = new URL(href);
+      return Response.json({ features: [] });
+    };
+    return handleGeocoding(request({ query: "Rua Jovino" }, { authorization: "Bearer fake.test.signature" }), "suggest");
+  };
+  try {
+    const response = await run([{ latitude: -23.0, longitude: -46.84 }]);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), []);
+    assert.equal(storeRead?.get("authorization"), "Bearer fake.test.signature");
+    assert.equal(mapbox?.searchParams.get("proximity"), "-46.84,-23");
+    // No store yet (onboarding) or a failed read: search the whole country.
+    for (const stores of [[], { message: "boom" }, [{ latitude: "x", longitude: 1 }]]) {
+      mapbox = undefined;
+      assert.equal((await run(stores)).status, 200);
+      assert.equal((mapbox as URL | undefined)?.searchParams.has("proximity"), false);
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+    keys.forEach((key, i) => { if (previous[i] === undefined) delete process.env[key]; else process.env[key] = previous[i]; });
+  }
+});

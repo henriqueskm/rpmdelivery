@@ -421,7 +421,7 @@ test("cadastro valida campos vazios e celular sem perder os dados preenchidos", 
     "Rua fictícia, 17",
   );
   await dialog.getByLabel("WhatsApp", { exact: true }).fill("(11) 90000-0000");
-  await dialog.getByLabel("Número / referência (opcional)").fill("BALCAO-X1");
+  await dialog.getByLabel("Nº do pedido (opcional)").fill("BALCAO-X1");
   await dialog.getByRole("button", { name: "Cadastrar pedido (demo)" }).click();
   await expect(dialog).not.toBeVisible();
   await expect(

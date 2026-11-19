@@ -310,7 +310,7 @@ Cada loja define uma **taxa de encosta** por dia e um **valor fixo por entrega**
 
 ### Nas telas
 
-- **Painel:** "Pagamento dos motoboys", na área de Motoboys, abre as taxas (editáveis por dono e gerente) e o acerto do dia, com troca de data e total do dia.
+- **Painel:** "Pagamentos", na área de Motoboys, abre as taxas (editáveis por dono e gerente) e o acerto do dia, com troca de data e total do dia.
 - **App:** um botão escuro ("R$ 51,00 ▾") no centro da linha fixa do topo, entre o símbolo do RpmDelivery e "Sair", com o valor a receber hoje. Só aparece com turno aberto, inclusive durante a rota. Tocar abre o histórico dos últimos 30 dias; os dias anteriores só são lidos nesse momento. A leitura a cada 15 s traz apenas os totais de hoje.
 
 ### Fora desta fatia
@@ -329,3 +329,10 @@ Comandos que já existiam no banco (fatias 1 a 3) e agora têm botão no `/dashb
 ## Endereço do pedido com localização
 
 No `/dashboard`, o campo "Endereço" do "Novo pedido" usa a mesma busca do cadastro da loja (`/api/geocoding/suggest` e `/resolve`, Mapbox no servidor). Escolher um endereço da lista envia `p_latitude`, `p_longitude`, `p_address_provider = 'mapbox'` e `p_address_provider_id` para `create_order`, e o cliente que é o próximo vê a casa no mapa do acompanhamento. A busca nunca bloqueia o pedido: sem escolher (endereço não encontrado ou busca fora do ar), o pedido é salvo só com o texto, como antes. Editar o endereço depois de escolher apaga a localização. Sem migration: `create_order` já aceitava as coordenadas desde a fatia 1.
+
+Ajustes depois do primeiro teste no celular (2026-11-18):
+
+- **Busca a partir do nome da rua.** As sugestões trazem ruas (sem número) além de endereços completos. Escolher uma rua não confirma nada: o campo vira "Rua X, ", com o cursor no fim, e pede o número; com o número, a lista mostra o endereço da casa. Só um endereço com número é confirmado (`resolve` busca apenas `address`).
+- **Perto da loja primeiro.** O servidor lê a localização da loja do usuário (`restaurants`, com o token dele, então o RLS limita às suas lojas) e manda como `proximity` ao Mapbox. Sem isso, "Rua Jovino" listava ruas do país inteiro. Sem loja ainda (cadastro) ou se a leitura falhar, a busca segue sem esse viés.
+- **Bairro preenchido sozinho.** O Mapbox quase nunca tem o bairro de endereços brasileiros; o servidor consulta o ViaCEP (gratuito, sem chave, só recebe CEP ou cidade + rua, nunca dados do cliente): primeiro pelo CEP completo, senão pela rua na cidade, e só usa o bairro se a rua inteira estiver em um só. A loja pode trocar o bairro; ele só é sobrescrito se o campo estiver vazio ou com o valor que a busca pôs. Falha do ViaCEP deixa o campo para a loja.
+- **"Nº do pedido".** O antigo "Número / referência" era o número do pedido (cupom/app), não o da casa; o rótulo agora diz isso.

@@ -1,6 +1,25 @@
 import "server-only";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { geocodingProvider } from "../../services/geocoding/provider.ts";
+import type { GeoPoint } from "../../services/geocoding/types.ts";
+
+/**
+ * Where the user's store is (RLS limits the read to their own stores), to bias the search toward
+ * its city. A user in several stores gets the first one; no store yet (onboarding) means no bias.
+ */
+async function storeLocation(client: SupabaseClient): Promise<GeoPoint | undefined> {
+  try {
+    const { data } = await client.from("restaurants").select("latitude, longitude")
+      .not("latitude", "is", null).not("longitude", "is", null).limit(1);
+    const row: unknown = Array.isArray(data) ? data[0] : undefined;
+    if (!row || typeof row !== "object") return undefined;
+    const { latitude, longitude } = row as Record<string, unknown>;
+    return typeof latitude === "number" && Math.abs(latitude) <= 90
+      && typeof longitude === "number" && Math.abs(longitude) <= 180 ? { latitude, longitude } : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 async function readInput(request: Request) {
   if (!request.body) return "";
@@ -55,12 +74,13 @@ export async function handleGeocoding(request: Request, operation: "suggest" | "
   try {
     const client = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-      global: { fetch: (url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(8000) }) },
+      global: { headers: { Authorization: `Bearer ${token}` },
+        fetch: (url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(8000) }) },
     });
     const { data, error } = await client.auth.getUser(token);
     if (error || !data.user) return reply({ message: "Entre novamente para continuar." }, 401);
     const result = operation === "suggest"
-      ? await geocodingProvider.suggest(input, request.signal)
+      ? await geocodingProvider.suggest(input, request.signal, await storeLocation(client))
       : await geocodingProvider.resolve(input, request.signal);
     return reply(result);
   } catch {

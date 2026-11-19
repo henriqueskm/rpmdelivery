@@ -7,7 +7,7 @@ import type { ResolvedAddress } from "@/services/geocoding/types";
 
 // A customer's address may be saved as typed: the search helps, it never blocks the order.
 const ORDER_ADDRESS_HINTS: AddressHints = {
-  idle: "Digite rua, número e cidade e escolha na lista: o cliente vê a casa no mapa. Sem escolher, o pedido é salvo só com o texto.",
+  idle: "Comece pelo nome da rua e escolha na lista: o cliente vê a casa no mapa. Sem escolher, o pedido é salvo só com o texto.",
   results: "Escolha o endereço na lista.",
   empty: "Nenhum endereço encontrado. Dá para salvar só com o texto.",
   error: "Não foi possível buscar agora. Dá para salvar só com o texto.",
@@ -34,6 +34,17 @@ export function NewOrderDialog({
   // Real data: an address picked from the search carries its coordinates; a new form starts empty.
   const [geocode, setGeocode] = useState<ResolvedAddress | null>(null);
   const [formKey, setFormKey] = useState(0);
+  // The bairro found with the address fills the field, unless the store already typed another one.
+  const neighborhoodRef = useRef<HTMLInputElement>(null);
+  const autoNeighborhood = useRef("");
+  function pickAddress(address: ResolvedAddress | null) {
+    setGeocode(address);
+    const field = neighborhoodRef.current;
+    if (!field || !address?.neighborhood) return;
+    if (field.value.trim() && field.value !== autoNeighborhood.current) return;
+    field.value = address.neighborhood;
+    autoNeighborhood.current = address.neighborhood;
+  }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -71,6 +82,7 @@ export function NewOrderDialog({
     dialogRef.current?.close();
     form.reset();
     setGeocode(null);
+    autoNeighborhood.current = "";
     setFormKey(key => key + 1);
   }
   return (
@@ -124,8 +136,8 @@ export function NewOrderDialog({
         </label>
         <p className="ops-form-wide ops-deadline-help">Conte a partir do horário original do pedido, mesmo se recebido antes do cadastro. Horários deste dispositivo; sem previsão de chegada.</p>
         {live ? (
-          <AddressAutocomplete key={formKey} onChange={setGeocode} className="ops-form-wide ops-order-address"
-            placeholder="Rua, número e cidade" mapAlt="Mapa do endereço do cliente, com marcador"
+          <AddressAutocomplete key={formKey} onChange={pickAddress} className="ops-form-wide ops-order-address"
+            placeholder="Nome da rua e número" mapAlt="Mapa do endereço do cliente, com marcador"
             hints={ORDER_ADDRESS_HINTS} />
         ) : (
           <label className="ops-form-wide">
@@ -143,14 +155,15 @@ export function NewOrderDialog({
           Bairro
           <input
             name="neighborhood"
+            ref={neighborhoodRef}
             required
             maxLength={120}
             autoComplete="off"
           />
         </label>
         <label>
-          Número / referência (opcional)
-          <input name="reference" maxLength={40} autoComplete="off" />
+          Nº do pedido (opcional)
+          <input name="reference" maxLength={40} autoComplete="off" placeholder="Como no cupom ou no app" />
         </label>
         <label className="ops-form-wide">
           Complemento / referência
