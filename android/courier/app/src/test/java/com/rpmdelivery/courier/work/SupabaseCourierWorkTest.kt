@@ -112,6 +112,26 @@ class SupabaseCourierWorkTest {
         } finally { auth.close() }
     }
 
+    @Test fun swipesCarryThePositionOnlyWhenThereIsOne() = runBlocking {
+        val (auth, work) = repositories()
+        try {
+            auth.login("synthetic@example.invalid", "synthetic-pass")
+            work.completeDelivery("req-1", "route-1", "d-1", GpsPoint(-23.0, -46.8, 9.5, "2026-11-20T12:00:00Z"), confirmFar = true)
+            val sent = body("complete_delivery")
+            assertEquals(setOf("p_request_id", "p_route_id", "p_delivery_id", "p_latitude", "p_longitude", "p_accuracy", "p_confirm_far"), sent.keys)
+            assertEquals("true", sent["p_confirm_far"]!!.jsonPrimitive.content)
+            work.arriveAtStore("route-1", GpsPoint(-23.0, -46.8, null, "2026-11-20T12:00:00Z"))
+            assertEquals("no accuracy, no key", setOf("p_route_id", "p_latitude", "p_longitude"), body("arrive_at_store").keys)
+
+            override = { name -> if (name == "arrive_at_store")
+                """{"code":"55000","details":"2900","hint":null,"message":"RPM_FAR_FROM_STORE 2900"}""" to HttpStatusCode.BadRequest else null }
+            val far = runCatching { work.arriveAtStore("route-1", GpsPoint(-23.0, -46.8, null, "2026-11-20T12:00:00Z")) }
+                .exceptionOrNull() as WorkProblem
+            assertEquals(WorkProblem.FAR_FROM_STORE, far.code)
+            assertEquals(2900, far.meters)
+        } finally { auth.close() }
+    }
+
     @Test fun gpsNeverWaitsForACommandAndNeverEndsTheSession() = runBlocking {
         val gate = Mutex()
         val (auth, work) = repositories(gate)

@@ -19,7 +19,8 @@ import { CourierDialog } from "./courier-dialog";
 import { DeadlineDialog } from "./deadline-dialog";
 import { tabs, useOperationsController, type LiveSource } from "./use-operations-controller";
 import { useOperationsBoard } from "./live/use-operations-board";
-import { CourierPay } from "./live/courier-pay";
+import { CourierPay, type CourierPayHandle } from "./live/courier-pay";
+import { StoreMenu } from "./store-menu";
 import { ConfirmDialog, type Confirmation } from "./live/confirm-dialog";
 import { useOperationsClock } from "./use-operations-clock";
 import { Icon } from "./ui";
@@ -40,6 +41,7 @@ export function Operations({
   email,
   accountAction,
   courierManagementHref,
+  storeHref,
   preview = false,
   initialScenario = "demo",
   restaurantId,
@@ -50,6 +52,8 @@ export function Operations({
   email?: string;
   accountAction?: ReactNode;
   courierManagementHref?: string;
+  /** Real data: the owner's "Dados da loja" page. */
+  storeHref?: string;
   preview?: boolean;
   initialScenario?: Scenario;
 }) {
@@ -74,6 +78,7 @@ export function Operations({
       email={email}
       accountAction={accountAction}
       courierManagementHref={courierManagementHref}
+      storeHref={storeHref}
       scenarioRef={scenarioRef}
     />
   );
@@ -85,6 +90,7 @@ export function Operations({
       email={email}
       accountAction={accountAction}
       courierManagementHref={courierManagementHref}
+      storeHref={storeHref}
       preview={preview}
       scenario={scenario}
       onScenario={changeScenario}
@@ -100,6 +106,8 @@ function LiveOperations({ restaurantId, ...props }: {
   email?: string;
   accountAction?: ReactNode;
   courierManagementHref?: string;
+  /** Real data: the owner's "Dados da loja" page. */
+  storeHref?: string;
   scenarioRef: RefObject<HTMLSelectElement | null>;
 }) {
   const { state, refresh, retry } = useOperationsBoard(restaurantId);
@@ -112,11 +120,14 @@ function LiveOperations({ restaurantId, ...props }: {
       <header className="ops-header">
         <Brand />
         <div className="ops-account">
-          <div>
-            <strong>{props.restaurantName}</strong>
-            {props.email && <small>{props.email}</small>}
-          </div>
-          {props.accountAction}
+          {props.storeHref
+            ? <StoreMenu restaurantName={props.restaurantName} email={props.email} storeHref={props.storeHref}
+                courierManagementHref={props.courierManagementHref} signOut={props.accountAction} />
+            : <><div>
+                <strong>{props.restaurantName}</strong>
+                {props.email && <small>{props.email}</small>}
+              </div>
+              {props.accountAction}</>}
         </div>
       </header>
       {content}
@@ -142,6 +153,7 @@ function OperationsWorkspace({
   email,
   accountAction,
   courierManagementHref,
+  storeHref,
   preview,
   scenario,
   onScenario,
@@ -156,6 +168,8 @@ function OperationsWorkspace({
   email?: string;
   accountAction?: ReactNode;
   courierManagementHref?: string;
+  /** Real data: the owner's "Dados da loja" page. */
+  storeHref?: string;
   preview: boolean;
   scenario: Scenario;
   onScenario: (scenario: Scenario) => void;
@@ -198,6 +212,7 @@ function OperationsWorkspace({
     });
   }
   function openIssues(){issueDialog.current?.showModal();}
+  const payMenu = useRef<CourierPayHandle>(null);
   return (
     <main className="operations">
       <header className="ops-header">
@@ -206,11 +221,19 @@ function OperationsWorkspace({
         <AlertsToolbar count={pending.length} onOpen={openIssues} onFollow={()=>followRoute(pending[0]?.routeId)}
           enabled={alerts.enabled} activating={alerts.activating} onSound={alerts.toggleSound} message={alerts.message}/>
         <div className="ops-account">
-          <div>
-            <strong>{restaurantName}</strong>
-            {email && <small>{email}</small>}
-          </div>
-          {accountAction}
+          {/* Real store: everything about the account lives in the side menu, "Sair" included. */}
+          {storeHref ? <>
+            <StoreMenu restaurantName={restaurantName} email={email} storeHref={storeHref}
+              courierManagementHref={courierManagementHref} signOut={accountAction}
+              onPay={live ? () => payMenu.current?.open() : undefined} />
+            {live && <CourierPay restaurantId={live.restaurantId} ref={payMenu} trigger={false} />}
+          </> : <>
+            <div>
+              <strong>{restaurantName}</strong>
+              {email && <small>{email}</small>}
+            </div>
+            {accountAction}
+          </>}
           {preview && <span className="ops-preview-tag">PREVIEW</span>}
         </div>
       </header>

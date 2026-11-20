@@ -14,6 +14,8 @@ export const testRestaurant = {
   name: "Cozinha da Vila",
   address: "Rua das Flores, 120, São Paulo",
   phone: null,
+  latitude: -23.55,
+  longitude: -46.63,
 };
 
 /** Answer of a store RPC: the JSON body, or a PostgREST error. */
@@ -31,6 +33,8 @@ type Options = {
   /** Store RPCs by name (get_operations_board answers an empty board by default). */
   rpc?: Record<string, RpcHandler>;
   existing?: boolean;
+  /** The signed-in member's role in the store (OWNER by default). */
+  role?: "OWNER" | "MANAGER" | "OPERATOR";
   invalidLogin?: boolean;
   queryError?: boolean;
   rpcError?: boolean;
@@ -101,7 +105,7 @@ export async function mockSupabase(page: Page, options: Options = {}) {
         options.queryError
           ? { message: "test failure", code: "XX000" }
           : existing
-            ? [{ restaurant_id: testRestaurant.id }]
+            ? [{ restaurant_id: testRestaurant.id, role: options.role ?? "OWNER" }]
             : [],
         options.queryError ? 500 : 200,
       );

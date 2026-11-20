@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase/client";
 import { forgetInvite } from "@/lib/invitations/context";
 
-export function SignOut({ courier = false }: { courier?: boolean }) {
+export function SignOut({ courier = false, className = "text-button", label = "Sair" }: {
+  courier?: boolean; className?: string; label?: string;
+}) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -27,11 +29,11 @@ export function SignOut({ courier = false }: { courier?: boolean }) {
     <div>
       <button
         type="button"
-        className="text-button"
+        className={className}
         disabled={pending}
         onClick={signOut}
       >
-        {pending ? "Saindo…" : "Sair"}
+        {pending ? "Saindo…" : label}
       </button>
       {error ? (
         <p className="notice error" role="alert">

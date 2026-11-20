@@ -24,10 +24,14 @@ type BoardIssue = {
   notes: string | null; reportedAt: string; decisionDeadline: string;
   decision: IssueResolution | null; decidedAt: string | null; decidedBy: string | null;
 };
+/** A delivery confirmed more than 300 m from the address (courier confirmed it, or no position from the app). */
+type BoardFarDelivery = { deliveryId: string; routeId: string; distanceMeters: number; reportedAt: string };
 export type Board = {
   serverNow: string;
   restaurant: { defaultPromiseMinutes: number; issueTimeoutMinutes: number };
   couriers: BoardCourier[]; routes: BoardRoute[]; orders: BoardOrder[]; issues: BoardIssue[];
+  /** Absent before the distance migration: read as none. */
+  farDeliveries?: BoardFarDelivery[];
 };
 
 /** What the commands need beyond the rendered state. */
@@ -79,7 +83,9 @@ export function parseBoard(value: unknown): Board | null {
     && list(value.issues, i => isText(i.id) && isText(i.deliveryId) && isText(i.routeId) && isCount(i.attempt)
       && oneOf(REASONS)(i.reason) && isOptionalText(i.notes) && isTime(i.reportedAt) && isTime(i.decisionDeadline)
       && (i.decision === null || oneOf(DECISIONS)(i.decision)) && isOptionalTime(i.decidedAt)
-      && isOptionalText(i.decidedBy));
+      && isOptionalText(i.decidedBy))
+    && (value.farDeliveries === undefined || list(value.farDeliveries, f => isText(f.deliveryId) && isText(f.routeId)
+      && isCount(f.distanceMeters) && isTime(f.reportedAt)));
   return valid ? value as Board : null;
 }
 
@@ -112,6 +118,7 @@ export function boardToState(board: Board, { now, receivedAt = now, alertReceipt
   const expired = new Set(board.issues
     .filter(issue => issue.decision === null && ms(issue.decisionDeadline) <= serverNow)
     .map(issue => issue.deliveryId));
+  const far = new Map((board.farDeliveries ?? []).map(f => [f.deliveryId, f.distanceMeters]));
 
   const orders: DemoOrder[] = board.orders.map(order => {
     const delivery = expired.has(order.deliveryId) ? "RETURN_TO_STORE" : order.deliveryStatus;
@@ -131,6 +138,7 @@ export function boardToState(board: Board, { now, receivedAt = now, alertReceipt
       status: order.orderStatus,
       delivery,
       attemptNumber: Math.max(1, order.failedAttempts + (onTheWay ? 1 : 0)),
+      ...(far.has(order.deliveryId) ? { farMeters: far.get(order.deliveryId) } : {}),
     };
   });
 

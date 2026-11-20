@@ -31,9 +31,15 @@ interface CourierWorkRepository {
     suspend fun requestShift(restaurantId: String)
     suspend fun endShift(shiftId: String)
     suspend fun startRoute(routeId: String, version: Int)
-    suspend fun completeDelivery(requestId: String, routeId: String, deliveryId: String)
+    /**
+     * [position]: where the phone is now, checked against the address pin (more than 300 m: refused with
+     * RPM_FAR_FROM_ADDRESS until [confirmFar]). Null when there is no fresh, real reading: never blocked.
+     */
+    suspend fun completeDelivery(requestId: String, routeId: String, deliveryId: String,
+        position: GpsPoint? = null, confirmFar: Boolean = false)
     suspend fun reportFailure(requestId: String, routeId: String, deliveryId: String, reason: FailureReason, notes: String)
-    suspend fun arriveAtStore(routeId: String)
+    /** More than 300 m from the store: refused with RPM_FAR_FROM_STORE. */
+    suspend fun arriveAtStore(routeId: String, position: GpsPoint? = null)
     /** Sends 1 to 100 readings of the route in progress. */
     suspend fun recordLocations(routeId: String, points: List<GpsPoint>)
     /** Best effort: asks the server to send the customers' "saiu para entrega" messages. */
@@ -44,7 +50,8 @@ interface CourierWorkRepository {
     suspend fun requestMembership(code: String): InviteRequest
 }
 
-class WorkProblem(val safeMessage: String, val code: String? = null) : Exception(safeMessage) {
+/** [meters]: with RPM_FAR_FROM_ADDRESS / RPM_FAR_FROM_STORE, how far the phone was. */
+class WorkProblem(val safeMessage: String, val code: String? = null, val meters: Int? = null) : Exception(safeMessage) {
     val expired: Boolean get() = code == EXPIRED
     val network: Boolean get() = code == NETWORK
     companion object {
@@ -54,6 +61,18 @@ class WorkProblem(val safeMessage: String, val code: String? = null) : Exception
         fun network() = WorkProblem(AuthCopy.NETWORK, NETWORK)
         /** Server refusals carry an RPM_* code; each becomes a sentence for the courier. */
         fun refused(code: String?) = WorkProblem(WorkCopy.forCode(code), code)
+        const val FAR_FROM_ADDRESS = "RPM_FAR_FROM_ADDRESS"
+        const val FAR_FROM_STORE = "RPM_FAR_FROM_STORE"
+        private val FAR = Regex("(RPM_FAR_FROM_(?:ADDRESS|STORE)) ([0-9]{1,6})")
+        /** A server refusal from its message; the distance ones carry their meters. */
+        fun fromServer(message: String?): WorkProblem {
+            val far = FAR.find(message.orEmpty())
+            if (far != null) {
+                val meters = far.groupValues[2].toInt()
+                return WorkProblem(WorkCopy.far(far.groupValues[1], meters), far.groupValues[1], meters)
+            }
+            return refused(RPM_CODE.find(message.orEmpty())?.value)
+        }
     }
 }
 
@@ -76,6 +95,12 @@ object WorkCopy {
         "RPM_SHIFT_NOT_FOUND", "RPM_SHIFT_STATE" -> "Seu turno mudou. Confira a tela atualizada."
         else -> GENERIC
     }
+    fun far(code: String, meters: Int): String = if (code == WorkProblem.FAR_FROM_STORE)
+        "Você está a ${distance(meters)} da loja. Deslize em \"cheguei\" quando estiver nela."
+        else "Você está a ${distance(meters)} do endereço da entrega."
+    /** "350 m", "1,2 km". */
+    fun distance(meters: Int): String = if (meters < 1000) "${(meters + 5) / 10 * 10} m"
+        else String.format(java.util.Locale.forLanguageTag("pt-BR"), "%.1f km", meters / 1000.0).replace(",0 km", " km")
 }
 
 private val RPM_CODE = Regex("RPM_[A-Z_]+")
@@ -103,10 +128,19 @@ class SupabaseCourierWork(
     override suspend fun startRoute(routeId: String, version: Int) {
         rpc("start_route", buildJsonObject { put("p_route_id", routeId); put("p_expected_version", version) })
     }
-    override suspend fun completeDelivery(requestId: String, routeId: String, deliveryId: String) {
+    override suspend fun completeDelivery(requestId: String, routeId: String, deliveryId: String,
+        position: GpsPoint?, confirmFar: Boolean) {
         rpc("complete_delivery", buildJsonObject {
             put("p_request_id", requestId); put("p_route_id", routeId); put("p_delivery_id", deliveryId)
+            position(position)
+            if (confirmFar) put("p_confirm_far", true)
         })
+    }
+    /** Only with a reading: an absent position keeps the server's older behavior. */
+    private fun kotlinx.serialization.json.JsonObjectBuilder.position(point: GpsPoint?) {
+        if (point == null) return
+        put("p_latitude", point.latitude); put("p_longitude", point.longitude)
+        point.accuracy?.let { put("p_accuracy", it) }
     }
     override suspend fun reportFailure(requestId: String, routeId: String, deliveryId: String, reason: FailureReason, notes: String) {
         rpc("report_delivery_failure", buildJsonObject {
@@ -114,8 +148,8 @@ class SupabaseCourierWork(
             put("p_reason", reason.name); put("p_notes", notes.trim().ifEmpty { null })
         })
     }
-    override suspend fun arriveAtStore(routeId: String) {
-        rpc("arrive_at_store", buildJsonObject { put("p_route_id", routeId) })
+    override suspend fun arriveAtStore(routeId: String, position: GpsPoint?) {
+        rpc("arrive_at_store", buildJsonObject { put("p_route_id", routeId); position(position) })
     }
     override suspend fun recordLocations(routeId: String, points: List<GpsPoint>) {
         require(points.size in 1..100)
@@ -191,7 +225,7 @@ class SupabaseCourierWork(
     catch (error: WorkProblem) { throw error }
     catch (error: RestException) {
         if (error.statusCode == 401) throw WorkProblem.network()
-        throw WorkProblem.refused(RPM_CODE.find(error.message.orEmpty())?.value)
+        throw WorkProblem.fromServer(error.message)
     } catch (_: IOException) { throw WorkProblem.network() }
     catch (_: HttpRequestTimeoutException) { throw WorkProblem.network() }
     catch (_: Exception) { throw WorkProblem(WorkCopy.GENERIC) }
@@ -207,7 +241,7 @@ class SupabaseCourierWork(
         is WorkProblem -> error
         is RestException -> if (error.statusCode == 401) {
             client.auth.clearSession(); WorkProblem.expired()
-        } else WorkProblem.refused(RPM_CODE.find(error.message.orEmpty())?.value)
+        } else WorkProblem.fromServer(error.message)
         is IOException, is HttpRequestTimeoutException -> WorkProblem.network()
         else -> WorkProblem(WorkCopy.GENERIC)
     }
@@ -221,9 +255,10 @@ class UnconfiguredWork : CourierWorkRepository {
     override suspend fun requestShift(restaurantId: String) = refuse()
     override suspend fun endShift(shiftId: String) = refuse()
     override suspend fun startRoute(routeId: String, version: Int) = refuse()
-    override suspend fun completeDelivery(requestId: String, routeId: String, deliveryId: String) = refuse()
+    override suspend fun completeDelivery(requestId: String, routeId: String, deliveryId: String,
+        position: GpsPoint?, confirmFar: Boolean) = refuse()
     override suspend fun reportFailure(requestId: String, routeId: String, deliveryId: String, reason: FailureReason, notes: String) = refuse()
-    override suspend fun arriveAtStore(routeId: String) = refuse()
+    override suspend fun arriveAtStore(routeId: String, position: GpsPoint?) = refuse()
     override suspend fun recordLocations(routeId: String, points: List<GpsPoint>) = refuse()
     override suspend fun notifyCustomers(routeId: String) = Unit
     override suspend fun inspectInvite(code: String): InviteCheck = refuse()

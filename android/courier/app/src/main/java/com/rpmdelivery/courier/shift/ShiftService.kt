@@ -18,7 +18,6 @@ import androidx.core.content.ContextCompat
 import com.rpmdelivery.courier.CourierGraph
 import com.rpmdelivery.courier.work.CourierHome
 import com.rpmdelivery.courier.work.CourierWorkRepository
-import com.rpmdelivery.courier.work.GpsPoint
 import com.rpmdelivery.courier.work.LocationBuffer
 import com.rpmdelivery.courier.work.WorkProblem
 import com.rpmdelivery.courier.work.alertsBetween
@@ -31,7 +30,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.time.Instant
 
 /**
  * Runs while the courier has an open shift, so the phone can stay in the pocket.
@@ -50,9 +48,8 @@ class ShiftService : Service() {
     // Every method spelled out: before Android 11 the provider callbacks have no default body.
     private val listener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
-            buffer.add(GpsPoint(location.latitude, location.longitude,
-                if (location.hasAccuracy()) location.accuracy.toDouble() else null,
-                Instant.ofEpochMilli(location.time).toString()))
+            if (location.isFake()) return
+            buffer.add(location.toPoint())
         }
         override fun onProviderEnabled(provider: String) = Unit
         override fun onProviderDisabled(provider: String) = Unit

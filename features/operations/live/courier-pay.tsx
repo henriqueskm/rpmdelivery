@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, type FormEvent } from "react";
+import { useCallback, useImperativeHandle, useRef, useState, type FormEvent, type Ref } from "react";
 import { getSupabase } from "@/lib/supabase/client";
 import { errorMessage } from "./commands";
 import { centsInput, formatCents, parseCourierPay, parseReais, type CourierPay } from "./pay";
@@ -14,7 +14,15 @@ function today() {
  * The store's courier pay: rates (owner or manager edits) and the day's settlement,
  * the same numbers each courier sees in the app.
  */
-export function CourierPay({ restaurantId }: { restaurantId: string }) {
+/** Lets the store menu open the same dialog. */
+export type CourierPayHandle = { open: () => void };
+
+export function CourierPay({ restaurantId, ref, trigger = true }: {
+  restaurantId: string;
+  ref?: Ref<CourierPayHandle>;
+  /** False: no "Pagamentos" button, opened only through [ref]. */
+  trigger?: boolean;
+}) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [day, setDay] = useState(today);
   const [pay, setPay] = useState<CourierPay | null>(null);
@@ -53,9 +61,11 @@ export function CourierPay({ restaurantId }: { restaurantId: string }) {
     void load(date);
   }
 
+  useImperativeHandle(ref, () => ({ open }));
+
   const total = pay?.couriers.reduce((sum, courier) => sum + courier.totalCents, 0) ?? 0;
   return (<>
-    <button type="button" className="text-button" onClick={open}>Pagamentos</button>
+    {trigger && <button type="button" className="text-button" onClick={open}>Pagamentos</button>}
     <dialog ref={dialogRef} className="ops-dialog ops-pay-dialog" aria-labelledby="ops-pay-title"
       onClose={() => { setError(""); setNotice(""); }}>
       <div className="ops-dialog-heading">

@@ -31,9 +31,14 @@ data class WorkState(
     val historyError: String? = null,
     /** A store's invite from a QR Code, a link or a typed code. Survives sign-in, never a restart. */
     val invite: InviteCard? = null,
+    /** "Entregue" far from the address: the courier confirms or not. */
+    val farPrompt: FarPrompt? = null,
 ) {
     val historyOpen: Boolean get() = section == Section.Earnings
 }
+
+/** The question shown when "entregue" comes from too far: who the delivery is for and how far the phone was. */
+data class FarPrompt(val customerName: String, val meters: Int)
 
 /**
  * The side menu. [Home] follows the courier's moment: invite, stores, line or route.
@@ -197,11 +202,33 @@ class WorkController(
         repository.startRoute(route.routeId, route.version)
         notifyCustomers(route.routeId)
     }
-    fun completeDelivery(route: CourierRoute, stop: Stop) = act("Entrega concluída.") {
-        once("complete:${stop.deliveryId}") { repository.completeDelivery(it, route.routeId, stop.deliveryId) }
-        // The next customer is now first in line: "você é o próximo".
-        notifyCustomers(route.routeId)
+    /**
+     * Far from the address the server holds the delivery and the courier is asked in [WorkState.farPrompt];
+     * confirming sends the same request again with [confirmFar], and the store sees the distance.
+     */
+    fun completeDelivery(route: CourierRoute, stop: Stop, position: GpsPoint? = null, confirmFar: Boolean = false) =
+        act("Entrega concluída.", onRefused = { problem ->
+            if (problem.code != WorkProblem.FAR_FROM_ADDRESS || confirmFar) false
+            else {
+                farContext = Triple(route, stop, position)
+                mutable.update { it.copy(farPrompt = FarPrompt(stop.customerName, problem.meters ?: 0)) }
+                true
+            }
+        }) {
+            once("complete:${stop.deliveryId}") { repository.completeDelivery(it, route.routeId, stop.deliveryId, position, confirmFar) }
+            // The next customer is now first in line: "você é o próximo".
+            notifyCustomers(route.routeId)
+        }
+
+    private var farContext: Triple<CourierRoute, Stop, GpsPoint?>? = null
+    /** "Confirmar mesmo assim": the same request, now accepted far away and flagged for the store. */
+    fun confirmFarDelivery() {
+        val (route, stop, position) = farContext ?: return
+        farContext = null
+        mutable.update { it.copy(farPrompt = null) }
+        completeDelivery(route, stop, position, confirmFar = true)
     }
+    fun cancelFarDelivery() { farContext = null; mutable.update { it.copy(farPrompt = null) } }
     fun reportFailure(route: CourierRoute, stop: Stop, reason: FailureReason, notes: String) =
         act("Ocorrência enviada. A loja decide o que fazer com este pedido.") {
             once("failure:${stop.deliveryId}:${stop.attempts}") {
@@ -218,8 +245,9 @@ class WorkController(
             catch (_: Exception) { /* The store can resend; the route goes on. */ }
         }
     }
-    fun arriveAtStore(route: CourierRoute) = act("Chegada registrada. Você voltou para a fila.") {
-        repository.arriveAtStore(route.routeId)
+    /** Far from the store the server refuses; the courier reads how far in [WorkState.message]. */
+    fun arriveAtStore(route: CourierRoute, position: GpsPoint? = null) = act("Chegada registrada. Você voltou para a fila.") {
+        repository.arriveAtStore(route.routeId, position)
     }
 
     private suspend fun once(key: String, command: suspend (String) -> Unit) {
@@ -251,7 +279,8 @@ class WorkController(
         }
     }
 
-    private fun act(success: String, command: suspend () -> Unit) {
+    /** [onRefused]: a refusal the caller turns into its own screen (true) instead of a message. */
+    private fun act(success: String, onRefused: (WorkProblem) -> Boolean = { false }, command: suspend () -> Unit) {
         if (mutable.value.busy) return
         mutable.update { it.copy(busy = true, message = null, notice = null) }
         scope.launch {
@@ -262,7 +291,7 @@ class WorkController(
             } catch (error: CancellationException) { throw error }
             catch (error: WorkProblem) {
                 expired = error.expired
-                if (!expired) mutable.update { it.copy(message = error.safeMessage) }
+                if (!expired && !onRefused(error)) mutable.update { it.copy(message = error.safeMessage) }
             } catch (_: Exception) {
                 mutable.update { it.copy(message = WorkCopy.GENERIC) }
             } finally { mutable.update { it.copy(busy = false) } }

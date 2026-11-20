@@ -80,7 +80,10 @@ test("login → onboarding → RPC → dashboard → sair, sem erros inesperados
   expect(runtimeErrors).toEqual([]);
   expect(consoleErrors).toEqual([]);
   expect(failedRequests).toEqual([]);
-  await page.getByRole("button", { name: "Sair", exact: true }).click();
+  // "Sair" lives in the store menu and asks first.
+  await page.getByRole("button", { name: `${testRestaurant.name}, abrir menu` }).click();
+  await page.getByRole("dialog", { name: "Menu da loja" }).getByRole("button", { name: "Sair", exact: true }).click();
+  await page.getByRole("button", { name: "Sair da conta", exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login$/);
@@ -124,8 +127,9 @@ test("membro existente vai direto ao dashboard sem criar restaurante", async ({
   const calls = await mockSupabase(page, { existing: true });
   await login(page);
   await expect(page).toHaveURL(/\/dashboard$/);
+  // The store's name opens its menu in the top corner.
   await expect(
-    page.getByText(testRestaurant.name, { exact: true }),
+    page.getByRole("button", { name: `${testRestaurant.name}, abrir menu` }),
   ).toBeVisible();
   expect(calls.rpc).toEqual([]);
 });

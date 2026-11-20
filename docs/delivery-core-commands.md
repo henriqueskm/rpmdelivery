@@ -369,3 +369,25 @@ O voltar de qualquer parte do menu leva ao Início. Um convite lido de qualquer 
 - **Lista de entregas legível.** O nome agora é título e o endereço aparece em tamanho de texto normal. A barra que puxa de baixo ficou um pouco mais alta.
 - **"Cheguei na loja" sem espera.** O servidor já registrava na hora. A espera vinha do app: o envio de GPS e os comandos usavam a mesma fila, e com sinal fraco a chegada esperava o GPS. O GPS agora vai por fora dessa fila. Se o token expirar, os pontos esperam o próximo envio, sem renovar nem apagar a sessão por conta própria. O deslize fica no fim com ✓ e "Registrando chegada…" (ou "Confirmando entrega…", "Iniciando a rota…") até a resposta.
 - **Transição entre entregas.** Ao confirmar, a entrega sai para a esquerda, no sentido do dedo, e a próxima entra pela direita, em 0,32 s, com vibração de confirmação. Com "remover animações" ligado no celular, a troca é sem movimento.
+
+## Dados da loja e distância nos deslizes (migration 20261120120000)
+
+**Dados da loja** (`/loja`, link "Dados da loja" no topo do painel). Dono e gerente alteram nome, celular e endereço; o operador só consulta. O endereço só muda para um endereço escolhido na lista, que já vem com o ponto no mapa. Comando: `update_restaurant_profile(restaurant, name, phone, [address, lat, lng, provider, provider_id])`, com recusas `RPM_STORE_MANAGER_REQUIRED`, `RPM_STORE_FIELDS`, `RPM_STORE_PHONE` e `RPM_STORE_ADDRESS`. Antes não havia como trocar o endereço depois do cadastro.
+
+**Distância.** O app manda a posição do celular junto com "entregue" e "cheguei na loja". A posição precisa ser de no máximo 2 minutos atrás e não pode vir de um app de GPS falso. O banco calcula a distância (haversine, sem PostGIS e sem API paga) e compara com 300 m, descontando a precisão do GPS até 100 m. O raio é largo porque o ponto do Mapbox erra algumas casas em Itatiba e o GPS urbano oscila de 10 a 50 m.
+
+- **Entregue a mais de 300 m:** o banco recusa com `RPM_FAR_FROM_ADDRESS <metros>` e nada é aplicado. O app pergunta "Você está longe do endereço". Se o motoboy confirmar, o mesmo pedido de entrega vai de novo com `p_confirm_far`. A tentativa guarda `distance_meters` e `far_from_address`, e o painel mostra "! Entregue a 1,2 km do endereço" na rota, com um resumo no topo de Rotas.
+- **Sem posição do app** (versão antiga, sem permissão ou sem leitura recente): nunca bloqueia. A distância é medida pelo último ponto de GPS da rota (até 2 min). Se der mais de 300 m, a entrega fica marcada para a loja do mesmo jeito.
+- **Pedido sem ponto no mapa** (salvo sem escolher na lista): não há o que comparar.
+- **Cheguei na loja a mais de 300 m:** recusado com `RPM_FAR_FROM_STORE <metros>`. O app mostra a distância. Sem posição, ou com a loja sem ponto no mapa, funciona como antes.
+- Os comandos antigos viraram `private.complete_delivery_core` e `private.arrive_at_store_core`, sem acesso pela API. Os públicos novos aceitam os parâmetros antigos, então o app instalado continua funcionando. `get_operations_board` ganhou `farDeliveries`, das últimas 12 horas.
+- Pontos de GPS falso são descartados também no envio contínuo da rota.
+
+**Menu da loja (painel).** O canto da conta virou o botão "Nome da loja ☰", que abre um menu pela direita. O menu é uma janela nativa: o foco fica dentro, e ele fecha com Esc ou com um toque fora. Itens:
+- Central de despacho
+- Motoboys e convites
+- Pagamentos dos motoboys (a mesma janela de antes)
+- Dados da loja
+- Sair, que pede confirmação
+
+Pendências, Acompanhar rotas e som continuam no topo. Os atalhos "Convites e vínculos" e "Pagamentos" do painel de Motoboys continuam onde estão.

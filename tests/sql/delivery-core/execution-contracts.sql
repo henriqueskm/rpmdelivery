@@ -396,8 +396,8 @@ reset role;
 -- Privileges
 -- ---------------------------------------------------------
 select core_test.check('anon cannot execute execution commands', not exists (
- select 1 from (values ('public.start_route(uuid,integer)'),('public.complete_delivery(uuid,uuid,uuid)'),
-  ('public.report_delivery_failure(uuid,uuid,uuid,text,text)'),('public.arrive_at_store(uuid)'),
+ select 1 from (values ('public.start_route(uuid,integer)'),('public.complete_delivery(uuid,uuid,uuid,double precision,double precision,double precision,boolean)'),
+  ('public.report_delivery_failure(uuid,uuid,uuid,text,text)'),('public.arrive_at_store(uuid,double precision,double precision,double precision)'),
   ('public.record_courier_locations(uuid,jsonb)'),('public.decide_delivery_failure(uuid,uuid,text)'),
   ('public.cancel_delivery_on_route(uuid,uuid)'),('public.requeue_delivery(uuid,uuid)')) f(sig)
  where has_function_privilege('anon',f.sig,'EXECUTE') or not has_function_privilege('authenticated',f.sig,'EXECUTE')));
