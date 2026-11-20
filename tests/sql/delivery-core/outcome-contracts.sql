@@ -7,6 +7,10 @@ create function core_test.outcome(p_route uuid, p_delivery uuid) returns text la
  where (o->>'routeId')::uuid=p_route and (o->>'deliveryId')::uuid=p_delivery
 $$;
 
+-- Each file runs in its own session on PostgreSQL 17: re-derive what distance-contracts.sql left.
+select set_config('core.shift_f',(select id::text from public.courier_shifts
+ where courier_id=core_test.id(221) and status not in ('ENDED','REJECTED')),false);
+
 select set_config('core.g'||n,core_test.as_actor(19,format(
  $s$select public.create_order(p_restaurant_id=>core_test.id(103),p_request_id=>core_test.id(%s),
    p_customer_name=>'Volta %s',p_customer_phone=>'1194444000%s',p_delivery_address=>'Rua G%s')$s$,
