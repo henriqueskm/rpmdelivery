@@ -15,9 +15,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -60,18 +64,31 @@ fun SwipeToConfirm(
     track: Color,
     thumb: Color,
     text: Color,
+    /** What the track says while the server answers, e.g. "Registrando chegada…". */
+    busyLabel: String = "Enviando…",
     onConfirm: () -> Unit,
 ) {
     val haptics = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     val offset = remember { Animatable(0f) }
     var trackWidth by remember { mutableIntStateOf(0) }
+    // Confirmed: the thumb stays at the end with a ✓ until the answer comes, so the swipe never looks ignored.
+    var confirmed by remember { mutableStateOf(false) }
     val thumbSize = 56.dp
     val inset = 4.dp
     val thumbPx = with(LocalDensity.current) { (thumbSize + inset * 2).toPx() }
     val travel = (trackWidth - thumbPx).coerceAtLeast(0f)
     val shape = RoundedCornerShape(16.dp)
-    val shown = if (busy) "Enviando…" else label
+    val shown = if (busy || confirmed) busyLabel else label
+    // The command ran (or was refused) and this control is still on screen: back to the start.
+    // The short wait lets "busy" arrive first; an answer that moves the screen on never shows the return.
+    LaunchedEffect(confirmed, busy) {
+        if (confirmed && !busy) {
+            delay(400)
+            confirmed = false
+            offset.animateTo(0f)
+        }
+    }
     Box(
         Modifier
             .fillMaxWidth()
@@ -81,27 +98,35 @@ fun SwipeToConfirm(
             .onSizeChanged { trackWidth = it.width }
             .semantics(mergeDescendants = true) {
                 role = Role.Button
-                if (busy) disabled()
-                onClick(label = label) { if (!busy) onConfirm(); !busy }
+                if (busy || confirmed) disabled()
+                onClick(label = label) { val ready = !busy && !confirmed; if (ready) onConfirm(); ready }
             }
             .draggable(
                 orientation = Orientation.Horizontal,
-                enabled = !busy && travel > 0f,
+                enabled = !busy && !confirmed && travel > 0f,
                 state = rememberDraggableState { delta ->
                     scope.launch { offset.snapTo((offset.value + delta).coerceIn(0f, travel)) }
                 },
                 onDragStopped = {
                     if (travel > 0f && offset.value >= travel * CONFIRM_AT) {
                         offset.animateTo(travel)
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                        confirmed = true
                         onConfirm()
-                    }
-                    // Back to the start either way: the screen moves on, or an error shows above.
-                    offset.animateTo(0f)
+                    } else offset.animateTo(0f)
                 },
             ),
         contentAlignment = Alignment.CenterStart,
     ) {
+        // The part already swiped fills with the thumb's color: progress you can see at a glance.
+        Box(
+            Modifier
+                .padding(vertical = inset)
+                .width(with(LocalDensity.current) { (offset.value + thumbPx).toDp() })
+                .heightIn(min = thumbSize)
+                .clip(shape)
+                .background(thumb.copy(alpha = 0.18f)),
+        )
         Text(
             shown,
             color = text,
@@ -116,10 +141,11 @@ fun SwipeToConfirm(
                 .padding(inset)
                 .size(thumbSize)
                 .clip(RoundedCornerShape(12.dp))
-                .background(if (busy) thumb.copy(alpha = 0.5f) else thumb),
+                .background(if (busy && !confirmed) thumb.copy(alpha = 0.5f) else thumb),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(painterResource(R.drawable.swipe_arrow), contentDescription = null, tint = MaterialTheme.colorScheme.surface,
+            if (confirmed) Text("✓", color = MaterialTheme.colorScheme.surface, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            else Icon(painterResource(R.drawable.swipe_arrow), contentDescription = null, tint = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.size(24.dp))
         }
     }

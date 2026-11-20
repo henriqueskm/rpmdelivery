@@ -11,6 +11,7 @@ import com.rpmdelivery.courier.auth.CourierAuthViewModel
 import com.rpmdelivery.courier.ui.CourierApp
 import com.rpmdelivery.courier.ui.theme.CourierTheme
 import com.rpmdelivery.courier.work.InviteLink
+import com.rpmdelivery.courier.shift.RouteBubble
 
 class MainActivity : ComponentActivity() {
     private val auth by lazy { ViewModelProvider(this)[CourierAuthViewModel::class.java] }
@@ -40,11 +41,14 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         if (auth.controller.state.value.authenticated) auth.controller.reload()
+        RouteBubble.setAppVisible(this, true)
         // The route screen reads only while the app is visible: no background work in this version.
         auth.work.setForeground(true)
     }
     override fun onStop() {
         auth.work.setForeground(false)
+        // Out of the app during a route (the maps app, mostly): the bubble brings it back in one tap.
+        RouteBubble.setAppVisible(this, false)
         super.onStop()
     }
 }

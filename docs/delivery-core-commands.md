@@ -360,3 +360,12 @@ O topo do app tem ☰ à esquerda e, com turno aberto, a pílula de ganhos no ce
 - **Sair:** pede confirmação. Com turno aberto, avisa que o turno continua na loja.
 
 O voltar de qualquer parte do menu leva ao Início. Um convite lido de qualquer lugar abre no Início. Sem migration.
+
+## Ajustes do primeiro teste no celular do motoboy (2026-11-20)
+
+- **Navegação pelo endereço escrito.** "Abrir navegação" mandava só as coordenadas do Mapbox (`geo:lat,lng`). O Google Maps marcava o ponto e escrevia embaixo o endereço que *ele* acha que fica ali, muitas vezes outra rua ou outro número, porque em Itatiba o ponto do Mapbox é aproximado. Agora vai o texto: rua e número, bairro, cidade e CEP, e o Maps ou o Waze acha a casa com os dados deles. As coordenadas continuam no nosso mapa do cliente e só entram na navegação quando não há texto.
+- **Bateria.** O texto agora diz "Uso de bateria · restrito / sem restrição". O antigo "Economia de bateria · desligado" parecia bom e não era. "Ativar" abre a janela do Android que libera só este app (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`), em vez da lista de todos os apps. Antes de publicar na Play Store, rever a política dessa permissão.
+- **Botão sobre o mapa.** É opcional e fica em Avisos e permissões, usando a permissão "sobrepor outros apps". Em rota, com o app em segundo plano, aparece um botão redondo com o símbolo sobre os outros apps; ele pode ser arrastado, e um toque volta para o app. Some ao voltar para o app, no fim da rota ou ao sair da conta. Não mostra dados de cliente.
+- **Lista de entregas legível.** O nome agora é título e o endereço aparece em tamanho de texto normal. A barra que puxa de baixo ficou um pouco mais alta.
+- **"Cheguei na loja" sem espera.** O servidor já registrava na hora. A espera vinha do app: o envio de GPS e os comandos usavam a mesma fila, e com sinal fraco a chegada esperava o GPS. O GPS agora vai por fora dessa fila. Se o token expirar, os pontos esperam o próximo envio, sem renovar nem apagar a sessão por conta própria. O deslize fica no fim com ✓ e "Registrando chegada…" (ou "Confirmando entrega…", "Iniciando a rota…") até a resposta.
+- **Transição entre entregas.** Ao confirmar, a entrega sai para a esquerda, no sentido do dedo, e a próxima entra pela direita, em 0,32 s, com vibração de confirmação. Com "remover animações" ligado no celular, a troca é sem movimento.

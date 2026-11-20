@@ -119,7 +119,10 @@ class SupabaseCourierWork(
     }
     override suspend fun recordLocations(routeId: String, points: List<GpsPoint>) {
         require(points.size in 1..100)
-        rpc("record_courier_locations", buildJsonObject {
+        // Outside the command gate: on a weak signal a GPS batch can take seconds, and "delivered" or
+        // "back at the store" must never wait behind it. No refresh here either: a 401 just leaves the
+        // points in the buffer for the next tick, after the app's own commands renew the session.
+        background("record_courier_locations", buildJsonObject {
             put("p_route_id", routeId)
             put("p_points", buildJsonArray {
                 points.forEach { point ->
@@ -180,6 +183,18 @@ class SupabaseCourierWork(
             catch (retry: Exception) { throw translate(retry) }
         } catch (error: Exception) { throw translate(error) }
     }
+
+    /** Background traffic (GPS): never takes the gate, never renews or clears the session. */
+    private suspend fun background(name: String, args: JsonObject): JsonElement = try {
+        call(name, args)
+    } catch (error: CancellationException) { throw error }
+    catch (error: WorkProblem) { throw error }
+    catch (error: RestException) {
+        if (error.statusCode == 401) throw WorkProblem.network()
+        throw WorkProblem.refused(RPM_CODE.find(error.message.orEmpty())?.value)
+    } catch (_: IOException) { throw WorkProblem.network() }
+    catch (_: HttpRequestTimeoutException) { throw WorkProblem.network() }
+    catch (_: Exception) { throw WorkProblem(WorkCopy.GENERIC) }
 
     private suspend fun call(name: String, args: JsonObject): JsonElement {
         client.auth.awaitInitialization()

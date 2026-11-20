@@ -95,6 +95,8 @@ class ShiftService : Service() {
         if (home.shift == null) { send(); finish(); return }
 
         val route = home.route?.takeIf { it.status == "ON_ROUTE" || it.status == "RETURNING" }
+        // The app may be in the background (maps app open): the service keeps the bubble in step.
+        RouteBubble.setRoute(this, route != null)
         if (route != null && trackingRoute != route.routeId) startTracking(route.routeId)
         if (route == null && trackingRoute != null) { send(); stopTracking() }
         send()
@@ -178,6 +180,7 @@ class ShiftService : Service() {
     }
 
     override fun onDestroy() {
+        RouteBubble.setRoute(this, false)
         if (trackingRoute != null) (getSystemService(Context.LOCATION_SERVICE) as LocationManager).removeUpdates(listener)
         scope.cancel()
         super.onDestroy()

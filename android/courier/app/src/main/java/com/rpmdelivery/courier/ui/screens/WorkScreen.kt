@@ -1,6 +1,16 @@
 package com.rpmdelivery.courier.ui.screens
 
 import android.Manifest
+import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -43,6 +53,7 @@ import com.rpmdelivery.courier.work.reais
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.rpmdelivery.courier.shift.ShiftService
+import com.rpmdelivery.courier.shift.RouteBubble
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -132,6 +143,9 @@ fun WorkScreen(work: WorkController, registration: CourierRegistration = Courier
     LaunchedEffect(shiftOpen, state.home != null) {
         if (shiftOpen) ShiftService.start(context) else if (state.home != null) ShiftService.stop(context)
     }
+    // On the street (route started or heading back) the bubble over the maps app may show.
+    val onStreet = state.home?.route?.status.let { it == "ON_ROUTE" || it == "RETURNING" }
+    LaunchedEffect(onStreet, state.home != null) { if (state.home != null) RouteBubble.setRoute(context, onStreet) }
 
     // Permissions are asked at the moment they make sense; a refusal never blocks the work.
     var locationOn by remember { mutableStateOf(hasLocation(context)) }
@@ -233,7 +247,7 @@ private fun RouteSheetScreen(state: WorkState, route: CourierRoute, actions: Wor
         BottomSheetScaffold(
             scaffoldState = sheet,
             // Closed it shows the handle and the title line only, never half a stop.
-            sheetPeekHeight = 74.dp,
+            sheetPeekHeight = 82.dp,
             sheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
             sheetContainerColor = MaterialTheme.colorScheme.surface,
             sheetShadowElevation = 10.dp,
@@ -249,9 +263,9 @@ private fun RouteSheetScreen(state: WorkState, route: CourierRoute, actions: Wor
                             scope.launch { if (open) sheet.bottomSheetState.partialExpand() else sheet.bottomSheetState.expand() }
                         }, verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text("Entregas da rota", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
+                            Text("Entregas da rota", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.semantics { heading() })
-                            Text("${entregues(route.delivered)} de ${route.stops.size}", style = MaterialTheme.typography.bodySmall,
+                            Text("${entregues(route.delivered)} de ${route.stops.size}", style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Text(if (open) "▾" else "▴", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -315,6 +329,18 @@ private fun EarningsPill(today: Today, onOpen: () -> Unit) {
     }
 }
 
+/**
+ * Asks Android, in its own small dialog, to let the app run without battery restriction: the shift's
+ * alerts (next in line, route released) must ring with the screen off. Falls back to the app's settings page.
+ */
+@SuppressLint("BatteryLife") // Core function: a courier waiting in line must get the alert while the phone sleeps.
+fun askBatteryExemption(context: Context) {
+    val direct = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, "package:${context.packageName}".toUri())
+    val details = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:${context.packageName}".toUri())
+    try { context.startActivity(direct) }
+    catch (_: ActivityNotFoundException) { try { context.startActivity(details) } catch (_: ActivityNotFoundException) { } }
+}
+
 fun hasLocation(context: Context): Boolean =
     ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
         ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -347,10 +373,26 @@ class InviteActions(
     val retry: () -> Unit = {},
 )
 
-/** geo: URI for a place: exact coordinates when known, otherwise the written address. */
-fun mapQuery(latitude: Double?, longitude: Double?, address: String): String =
-    if (latitude != null && longitude != null) "geo:$latitude,$longitude?q=$latitude,$longitude"
-    else "geo:0,0?q=${Uri.encode(address)}"
+/**
+ * geo: URI for a place, by its written address first: the maps app finds the house with its own data.
+ * Our coordinates come from Mapbox and are approximate in Brazil (a few houses off, sometimes the corner),
+ * and a bare coordinate makes Google label the pin with whatever address it thinks is there.
+ * The coordinates are only used when there is no address to search.
+ */
+fun mapQuery(latitude: Double?, longitude: Double?, address: String): String = when {
+    address.isNotBlank() -> "geo:0,0?q=${Uri.encode(address.trim())}"
+    latitude != null && longitude != null -> "geo:$latitude,$longitude?q=$latitude,$longitude"
+    else -> "geo:0,0"
+}
+
+/** What to search for a stop: street and number, then bairro, then the rest (city, CEP) as the provider wrote it. */
+fun stopSearch(address: String, neighborhood: String?): String {
+    val bairro = neighborhood?.trim().orEmpty()
+    if (bairro.isEmpty() || address.contains(bairro, ignoreCase = true)) return address.trim()
+    val comma = address.indexOf(',')
+    return if (comma < 0) "${address.trim()}, $bairro"
+    else "${address.substring(0, comma).trim()}, $bairro, ${address.substring(comma + 1).trim()}"
+}
 
 @Composable
 fun WorkContent(state: WorkState, actions: WorkActions) {
@@ -602,7 +644,7 @@ private fun ShiftContent(shift: Shift, busy: Boolean, actions: WorkActions) {
  * is off has a button that fixes it on the spot; it reads again when the courier comes back.
  */
 @Composable
-private fun ReadyChecks() {
+private fun ReadyChecks(withBubble: Boolean = false) {
     val context = LocalContext.current
     var checks by remember { mutableIntStateOf(0) }
     LifecycleResumeEffect(Unit) { checks++; onPauseOrDispose { } }
@@ -625,16 +667,23 @@ private fun ReadyChecks() {
         CheckRow("Localização", "Só durante a rota, para o cliente ver você chegando.", locationOn) {
             askLocation.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
         }
-        CheckRow("Economia de bateria", "Sem restrição, o aviso chega com a tela apagada.", batteryFree) {
-            open(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
-        }
+        CheckRow("Uso de bateria", "Sem restrição, o aviso chega com a tela apagada.", batteryFree,
+            on = "sem restrição", off = "restrito") { askBatteryExemption(context) }
         if (notificationsOn && locationOn && batteryFree)
             Text("Tudo certo: você recebe os avisos com a tela apagada.", style = MaterialTheme.typography.bodyMedium, color = Green)
+        // Optional, so only in Avisos e permissões: the queue shows what the alerts need, nothing more.
+        if (withBubble) {
+            val bubbleOn = remember(checks) { RouteBubble.allowed(context) }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            CheckRow("Botão sobre o mapa", "Opcional. Na rota, um botão redondo fica sobre o Maps e volta para o app com um toque.", bubbleOn) {
+                open(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:${context.packageName}".toUri()))
+            }
+        }
     }
 }
 
 @Composable
-private fun CheckRow(title: String, why: String, ok: Boolean, fix: () -> Unit) {
+private fun CheckRow(title: String, why: String, ok: Boolean, on: String = "ligado", off: String = "desligado", fix: () -> Unit) {
     Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) { }, verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Surface(shape = CircleShape, color = if (ok) SoftGreen else SoftCoral, contentColor = if (ok) Green else Coral,
@@ -642,7 +691,7 @@ private fun CheckRow(title: String, why: String, ok: Boolean, fix: () -> Unit) {
             Box(contentAlignment = Alignment.Center) { Text(if (ok) "✓" else "!", fontWeight = FontWeight.Bold) }
         }
         Column(Modifier.weight(1f)) {
-            Text("$title · ${if (ok) "ligado" else "desligado"}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+            Text("$title · ${if (ok) on else off}", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
             Text(why, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (!ok) TextButton(onClick = fix, modifier = Modifier.heightIn(min = 48.dp)) { Text("Ativar") }
@@ -713,7 +762,7 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
                 Heading("Rota em preparação", "$storeName · ${entregas(total)}", if (route.pickupReleased) "Liberada" else null)
                 if (route.pickupReleased) {
                     Banner("Retirada liberada. Pegue os pedidos e inicie a rota.", SoftGreen, Green)
-                    SwipeToConfirm("Deslize para iniciar a rota", busy, SoftCoral, Coral, Coral) { actions.startRoute(route) }
+                    SwipeToConfirm("Deslize para iniciar a rota", busy, SoftCoral, Coral, Coral, busyLabel = "Iniciando a rota…") { actions.startRoute(route) }
                 } else {
                     Text("A loja está separando os pedidos. Aguarde a liberação da retirada.", style = MaterialTheme.typography.bodyLarge)
                 }
@@ -729,33 +778,45 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
                         actions.navigate(mapQuery(route.store.latitude, route.store.longitude, address))
                     }
                 }
-                SwipeToConfirm("Deslize quando chegar na loja", busy, SoftCoral, Coral, Coral) { actions.arrive(route) }
+                SwipeToConfirm("Deslize quando chegar na loja", busy, SoftCoral, Coral, Coral, busyLabel = "Registrando chegada…") { actions.arrive(route) }
             }
             else -> {
-                val next = route.next
                 Heading("Minha rota", "Entrega ${minOf(route.settled + 1, total)} de $total", "Em rota")
                 LocationOff(actions)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                if (next == null) {
-                    Text("Aguardando a loja decidir as ocorrências. A tela se atualiza sozinha.", style = MaterialTheme.typography.bodyLarge)
-                } else if (failing) {
-                    NextStop(next)
-                    FailureForm(busy, onBack = { failing = false },
-                        onSend = { reason, notes -> failing = false; actions.fail(route, next, reason, notes) })
-                } else {
-                    NextStop(next)
-                    NavigationButton("Abrir navegação", "Google Maps, Waze ou o aplicativo de mapas instalado") {
-                        actions.navigate(mapQuery(next.latitude, next.longitude, listOfNotNull(next.address, next.neighborhood).joinToString(", ")))
-                    }
-                    // The swipe is the confirmation: no extra dialog between the courier and the next stop.
-                    SwipeToConfirm("Deslize para confirmar a entrega", busy, SoftGreen, Green, Green) { actions.complete(route, next) }
-                    // A quiet link, set apart from the swipe: the exception never competes with "delivered".
-                    // A stray tap only opens the reason form, which still needs "Enviar para a loja".
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                    TextButton(onClick = { failing = true }, enabled = !busy,
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
-                        modifier = Modifier.heightIn(min = 48.dp)) {
-                        Text("Não consegui entregar", style = MaterialTheme.typography.bodyMedium)
+                // Delivered (or reported): the stop leaves to the left, the way the thumb went, and the
+                // next one comes in from the right. The leaving stop keeps its ✓ swipe while it goes.
+                val motion = rememberMotion()
+                AnimatedContent(targetState = route.next, contentKey = { it?.deliveryId }, label = "next-stop",
+                    transitionSpec = {
+                        if (!motion) EnterTransition.None togetherWith ExitTransition.None
+                        else (slideInHorizontally(tween(320)) { it } + fadeIn(tween(320))) togetherWith
+                            (slideOutHorizontally(tween(320)) { -it } + fadeOut(tween(220)))
+                    }) { next ->
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        if (next == null) {
+                            Text("Aguardando a loja decidir as ocorrências. A tela se atualiza sozinha.", style = MaterialTheme.typography.bodyLarge)
+                        } else if (failing) {
+                            NextStop(next)
+                            FailureForm(busy, onBack = { failing = false },
+                                onSend = { reason, notes -> failing = false; actions.fail(route, next, reason, notes) })
+                        } else {
+                            NextStop(next)
+                            NavigationButton("Abrir navegação", "Google Maps, Waze ou o aplicativo de mapas instalado") {
+                                actions.navigate(mapQuery(next.latitude, next.longitude, stopSearch(next.address, next.neighborhood)))
+                            }
+                            // The swipe is the confirmation: no extra dialog between the courier and the next stop.
+                            SwipeToConfirm("Deslize para confirmar a entrega", busy, SoftGreen, Green, Green,
+                                busyLabel = "Confirmando entrega…") { actions.complete(route, next) }
+                            // A quiet link, set apart from the swipe: the exception never competes with "delivered".
+                            // A stray tap only opens the reason form, which still needs "Enviar para a loja".
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            TextButton(onClick = { failing = true }, enabled = !busy,
+                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                                modifier = Modifier.heightIn(min = 48.dp)) {
+                                Text("Não consegui entregar", style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
                     }
                 }
             }
@@ -767,6 +828,15 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
                 TextButton(onClick = { actions.dial(phone) }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Ligar para a loja") }
             }
         }
+    }
+}
+
+/** False when the phone's "remove animations" setting is on: screens then change without movement. */
+@Composable
+private fun rememberMotion(): Boolean {
+    val context = LocalContext.current
+    return remember {
+        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
     }
 }
 
@@ -811,7 +881,7 @@ private fun NextStop(stop: Stop) {
 private fun StopList(route: CourierRoute) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Text("Entregas da rota", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold,
+        Text("Entregas da rota", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
             modifier = Modifier.semantics { heading() })
         StopRows(route)
     }
@@ -819,15 +889,16 @@ private fun StopList(route: CourierRoute) {
 
 @Composable
 private fun StopRows(route: CourierRoute) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    // Read at arm's length, often in the sun: the address is body size, not fine print.
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         route.stops.forEach { stop ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column(Modifier.weight(1f)) {
-                    Text(stop.customerName, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                    Text(listOfNotNull(stop.address, stop.neighborhood).joinToString(" · "), style = MaterialTheme.typography.bodySmall,
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(stop.customerName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(listOfNotNull(stop.address, stop.neighborhood).joinToString(" · "), style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Text(stopLabel(stop), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold,
+                Text(stopLabel(stop), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold,
                     color = if (stop.status == "NEXT") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
@@ -932,7 +1003,7 @@ private fun ProfileContent(registration: CourierRegistration, onBack: () -> Unit
 @Composable
 private fun AlertsContent(onBack: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        ReadyChecks()
+        ReadyChecks(withBubble = true)
         Text("Os avisos chegam quando a loja aprova seu turno, quando você é o próximo da fila e quando a rota é liberada. A localização só é usada durante a rota.",
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Secondary("Voltar ao início", false, onBack)

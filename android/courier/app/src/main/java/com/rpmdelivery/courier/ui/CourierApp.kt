@@ -49,6 +49,7 @@ import com.rpmdelivery.courier.ui.screens.RouteScreen
 import com.rpmdelivery.courier.ui.screens.WelcomeScreen
 import androidx.compose.ui.platform.LocalContext
 import com.rpmdelivery.courier.shift.ShiftService
+import com.rpmdelivery.courier.shift.RouteBubble
 import com.rpmdelivery.courier.ui.screens.WorkShell
 import com.rpmdelivery.courier.work.WorkController
 
@@ -62,6 +63,7 @@ fun CourierApp(controller: AuthController, work: WorkController? = null) {
             work.clear()
             // Signed out or expired: no more alerts or GPS from this phone.
             ShiftService.stop(context)
+            RouteBubble.setRoute(context, false)
         }
     }
     var previewMessage by remember { mutableStateOf(false) }
