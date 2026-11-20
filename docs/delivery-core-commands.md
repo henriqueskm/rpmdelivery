@@ -400,3 +400,15 @@ Pendências, Acompanhar rotas e som continuam no topo. Os atalhos "Convites e v�
 - **Status por rota:** `get_operations_board` ganhou `routeOutcomes`, que diz o que aconteceu com cada pedido em cada rota (`DELIVERED`, `RETURNED`, `CANCELLED`). Antes, um pedido devolvido na R-1 e entregue na R-2 aparecia como "Entregue" nas duas. Um pedido conta como devolvido numa rota quando ela terminou sem entregá-lo, quando ele voltou para a fila ou quando outra rota em andamento o levou. A regra não compara horários.
 - **Motoboys com cor:** cada status vira uma etiqueta colorida, e a linha do motoboy ganha uma faixa da mesma cor à esquerda. Disponível é verde, Reservado âmbar, Em rota azul, Retornando roxo e Turno pendente laranja. O texto continua escrito, então a cor nunca é o único sinal.
 - **Botões do topo:** no computador, "+ Novo pedido" fica na barra do topo, ao lado de "Central de despacho", que encurta se faltar espaço. Na demonstração, "Montagem automática" fica no cabeçalho da Montagem. No celular, os dois ficam acima das abas.
+
+## Acompanhar rotas, Motoboys compacto e bairro ao trocar o endereço
+
+- **Acompanhar rotas** (botão no topo): abre uma tela por cima do painel com cada rota na rua (em rota ou voltando). Cada card mostra o motoboy, há quanto tempo saiu (`startedAt`, que o quadro já enviava), "N de M entregues" com uma barra de progresso e os pedidos em ordem:
+  - ✓ entregue, com o aviso de distância quando for o caso;
+  - ● próxima, com o prazo;
+  - ○ ainda na rota;
+  - ! ocorrência, com o botão "Decidir", que fecha a tela e abre a Central.
+
+  Embaixo vem a lista das rotas aguardando retirada. Esta tela não tem mapa nem migration. O horário exato de cada entrega e o mini mapa ficam para depois.
+- **Motoboys compacto:** uma linha por motoboy, com posição na fila (1º, 2º…), nome e a etiqueta colorida do status. A cor fica só na etiqueta. "Aprovar/Recusar" aparece numa segunda linha só para turno pendente. Cabem uns 15 motoboys sem rolar.
+- **Bairro:** o bairro preenchido pela busca acompanha o endereço. Muda quando o endereço muda e fica vazio quando o novo endereço não tem bairro encontrado. Antes, ficava o bairro da rua anterior. Um bairro digitado pela loja nunca é sobrescrito.

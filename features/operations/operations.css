@@ -1462,17 +1462,19 @@
   .ops-panel-actions { display: none; }
 }
 .ops-route-card .ops-route-hint { margin: 6px 0 10px; }
-/* Courier status at a glance: a colored pill and a stripe of the same color on the row. */
-.ops-courier { border-left: 4px solid transparent; }
-.ops-courier[data-status="available"] { border-left-color: #2f8a57; }
-.ops-courier[data-status="reserved"] { border-left-color: #d29a2f; }
-.ops-courier[data-status="on-route"] { border-left-color: #3a6fb5; }
-.ops-courier[data-status="returning"] { border-left-color: #7a5bb0; }
-.ops-courier[data-status="pending"] { border-left-color: #d0582f; }
+/* Compact courier list: one line each; only the status pill carries color. */
+.operations .ops-courier { display: block; padding: 6px 6px; margin: 0 8px; }
+.operations .ops-courier.is-next { padding: 6px 6px; margin-top: 2px; }
+.ops-courier-line { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 30px; }
+.ops-courier-line .ops-queue-number { flex: 0 0 22px; font-size: 11px; font-weight: 650; color: #647068; }
+.ops-courier-line strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
+.ops-courier-line .ops-next { margin: 0; flex-shrink: 0; }
+.ops-courier-line .ops-courier-status { display: inline; margin: 0; flex-shrink: 0; }
+.ops-courier .ops-shift-review { display: flex; gap: 6px; margin: 4px 0 2px 30px; }
 .ops-courier-status { color: #536258; }
 .ops-courier-pill {
   display: inline-block;
-  margin-top: 3px;
+  white-space: nowrap;
   padding: 2px 8px;
   border-radius: 999px;
   font-size: 12px;
@@ -1503,3 +1505,35 @@
   .ops-alert-toolbar { flex-shrink: 0; flex-wrap: nowrap; }
   .ops-header { gap: 20px; }
 }
+
+/* "Acompanhar rotas": routes on the street, one card each, stops in order. */
+.ops-tracker { width: min(1180px, calc(100% - 24px)); }
+.ops-tracker-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.ops-tracker-head h2 { margin: 0; font-size: 20px; font-weight: 700; }
+.ops-tracker-head p { margin: 2px 0 0; color: #647068; font-size: 13px; }
+.ops-tracker-close { min-width: 44px; min-height: 44px; font-size: 24px !important; line-height: 1; }
+.ops-tracker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.ops-tracker-route { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; }
+.ops-tracker-route-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
+.ops-tracker-route h3 { margin: 8px 0 2px; font-size: 16px; overflow-wrap: anywhere; }
+.ops-tracker-meta { margin: 0 0 8px; color: #536258; font-size: 12px; }
+.ops-tracker-progress { height: 6px; border-radius: 999px; background: #e9ede5; overflow: hidden; }
+.ops-tracker-progress > span { display: block; height: 100%; background: #2f8a57; }
+.ops-tracker-returning { margin: 8px 0 0; color: #573d88; font-size: 12px; font-weight: 650; }
+.ops-tracker-stops { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 2px; }
+.ops-tracker-stop { display: flex; gap: 10px; padding: 8px 6px; border-radius: 8px; }
+.ops-tracker-stop.is-next { background: #eef6f0; }
+.ops-tracker-stop.is-failed { background: #fff3ee; }
+.ops-tracker-stop.is-settled { color: #647068; }
+.ops-tracker-mark { flex: 0 0 18px; text-align: center; font-weight: 700; line-height: 20px; }
+.ops-tracker-stop.is-next .ops-tracker-mark { color: #1d6640; }
+.ops-tracker-stop.is-failed .ops-tracker-mark { color: #a3381e; }
+.ops-tracker-stop-body { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.ops-tracker-stop-line { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
+.ops-tracker-stop-line strong { font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ops-tracker-stop-state { flex-shrink: 0; font-size: 12px; font-weight: 650; }
+.ops-tracker-stop.is-next .ops-tracker-stop-state { color: #1d6640; }
+.ops-tracker-stop.is-failed .ops-tracker-stop-state { color: #a3381e; }
+.ops-tracker-customer { font-size: 12px; color: #536258; overflow-wrap: anywhere; }
+.operations .ops-tracker-decide { justify-self: start; margin-top: 4px; min-height: 40px; font-size: 12px; }
+.ops-tracker-waiting { margin: 14px 0 0; color: #647068; font-size: 12px; }

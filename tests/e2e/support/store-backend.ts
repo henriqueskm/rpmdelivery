@@ -35,7 +35,7 @@ export function storeBackend() {
       { shiftId: "s-carla", name: "Carla Dias", status: "PENDING", linkActive: true, requestedAt: minutesAgo(2), availableSince: null as string | null },
     ],
     routes: [
-      { id: "r-7", reference: "R-7", shiftId: "s-ana", status: "ON_ROUTE", compositionVersion: 1,
+      { id: "r-7", reference: "R-7", shiftId: "s-ana", status: "ON_ROUTE", compositionVersion: 1, startedAt: minutesAgo(18),
         pickupReleasedAt: minutesAgo(30), deliveryIds: ["d-1050", "d-1051"], retryDeliveryIds: [] as string[] },
       { id: "r-6", reference: "R-6", shiftId: "s-dani", status: "PREPARING", compositionVersion: 2,
         pickupReleasedAt: null as string | null, deliveryIds: ["d-1047"], retryDeliveryIds: [] as string[] },

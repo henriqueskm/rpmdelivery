@@ -18,6 +18,8 @@ type BoardCourier = {
 type BoardRoute = {
   id: string; reference: string; shiftId: string; status: RouteStatus; compositionVersion: number;
   pickupReleasedAt: string | null; deliveryIds: string[]; retryDeliveryIds: string[];
+  /** Sent since the board's first version; optional so an odd answer never breaks the panel. */
+  startedAt?: string | null;
 };
 type BoardIssue = {
   id: string; deliveryId: string; routeId: string; attempt: number; reason: IssueReason;
@@ -165,6 +167,7 @@ export function boardToState(board: Board, { now, receivedAt = now, alertReceipt
     status: route.status,
     pickupReleasedAt: route.pickupReleasedAt ? ms(route.pickupReleasedAt) : null,
     retryOrderIds: route.retryDeliveryIds,
+    ...(route.startedAt && isTime(route.startedAt) ? { startedAt: ms(route.startedAt) } : {}),
   }));
 
   const issues: DemoIssue[] = board.issues.map(issue => {

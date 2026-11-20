@@ -51,43 +51,29 @@ export function CouriersPanel({ state, managementHref, onReviewShift, pending, p
             const position = available.findIndex((a) => a.id === c.id);
             const label = courierLabel(state, c);
             return (
+              // One line per courier, so 15 of them fit without much scrolling: queue position, name and
+              // the status pill (the only colored part). Approving a shift adds a second line.
               <div
                 className={`ops-courier ${position === 0 ? "is-next" : ""}`}
-                data-status={statusKey[label]}
                 key={c.id}
               >
-                <span className="ops-avatar" aria-hidden="true">
-                  {c.initials}
-                </span>
-                <div>
-                  <strong dir="auto">{c.name}</strong>
-                  <span
-                    className={`ops-courier-status status-${statusKey[label]}`}
-                  >
-                    <span className="ops-courier-pill">{label}</span>
-                    {position >= 0 && <span className="ops-courier-wait"> · {c.availableMinutes} min</span>}
+                <div className="ops-courier-line">
+                  <span className="ops-queue-number" aria-label={position >= 0 ? `Posição ${position + 1}` : undefined}>
+                    {position >= 0 ? `${position + 1}º` : ""}
                   </span>
-                  {position === 0 && (
-                    <span className="ops-next">Próximo da fila</span>
-                  )}
-                  {label === "Turno pendente" && (
-                    <small>Aguardando aprovação da loja</small>
-                  )}
-                  {label === "Turno pendente" && onReviewShift && (
-                    <span className="ops-shift-review">
-                      <button className="ops-primary" disabled={pending} onClick={() => onReviewShift(c.id, true)}
-                        aria-label={`Aprovar turno de ${c.name}`}>Aprovar</button>
-                      <button disabled={pending} onClick={() => onReviewShift(c.id, false)}
-                        aria-label={`Recusar turno de ${c.name}`}>Recusar</button>
-                    </span>
-                  )}
+                  <strong dir="auto" title={c.name}>{c.name}</strong>
+                  {/* "1º" and the highlighted row already say it; the word stays for screen readers. */}
+                  {position === 0 && <span className="ops-visually-hidden">Próximo da fila</span>}
+                  <span className={`ops-courier-status status-${statusKey[label]}`}>
+                    <span className="ops-courier-pill">{label}{position >= 0 && ` · ${c.availableMinutes} min`}</span>
+                  </span>
                 </div>
-                {position >= 0 && (
-                  <span
-                    className="ops-queue-number"
-                    aria-label={`Posição ${position + 1}`}
-                  >
-                    {position + 1}
+                {label === "Turno pendente" && onReviewShift && (
+                  <span className="ops-shift-review">
+                    <button className="ops-primary" disabled={pending} onClick={() => onReviewShift(c.id, true)}
+                      aria-label={`Aprovar turno de ${c.name}`}>Aprovar</button>
+                    <button disabled={pending} onClick={() => onReviewShift(c.id, false)}
+                      aria-label={`Recusar turno de ${c.name}`}>Recusar</button>
                   </span>
                 )}
               </div>

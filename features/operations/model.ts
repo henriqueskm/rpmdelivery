@@ -45,6 +45,8 @@ export type DemoRoute = {
   status: RouteStatus;
   pickupReleasedAt: number | null;
   retryOrderIds?: string[];
+  /** Real data: when the courier started the route (the swipe), for "saiu há 18 min". */
+  startedAt?: number;
 };
 export type DemoState = {
   issueTimeoutMinutes: number;

@@ -15,10 +15,11 @@ export async function mockGeocoding(page: Page, options: {
   empty?: boolean; error?: boolean; resolveError?: boolean; slow?: boolean; many?: boolean;
   /** A query without a number lists the street first; picking it asks for the number. */
   street?: boolean;
-  /** Bairro found with the address (Mapbox or CEP lookup). */
-  neighborhood?: string;
+  /** Bairro found with the address (Mapbox or CEP lookup). A list answers each pick in turn ("" = none found). */
+  neighborhood?: string | string[];
 } = {}) {
   const calls: { suggest: string[]; resolve: string[] } = { suggest: [], resolve: [] };
+  const bairro = (n: number) => Array.isArray(options.neighborhood) ? options.neighborhood[n] : options.neighborhood;
   await page.route("**/api/geocoding/*", async (route) => {
     const resolve = route.request().url().endsWith("/resolve");
     const body = route.request().postDataJSON();
@@ -27,7 +28,7 @@ export async function mockGeocoding(page: Page, options: {
     if (options.slow) await new Promise((done) => setTimeout(done, 650));
     await route.fulfill({ status: options.error || (resolve && options.resolveError) ? 502 : 200,
       json: options.error || (resolve && options.resolveError) ? { message: "Falha simulada" }
-        : resolve ? { ...resolvedAddress, ...(options.neighborhood ? { neighborhood: options.neighborhood } : {}) }
+        : resolve ? { ...resolvedAddress, ...(bairro(calls.resolve.length - 1) ? { neighborhood: bairro(calls.resolve.length - 1) } : {}) }
         : options.empty ? []
         : options.street && !/\d/.test(body.query) ? [{
           id: "mapbox_street_id", label: "Rua das Flores", secondaryLabel: "São Paulo, Brasil", kind: "street" }]

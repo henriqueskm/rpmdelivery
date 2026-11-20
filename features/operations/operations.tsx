@@ -21,6 +21,7 @@ import { tabs, useOperationsController, type LiveSource } from "./use-operations
 import { useOperationsBoard } from "./live/use-operations-board";
 import { CourierPay, type CourierPayHandle } from "./live/courier-pay";
 import { StoreMenu } from "./store-menu";
+import { RouteTracker } from "./route-tracker";
 import { ConfirmDialog, type Confirmation } from "./live/confirm-dialog";
 import { useOperationsClock } from "./use-operations-clock";
 import { Icon } from "./ui";
@@ -213,6 +214,8 @@ function OperationsWorkspace({
   }
   function openIssues(){issueDialog.current?.showModal();}
   const payMenu = useRef<CourierPayHandle>(null);
+  /** "Acompanhar rotas": the detailed view of the routes on the street. */
+  const trackerDialog = useRef<HTMLDialogElement>(null);
   const automaticTriggerCompact = useRef<HTMLButtonElement>(null);
   return (
     <main className="operations">
@@ -224,7 +227,7 @@ function OperationsWorkspace({
           <button className="ops-primary ops-new-order" onClick={openNewOrder}>
             <Icon name="plus" /> Novo pedido
           </button></div>
-        <AlertsToolbar count={pending.length} onOpen={openIssues} onFollow={()=>followRoute(pending[0]?.routeId)}
+        <AlertsToolbar count={pending.length} onOpen={openIssues} onFollow={()=>trackerDialog.current?.showModal()}
           enabled={alerts.enabled} activating={alerts.activating} onSound={alerts.toggleSound} message={alerts.message}/>
         <div className="ops-account">
           {/* Real store: everything about the account lives in the side menu, "Sair" included. */}
@@ -422,6 +425,7 @@ function OperationsWorkspace({
         onCommand={courierCommand}
         onCompletedClose={followRoute}
       />}
+      <RouteTracker dialogRef={trackerDialog} state={state} now={now} onIssues={openIssues} />
       <IssueCenter dialogRef={issueDialog} state={state} now={now} onCommand={issueCommand} onFollow={followRoute} live={!!live}/>
     </main>
   );

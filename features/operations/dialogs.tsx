@@ -40,10 +40,13 @@ export function NewOrderDialog({
   function pickAddress(address: ResolvedAddress | null) {
     setGeocode(address);
     const field = neighborhoodRef.current;
-    if (!field || !address?.neighborhood) return;
+    if (!field) return;
+    // A bairro the store typed stays. One the search filled follows the address: a new address
+    // brings its bairro, or clears it when none was found (never the previous street's).
     if (field.value.trim() && field.value !== autoNeighborhood.current) return;
-    field.value = address.neighborhood;
-    autoNeighborhood.current = address.neighborhood;
+    const next = address?.neighborhood ?? "";
+    field.value = next;
+    autoNeighborhood.current = next;
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
