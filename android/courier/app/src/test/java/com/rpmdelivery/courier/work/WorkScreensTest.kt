@@ -154,6 +154,49 @@ class WorkScreensTest {
         node(WorkCopy.forCode("RPM_SHIFT_OPEN_ELSEWHERE")).assertIsDisplayed()
     }
 
+    @Test fun sideMenuOpensEachPartAndSignsOutAfterConfirming() {
+        fake.home = fake.home.copy(stores = listOf(fake.store, Store("r-2", "Pizzaria Sintética", "PENDING")),
+            shift = Shift("shift-1", "r-1", "Cozinha da Vila", "AVAILABLE", 2, "2026-11-14T13:42:00+00:00"))
+        show()
+        fun menu() { compose.onNodeWithContentDescription("Abrir menu").performClick(); compose.waitForIdle() }
+        fun pick(label: String) { compose.onNodeWithText(label).performClick(); compose.waitForIdle() }
+
+        menu()
+        compose.onNodeWithText("Pessoa sintética").assertIsDisplayed()
+        compose.onNodeWithText("Honda CG 160 Fan · ABC1D23").assertIsDisplayed()
+        compose.onNodeWithText("Em turno · Cozinha da Vila").assertIsDisplayed()
+        compose.onNodeWithText("1 aguardando").assertIsDisplayed()
+        captureEvidence(compose, "work-13-menu-390")
+
+        pick("Estabelecimentos")
+        node("Aprovado").assertIsDisplayed()
+        node("Aguardando a loja").assertIsDisplayed()
+        node("Ler convite de outra loja").assertIsDisplayed()
+        captureEvidence(compose, "work-14-stores-390")
+        // Back returns to Início, where the line is.
+        compose.runOnIdle { work.show(Section.Home) }
+        node("Você está na fila").assertIsDisplayed()
+
+        menu(); pick("Meu cadastro")
+        node("(11) 98765-4321").assertIsDisplayed()
+        node("ABC1D23").assertIsDisplayed()
+        menu(); pick("Avisos e permissões")
+        node("Pronto para os avisos").assertIsDisplayed()
+        menu(); pick("Ajuda")
+        node("Pedi turno e nada aconteceu").assertIsDisplayed()
+        node("Voltar ao início").performClick()
+        node("Você está na fila").assertIsDisplayed()
+
+        menu(); pick("Sair")
+        compose.onNodeWithText("Sair da conta?").assertIsDisplayed()
+        compose.onNodeWithText("Seu turno em Cozinha da Vila continua aberto na loja, mas este celular para de receber avisos. Se terminou o dia, encerre o turno antes.")
+            .assertIsDisplayed()
+        assertTrue("nothing happens before confirming", controller.state.value.authenticated)
+        compose.onAllNodesWithText("Sair").filterToOne(hasClickAction() and hasAnyAncestor(isDialog())).performClick()
+        compose.waitForIdle()
+        assertFalse(controller.state.value.authenticated)
+    }
+
     @Test fun courierWithoutStoreTypesTheInviteCodeAndAsksForTheLink() {
         fake.home = fake.home.copy(stores = emptyList())
         show()
@@ -194,12 +237,13 @@ class WorkScreensTest {
     @Test fun earningsButtonStaysInTheCornerAndOpensTheHistory() {
         fake.home = fake.home.copy(today = Today(3, 3000, 2100, 5100))
         show()
-        // Off duty: the top line has the symbol and "Sair", and no earnings to follow.
+        // Off duty: the top line has the menu only, and no earnings to follow. "Sair" lives in the menu.
         val pill = compose.onNodeWithContentDescription("A receber hoje: R$ 51,00, 3 entregas. Abrir histórico")
         pill.assertDoesNotExist()
-        compose.onNodeWithContentDescription("RpmDelivery").assertIsDisplayed()
-        compose.onNodeWithText("Sair").assertIsDisplayed()
-        compose.onNodeWithText("Início").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Abrir menu").assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+        // The closed menu stays composed off screen.
+        compose.onNodeWithText("Sair").assertIsNotDisplayed()
+        compose.onNodeWithText("Início").assertIsNotDisplayed()
         compose.onNodeWithText("RpmDelivery").assertDoesNotExist()
 
         // On shift the earnings sit in the middle of the fixed top line.
