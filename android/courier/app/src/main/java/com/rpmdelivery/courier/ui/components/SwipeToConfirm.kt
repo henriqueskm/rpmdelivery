@@ -1,6 +1,8 @@
 package com.rpmdelivery.courier.ui.components
 
-import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
@@ -19,11 +21,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,11 +47,15 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rpmdelivery.courier.R
-import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-/** How far the thumb must travel, as a share of the track, to confirm. */
-private const val CONFIRM_AT = 0.85f
+/**
+ * How far the thumb must travel, as a share of the track, to confirm. 0.85 made couriers drag to the
+ * phone's edge (first real-phone test); 0.6 still needs a deliberate swipe.
+ */
+private const val CONFIRM_AT = 0.6f
+/** A quick flick confirms from here on: the finger often leaves the glass before the end. */
+private const val FLING_FROM = 0.35f
 
 /**
  * Actions that cannot be undone (start the route, delivered, back at the store) confirm with a swipe
@@ -69,8 +75,10 @@ fun SwipeToConfirm(
     onConfirm: () -> Unit,
 ) {
     val haptics = LocalHapticFeedback.current
-    val scope = rememberCoroutineScope()
-    val offset = remember { Animatable(0f) }
+    val density = LocalDensity.current
+    // The thumb's position, set synchronously on every drag delta so it stays under the finger.
+    // (Launching a coroutine per delta lost movement: each snapTo could cancel the one before.)
+    var offset by remember { mutableFloatStateOf(0f) }
     var trackWidth by remember { mutableIntStateOf(0) }
     // Confirmed: the thumb stays at the end with a ✓ until the answer comes, so the swipe never looks ignored.
     var confirmed by remember { mutableStateOf(false) }
@@ -78,15 +86,22 @@ fun SwipeToConfirm(
     val inset = 4.dp
     val thumbPx = with(LocalDensity.current) { (thumbSize + inset * 2).toPx() }
     val travel = (trackWidth - thumbPx).coerceAtLeast(0f)
+    val flingPx = with(density) { 900.dp.toPx() } // per second
     val shape = RoundedCornerShape(16.dp)
-    val shown = if (busy || confirmed) busyLabel else label
+    // Past the point that confirms: say so, and tick once, so the courier knows to let go.
+    val armed = travel > 0f && offset >= travel * CONFIRM_AT
+    LaunchedEffect(armed) { if (armed && !confirmed) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick) }
+    val shown = when { busy || confirmed -> busyLabel; armed -> "Solte para confirmar"; else -> label }
+    suspend fun settle(target: Float) {
+        animate(offset, target, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { value, _ -> offset = value }
+    }
     // The command ran (or was refused) and this control is still on screen: back to the start.
     // The short wait lets "busy" arrive first; an answer that moves the screen on never shows the return.
     LaunchedEffect(confirmed, busy) {
         if (confirmed && !busy) {
             delay(400)
             confirmed = false
-            offset.animateTo(0f)
+            settle(0f)
         }
     }
     Box(
@@ -104,16 +119,15 @@ fun SwipeToConfirm(
             .draggable(
                 orientation = Orientation.Horizontal,
                 enabled = !busy && !confirmed && travel > 0f,
-                state = rememberDraggableState { delta ->
-                    scope.launch { offset.snapTo((offset.value + delta).coerceIn(0f, travel)) }
-                },
-                onDragStopped = {
-                    if (travel > 0f && offset.value >= travel * CONFIRM_AT) {
-                        offset.animateTo(travel)
+                state = rememberDraggableState { delta -> offset = (offset + delta).coerceIn(0f, travel) },
+                onDragStopped = { velocity ->
+                    val reached = offset >= travel * CONFIRM_AT || (velocity > flingPx && offset >= travel * FLING_FROM)
+                    if (travel > 0f && reached) {
+                        settle(travel)
                         haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                         confirmed = true
                         onConfirm()
-                    } else offset.animateTo(0f)
+                    } else settle(0f)
                 },
             ),
         contentAlignment = Alignment.CenterStart,
@@ -122,7 +136,7 @@ fun SwipeToConfirm(
         Box(
             Modifier
                 .padding(vertical = inset)
-                .width(with(LocalDensity.current) { (offset.value + thumbPx).toDp() })
+                .width(with(density) { (offset + thumbPx).toDp() })
                 .heightIn(min = thumbSize)
                 .clip(shape)
                 .background(thumb.copy(alpha = 0.18f)),
@@ -137,7 +151,7 @@ fun SwipeToConfirm(
         )
         Box(
             Modifier
-                .offset { IntOffset(offset.value.roundToInt(), 0) }
+                .offset { IntOffset(offset.roundToInt(), 0) }
                 .padding(inset)
                 .size(thumbSize)
                 .clip(RoundedCornerShape(12.dp))

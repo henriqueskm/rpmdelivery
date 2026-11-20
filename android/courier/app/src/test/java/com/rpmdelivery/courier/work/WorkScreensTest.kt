@@ -103,7 +103,8 @@ class WorkScreensTest {
         swipe("Deslize para confirmar a entrega", share = 0.5f)
         assertFalse(fake.calls.any { it.startsWith("complete_delivery") })
         node("Entrega 1 de 2").assertIsDisplayed()
-        swipe("Deslize para confirmar a entrega")
+        // Two thirds of the way is enough (it used to take the phone's edge): the thumb follows the finger.
+        swipe("Deslize para confirmar a entrega", share = 0.7f)
         assertTrue(fake.calls.contains("complete_delivery:d-1"))
         node("Entrega 2 de 2").assertIsDisplayed()
         compose.onNode(hasText("Igor Nunes") and hasAnyAncestor(hasTestTag("next-stop"))).performScrollTo().assertIsDisplayed()
