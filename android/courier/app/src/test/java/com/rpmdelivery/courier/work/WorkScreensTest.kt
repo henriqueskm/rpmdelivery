@@ -154,6 +154,43 @@ class WorkScreensTest {
         node(WorkCopy.forCode("RPM_SHIFT_OPEN_ELSEWHERE")).assertIsDisplayed()
     }
 
+    @Test fun courierWithoutStoreTypesTheInviteCodeAndAsksForTheLink() {
+        fake.home = fake.home.copy(stores = emptyList())
+        show()
+        node("Nenhuma loja aprovada").assertIsDisplayed()
+        node("Ler QR Code do convite").assertHeightIsAtLeast(48.dp)
+        captureEvidence(compose, "work-11-no-store-invite-390")
+        node("Digitar o código do convite").performClick()
+        compose.onNodeWithText("Código do convite").performTextInput("abc")
+        node("Continuar com o código").performClick()
+        node("Digite os 20 caracteres do código, com ou sem hífens.").assertIsDisplayed()
+        compose.onNodeWithText("Código do convite").performTextClearance()
+        compose.onNodeWithText("Código do convite").performTextInput("0123-4567-89AB-CDEF-0123")
+        node("Continuar com o código").performClick()
+        compose.waitForIdle()
+        node("Pizzaria do Bairro").assertIsDisplayed()
+        compose.onNodeWithText("Ler QR Code do convite").assertDoesNotExist()
+        captureEvidence(compose, "work-12-invite-ready-390")
+        node("Pedir vínculo").assertHeightIsAtLeast(48.dp).performClick()
+        compose.waitForIdle()
+        node("Pedido enviado para Pizzaria do Bairro. Quando a loja aprovar, ela aparece aqui.").assertIsDisplayed()
+        node("Aguardando a loja Pizzaria do Bairro aprovar seu vínculo.").assertIsDisplayed()
+        compose.onNodeWithText("Pedir vínculo").assertDoesNotExist()
+    }
+
+    @Test fun inviteOpenedBeforeSigningInWaitsForTheAccount() {
+        auth.current = null
+        controller = AuthController(auth, scope)
+        work = WorkController(fake, scope, onExpired = { controller.sessionExpired() }, refreshMillis = 3_600_000)
+        compose.setContent { CourierTheme { CourierApp(controller, work) } }
+        compose.runOnIdle { work.receiveInvite(fake.inviteCode); controller.restore() }
+        node("Convite da loja recebido. Entre ou crie sua conta para pedir o vínculo.").assertIsDisplayed()
+        auth.current = completeProfile
+        compose.runOnIdle { controller.restore() }
+        compose.waitForIdle()
+        node("Pizzaria do Bairro").assertIsDisplayed()
+    }
+
     @Test fun earningsButtonStaysInTheCornerAndOpensTheHistory() {
         fake.home = fake.home.copy(today = Today(3, 3000, 2100, 5100))
         show()

@@ -28,6 +28,8 @@ data class WorkState(
     val history: List<HistoryDay>? = null,
     val historyLoading: Boolean = false,
     val historyError: String? = null,
+    /** A store's invite from a QR Code, a link or a typed code. Survives sign-in, never a restart. */
+    val invite: InviteCard? = null,
 )
 
 /**
@@ -56,12 +58,85 @@ class WorkController(
             if (polling?.isActive != true) polling = scope.launch {
                 while (isActive) { load(); delay(refreshMillis) }
             }
+            checkInvite()
         } else { polling?.cancel(); polling = null }
     }
 
     fun refresh() { scope.launch { load() } }
-    /** A new account starts from an empty screen. */
-    fun clear() { requestIds.clear(); mutable.value = WorkState() }
+    /** A new account starts from an empty screen. An invite that arrived before signing in waits for it. */
+    fun clear() { requestIds.clear(); mutable.value = WorkState(invite = keptInvite()) }
+
+    // ------------------------------------------------------------ store invites
+
+    /** In memory only: never in the UI state, saved state or logs. */
+    private var inviteCode: String? = null
+    private fun keptInvite() = inviteCode?.let { InviteCard(InvitePhase.Waiting) }
+
+    /** An invite code (already normalized). It is checked as soon as the courier's day is on screen. */
+    fun receiveInvite(code: String) {
+        inviteCode = code
+        mutable.update { it.copy(invite = InviteCard(InvitePhase.Waiting)) }
+        if (foreground && shown) checkInvite()
+    }
+    fun dismissInvite() { inviteCode = null; mutable.update { it.copy(invite = null) } }
+    /** After a dropped connection or a completed profile. */
+    fun retryInvite() {
+        if (inviteCode == null || mutable.value.invite?.retry != true) return
+        mutable.update { it.copy(invite = InviteCard(InvitePhase.Waiting)) }
+        checkInvite()
+    }
+
+    private fun checkInvite() {
+        val code = inviteCode ?: return
+        if (mutable.value.invite?.phase != InvitePhase.Waiting) return
+        mutable.update { it.copy(invite = InviteCard(InvitePhase.Checking)) }
+        scope.launch {
+            val card = try {
+                val check = repository.inspectInvite(code)
+                when {
+                    !check.ok -> InviteCard(InvitePhase.Failed, message = InviteCopy.refusal(check.reason))
+                    !check.registered -> InviteCard(InvitePhase.Failed, check.restaurantName, InviteCopy.refusal("profile_required"), retry = true)
+                    else -> InviteCard(InvitePhase.Ready, check.restaurantName)
+                }
+            } catch (error: CancellationException) { throw error }
+            catch (error: WorkProblem) {
+                if (error.expired) { expire(); return@launch }
+                InviteCard(InvitePhase.Failed, message = error.safeMessage, retry = true)
+            } catch (_: Exception) { InviteCard(InvitePhase.Failed, message = WorkCopy.GENERIC, retry = true) }
+            // A newer invite replaced this one while it was being checked.
+            if (inviteCode == code) mutable.update { it.copy(invite = card) }
+        }
+    }
+
+    /** Sends the request to the invite's store. Approved in the panel, the store then shows up here. */
+    fun requestLink() {
+        val code = inviteCode ?: return
+        val card = mutable.value.invite ?: return
+        if (card.phase != InvitePhase.Ready || mutable.value.busy) return
+        mutable.update { it.copy(busy = true, message = null, notice = null, invite = card.copy(phase = InvitePhase.Sending, message = null)) }
+        scope.launch {
+            var expired = false
+            try {
+                val result = repository.requestMembership(code)
+                if (result.ok) {
+                    inviteCode = null
+                    mutable.update { it.copy(invite = null, notice = InviteCopy.requested(card.restaurantName ?: "a loja", result.status)) }
+                } else {
+                    val retry = result.reason == "profile_required"
+                    if (!retry) inviteCode = null
+                    mutable.update { it.copy(invite = card.copy(phase = InvitePhase.Failed, message = InviteCopy.refusal(result.reason), retry = retry)) }
+                }
+            } catch (error: CancellationException) { throw error }
+            catch (error: WorkProblem) {
+                expired = error.expired
+                // Nothing was confirmed: the same request can be sent again (the server never doubles it).
+                if (!expired) mutable.update { it.copy(invite = card.copy(phase = InvitePhase.Ready, message = error.safeMessage)) }
+            } catch (_: Exception) {
+                mutable.update { it.copy(invite = card.copy(phase = InvitePhase.Ready, message = WorkCopy.GENERIC)) }
+            } finally { mutable.update { it.copy(busy = false) } }
+            if (expired) expire() else load(afterCommand = true)
+        }
+    }
     fun inform(message: String) = mutable.update { it.copy(message = message, notice = null) }
 
     /** Opens the history and reads it then; nothing about past days is read before that. */
@@ -174,7 +249,7 @@ class WorkController(
 
     private fun expire() {
         polling?.cancel(); polling = null
-        mutable.value = WorkState()
+        mutable.value = WorkState(invite = keptInvite())
         onExpired()
     }
 }

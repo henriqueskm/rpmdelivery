@@ -14,6 +14,9 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -35,6 +38,10 @@ interface CourierWorkRepository {
     suspend fun recordLocations(routeId: String, points: List<GpsPoint>)
     /** Best effort: asks the server to send the customers' "saiu para entrega" messages. */
     suspend fun notifyCustomers(routeId: String)
+    /** Which store an invite belongs to. Never changes anything. */
+    suspend fun inspectInvite(code: String): InviteCheck
+    /** Asks the invite's store for a link; the store approves it in the panel. Repeating it is harmless. */
+    suspend fun requestMembership(code: String): InviteRequest
 }
 
 class WorkProblem(val safeMessage: String, val code: String? = null) : Exception(safeMessage) {
@@ -125,6 +132,19 @@ class SupabaseCourierWork(
         })
     }
 
+    override suspend fun inspectInvite(code: String): InviteCheck {
+        val result = rpc("inspect_courier_invite", buildJsonObject { put("p_code", code) }) as? JsonObject
+            ?: throw WorkProblem(WorkCopy.UNEXPECTED)
+        return InviteCheck(result.flag("ok"), result.text("reason"), result.text("restaurantName"), result.flag("registered"))
+    }
+    override suspend fun requestMembership(code: String): InviteRequest {
+        val result = rpc("request_courier_membership", buildJsonObject { put("p_code", code) }) as? JsonObject
+            ?: throw WorkProblem(WorkCopy.UNEXPECTED)
+        return InviteRequest(result.flag("ok"), result.text("reason"), result.text("status"))
+    }
+    private fun JsonObject.flag(key: String) = (get(key) as? JsonPrimitive)?.booleanOrNull == true
+    private fun JsonObject.text(key: String) = (get(key) as? JsonPrimitive)?.contentOrNull
+
     override suspend fun notifyCustomers(routeId: String) {
         val token = client.auth.currentSessionOrNull()?.accessToken ?: return
         withContext(Dispatchers.IO) {
@@ -191,4 +211,6 @@ class UnconfiguredWork : CourierWorkRepository {
     override suspend fun arriveAtStore(routeId: String) = refuse()
     override suspend fun recordLocations(routeId: String, points: List<GpsPoint>) = refuse()
     override suspend fun notifyCustomers(routeId: String) = Unit
+    override suspend fun inspectInvite(code: String): InviteCheck = refuse()
+    override suspend fun requestMembership(code: String): InviteRequest = refuse()
 }

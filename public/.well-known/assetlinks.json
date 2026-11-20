@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.rpmdelivery.courier.demo",
+      "sha256_cert_fingerprints": [
+        "10:BF:34:04:43:C3:00:38:20:FD:CC:AC:EA:C3:64:3B:32:B3:8B:3F:54:C6:A1:84:F7:4A:4E:BB:BA:43:3B:FF"
+      ]
+    }
+  }
+]

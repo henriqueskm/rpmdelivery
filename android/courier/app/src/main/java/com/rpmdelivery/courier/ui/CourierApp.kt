@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
@@ -66,6 +67,7 @@ fun CourierApp(controller: AuthController, work: WorkController? = null) {
     }
     var previewMessage by remember { mutableStateOf(false) }
     val working = work != null && state.screen == AuthScreen.Home && state.registration.complete
+    val invited = work?.state?.collectAsState()?.value?.invite != null
     val back ={ controller.navigate(if (state.authenticated) AuthScreen.Home else AuthScreen.Welcome) }
     BackHandler(state.screen !in setOf(AuthScreen.Welcome, AuthScreen.Home, AuthScreen.Loading), onBack = back)
     Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
@@ -87,6 +89,13 @@ fun CourierApp(controller: AuthController, work: WorkController? = null) {
                         Text("Aguarde…", modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                     }
                     state.message?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
+                    // An invite read before signing in waits here; the courier's day picks it up.
+                    if (invited && state.screen != AuthScreen.Loading) Surface(color = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+                        Text(if (state.authenticated) "Convite da loja recebido. Complete seu cadastro para pedir o vínculo."
+                            else "Convite da loja recebido. Entre ou crie sua conta para pedir o vínculo.",
+                            style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(14.dp).semantics { liveRegion = LiveRegionMode.Polite })
+                    }
                     when (state.screen) {
                         AuthScreen.Loading -> Text("Recuperando sua sessão protegida…")
                         AuthScreen.Welcome -> WelcomeScreen(

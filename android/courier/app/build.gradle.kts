@@ -86,6 +86,15 @@ dependencies {
     // Ktor version used by this exact SDK cohort, not an independent upgrade.
     //noinspection NewerVersionAvailable
     implementation("io.ktor:ktor-client-okhttp:3.4.3")
+    // Reading the store's invite QR Code inside the app: CameraX preview + ML Kit's bundled QR model
+    // (no Play services download, works offline). The camera is opened only while the reader is shown.
+    // 1.7.0 needs compileSdk 36 and AGP 8.9.1+, both met by this cohort.
+    val cameraX = "1.7.0"
+    implementation("androidx.camera:camera-camera2:$cameraX")
+    implementation("androidx.camera:camera-lifecycle:$cameraX")
+    implementation("androidx.camera:camera-view:$cameraX")
+    implementation("androidx.camera:camera-mlkit-vision:$cameraX")
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 

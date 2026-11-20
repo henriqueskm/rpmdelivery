@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.rpmdelivery.courier.auth.CourierAuthViewModel
 import com.rpmdelivery.courier.ui.CourierApp
 import com.rpmdelivery.courier.ui.theme.CourierTheme
+import com.rpmdelivery.courier.work.InviteLink
 
 class MainActivity : ComponentActivity() {
     private val auth by lazy { ViewModelProvider(this)[CourierAuthViewModel::class.java] }
@@ -31,8 +32,10 @@ class MainActivity : ComponentActivity() {
         if (incoming?.action != Intent.ACTION_VIEW) return
         val callback = incoming.dataString ?: return
         incoming.data = null
-        // Never forward, log, save or render the URI. The repository validates it and the pending PKCE verifier.
-        auth.controller.confirm(callback)
+        // Never forward, log, save or render the URI. A store invite (QR Code or link) carries only its code;
+        // anything else goes to the repository, which validates it and the pending PKCE verifier.
+        val invite = InviteLink.code(callback)
+        if (invite != null) auth.work.receiveInvite(invite) else auth.controller.confirm(callback)
     }
     override fun onStart() {
         super.onStart()

@@ -9,6 +9,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Only to read a store's invite QR Code, asked when the courier opens the reader. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
     <application
         android:allowBackup="false"
         android:fullBackupContent="@xml/backup_rules"
@@ -32,6 +35,14 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="rpmdelivery" android:host="auth" android:path="/confirm" />
+            </intent-filter>
+            <!-- A store's invite (QR Code or link) opens here instead of the site. Verified by
+                 https://rpmdelivery.vercel.app/.well-known/assetlinks.json. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="rpmdelivery.vercel.app" android:path="/convite" />
             </intent-filter>
         </activity>
         <!-- Open shift only: specialUse while waiting in line (alerts), location while on the route. -->

@@ -83,4 +83,22 @@ internal class FakeWork : CourierWorkRepository {
         sentPoints += points
     }
     override suspend fun notifyCustomers(routeId: String) { notified++ }
+
+    // Store invites, as inspect_courier_invite / request_courier_membership answer them.
+    val inviteCode = "0123456789abcdef0123"
+    val invitingStore = Store("r-2", "Pizzaria do Bairro", "PENDING")
+    var registered = true
+    val inviteCodes = mutableListOf<String>()
+    override suspend fun inspectInvite(code: String): InviteCheck {
+        record("inspect_courier_invite"); inviteCodes += code
+        return if (code != inviteCode) InviteCheck(false, "unavailable")
+        else InviteCheck(true, restaurantName = invitingStore.name, registered = registered)
+    }
+    override suspend fun requestMembership(code: String): InviteRequest {
+        record("request_courier_membership"); inviteCodes += code
+        if (code != inviteCode) return InviteRequest(false, "unavailable")
+        if (!registered) return InviteRequest(false, "profile_required")
+        if (home.stores.none { it.restaurantId == invitingStore.restaurantId }) home = home.copy(stores = home.stores + invitingStore)
+        return InviteRequest(true, status = home.stores.first { it.restaurantId == invitingStore.restaurantId }.linkStatus)
+    }
 }
