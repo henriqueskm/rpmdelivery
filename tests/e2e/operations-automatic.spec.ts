@@ -10,6 +10,12 @@ async function open(page:Page,scenario="opt-urgent",capacity="4",manualSelection
   await expect(dialog(page)).toBeVisible();
   await dialog(page).getByLabel("Entregas por rota",{exact:true}).selectOption(capacity);
 }
+/** Routes live in "Acompanhar rotas" (a modal). */
+async function routes(page:Page) {
+  const tracker=page.getByRole("dialog",{name:"Acompanhar rotas"});
+  if(!(await tracker.isVisible()))await page.locator(".ops-follow-routes").click();
+  await expect(tracker).toBeVisible();
+}
 async function calculate(page:Page) {
   await dialog(page).getByRole("button",{name:"Gerar propostas (demo)",exact:true}).click();
   await expect(dialog(page).getByRole("region",{name:"Rotas propostas",exact:true})).toBeVisible();
@@ -27,9 +33,12 @@ test("calcular não atribui; lote reserva FIFO em PREPARING, só loja libera e s
   const choose=dialog(page).getByRole("checkbox",{name:/^Selecionar proposta /});
   for(let i=0;i<3;i++)await choose.nth(i).check();
   await dialog(page).getByRole("button",{name:"Confirmar 3 rotas (demo)",exact:true}).click();
-  await expect(page.locator("#ops-panel-routes")).toBeFocused();
+  // The new routes wait for their release: the banner's button takes the focus.
+  await expect(page.getByRole("button",{name:"Abrir e liberar"})).toBeFocused();
+  await expect(page.getByRole("region",{name:"Retiradas para liberar"})).toContainText("R-45 · Bianca Souza · R-44 · Lívia Oliveira · R-43 · João Martins");
   await expect(page.locator(".ops-stop-content strong")).toHaveCount(1);
   await expect(page.locator(".ops-stop-content strong")).toContainText("#1048");
+  await routes(page);
   for(const reference of ["R-43","R-44","R-45"]) {
     const route=page.getByRole("article",{name:`Rota ${reference}`,exact:true});
     await expect(route).toContainText("Em preparação");await expect(route).toContainText("Aguardando liberação");
@@ -52,6 +61,7 @@ test("um pedido permite confirmação individual sem aplicar outras propostas",a
   await expect(dialog(page).locator(".ops-auto-batch")).toContainText("1 de 1 pedido analisado");
   await expect(dialog(page).getByRole("article",{name:"Proposta 1",exact:true})).toContainText("1 entrega");
   await dialog(page).getByRole("button",{name:"Confirmar rota 1 de João Martins (demo)",exact:true}).click();
+  await routes(page);
   await expect(page.getByRole("article",{name:"Rota R-43",exact:true})).toContainText("Aguardando liberação");
   await expect(page.getByRole("article",{name:"Rota R-44",exact:true})).toHaveCount(0);
 });

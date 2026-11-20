@@ -9,7 +9,15 @@ async function frozen(page: Page) {
   await page.goto("/preview/operacao");
   await expect(page.getByRole("checkbox", { name: "Selecionar pedido 1048", exact: true })).toBeVisible();
 }
+/** "Rotas" opens "Acompanhar rotas" (a modal, where routes live); any other name closes it and picks the column. */
 async function area(page: Page, name: string) {
+  const tracker = page.getByRole("dialog", { name: "Acompanhar rotas" });
+  if (name === "Rotas") {
+    if (!(await tracker.isVisible())) await page.locator(".ops-follow-routes").press("Enter");
+    await expect(tracker).toBeVisible();
+    return;
+  }
+  if (await tracker.isVisible()) await page.keyboard.press("Escape");
   const tab = page.getByRole("tab", { name, exact: true });
   if (await tab.isVisible()) await tab.click();
 }
@@ -53,7 +61,7 @@ test("loja revoga retirada sem mudar rota; motoboy bloqueado até nova liberaç�
     await area(page, "Motoboys");
     await expect(page.locator(".ops-courier").filter({ hasText: "Marcos Pereira" })).toContainText("Reservado");
     await area(page, "Rotas");
-    // The routes column scrolls by itself and this page's clock is paused: keyboard, not a pointer
+    // The routes screen scrolls by itself and this page's clock is paused: keyboard, not a pointer
     // click that waits for the scroll to settle.
     await card.getByRole("button", { name: "Visão do motoboy (demo)" }).press("Enter");
     await expect(driver).toContainText("Aguardando liberação");
@@ -154,6 +162,7 @@ test("motoboy confere PREPARING bloqueado, liberação única, ordem preservada 
   await route(page).getByRole("button", { name: "Editar montagem" }).click();
   await page.getByRole("button", { name: "Mover pedido 1041 para cima" }).click();
   await page.getByRole("button", { name: "Salvar montagem (demo)" }).click();
+  await area(page, "Rotas");
   await expect(route(page)).toContainText("Pronto para retirada");
   await route(page).getByRole("button", { name: "Visão do motoboy (demo)" }).click();
   await expect(start).toBeEnabled();
@@ -165,6 +174,7 @@ test("motoboy confere PREPARING bloqueado, liberação única, ordem preservada 
   await page.getByRole("checkbox", { name: "Selecionar pedido 1048", exact: true }).check();
   if (await page.getByRole("tab", { name: /^Montagem/ }).isVisible()) await page.getByRole("tab", { name: /^Montagem/ }).click();
   await page.getByRole("button", { name: "Salvar montagem (demo)" }).click();
+  await area(page, "Rotas");
   await expect(route(page)).toContainText("Aguardando liberação");
   await route(page).getByRole("button", { name: "Visão do motoboy (demo)" }).click();
   await expect(start).toBeDisabled();
@@ -216,6 +226,7 @@ test("rota com vinte pedidos mantém prazo urgente e início bloqueado acessíve
       await page.getByRole("checkbox", { name: "Selecionar visíveis", exact: true }).check();
       await page.getByRole("tab", { name: /^Montagem/ }).click();
       await page.getByRole("button", { name: "Atribuir rota (demo)" }).click();
+      await area(page, "Rotas");
     }
     await page.getByRole("article", { name: "Rota R-43", exact: true }).getByRole("button", { name: "Visão do motoboy (demo)" }).click();
     const driver = page.getByRole("dialog", { name: "Aplicativo do motoboy" });

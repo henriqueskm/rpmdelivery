@@ -51,13 +51,13 @@ async function openPanel(page: Page) {
 test("acompanhar rotas: mini mapa com loja, motoboy e próxima entrega; horário de cada entrega", async ({ page }) => {
   await openPanel(page);
   await page.getByRole("button", { name: "Acompanhar rotas" }).click();
-  const tracker = page.getByRole("dialog", { name: "Rotas em andamento" });
+  const tracker = page.getByRole("dialog", { name: "Acompanhar rotas" });
   const map = tracker.getByRole("region", { name: "Mapa com a loja e 1 motoboy na rua" });
   await expect(map).toBeVisible();
   await expect(map.locator(".ops-map-marker-store")).toHaveText("Loja");
   await expect(map.locator(".ops-map-marker-courier")).toHaveText("R-1");
   await expect(map.locator(".ops-map-marker-stop")).toHaveText("#2002");
-  const route = tracker.getByRole("article", { name: "Acompanhamento da rota R-1" });
+  const route = tracker.getByRole("article", { name: "Rota R-1", exact: true });
   await expect(route).toContainText("Saiu há 25 min · 1 de 2 entregues");
   await expect(route.locator(".ops-tracker-stop").nth(0)).toContainText("Entregue às 10:25");
   // Closing the screen removes the map (Mapbox bills each map created).
@@ -77,7 +77,7 @@ test("copiar link de acompanhamento do pedido, no painel e na tela de rotas", as
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(new URL(`/acompanhar/${token(3)}`, baseURL).toString());
   // On the street: the next stop's link, from "Acompanhar rotas". A delivered stop needs none.
   await page.getByRole("button", { name: "Acompanhar rotas" }).click();
-  const tracker = page.getByRole("dialog", { name: "Rotas em andamento" });
+  const tracker = page.getByRole("dialog", { name: "Acompanhar rotas" });
   await tracker.getByRole("button", { name: "Copiar link de acompanhamento do pedido 2002" }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(`/acompanhar/${token(2)}`);
   await expect(tracker.getByRole("button", { name: "Copiar link de acompanhamento do pedido 2001" })).toHaveCount(0);

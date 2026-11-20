@@ -19,7 +19,15 @@ async function openPanel(page: Page) {
 }
 
 /** On phones each area is a tab; on desktop all are visible. */
+/** /^Rotas/ opens "Acompanhar rotas" (a modal, where routes live); any other area closes it and picks the column. */
 async function showArea(page: Page, name: RegExp) {
+  const tracker = page.getByRole("dialog", { name: "Acompanhar rotas" });
+  if (name.source === "^Rotas") {
+    if (!(await tracker.isVisible())) await page.locator(".ops-follow-routes").click();
+    await expect(tracker).toBeVisible();
+    return;
+  }
+  if (await tracker.isVisible()) await page.keyboard.press("Escape");
   const tab = page.getByRole("tab", { name });
   if (await tab.isVisible()) await tab.click();
 }
@@ -84,7 +92,11 @@ test("painel real: aprova turno, cadastra pedido, monta e libera rota pelo banco
   await showArea(page, /^Montagem/);
   await expect(page.getByRole("button", { name: "Sugerir sequência" })).toHaveCount(0);
   await page.getByRole("button", { name: "Atribuir rota", exact: false }).click();
+  // The new route waits for its release: the banner opens "Acompanhar rotas" on it.
+  await expect(page.getByRole("region", { name: "Retiradas para liberar" })).toContainText("R-8 · Bruno Alves");
+  await page.getByRole("button", { name: "Abrir e liberar" }).click();
   const route8 = page.locator("#ops-route-r-8");
+  await expect(route8).toBeFocused();
   await expect(route8).toBeVisible();
   await expect(route8).toContainText("Bruno Alves");
   expect(backend.commandCalls().find(call => call.fn === "create_route")!.body).toMatchObject({
@@ -107,7 +119,7 @@ test("ocorrência decidida pela Central e rota mudada em outro aparelho", async 
   await openPanel(page);
 
   await showArea(page, /^Rotas/);
-  await page.locator("#ops-route-r-7").getByRole("button", { name: "! Decisão pendente" }).click();
+  await page.locator("#ops-route-r-7").getByRole("button", { name: "Decidir ocorrência #1050" }).click();
   const center = page.getByRole("dialog", { name: "Central de ocorrências" });
   await expect(center).toBeVisible();
   await expect(center.getByText("Demonstração em memória.", { exact: false })).toHaveCount(0);
@@ -121,6 +133,7 @@ test("ocorrência decidida pela Central e rota mudada em outro aparelho", async 
   // Someone changed R-6 on another device: the panel says so and reloads.
   backend.failOnce("release_route_pickup", { status: 400, json: { code: "P0001", message: "RPM_ROUTE_STALE" } });
   const reads = backend.boardReads();
+  await showArea(page, /^Rotas/);
   await page.locator("#ops-route-r-6").getByRole("button", { name: "Liberar retirada" }).click();
   await expect(page.getByRole("status").filter({ hasText: "A rota mudou em outro aparelho" })).toBeVisible();
   expect(backend.boardReads()).toBeGreaterThan(reads);
@@ -309,10 +322,10 @@ test("acompanhar rotas: tela com cada rota na rua, entregas em ordem e ocorrênc
   await mockSupabase(page, { existing: true, rpc: backend.handlers });
   await openPanel(page);
   await page.getByRole("button", { name: "Acompanhar rotas" }).click();
-  const tracker = page.getByRole("dialog", { name: "Rotas em andamento" });
+  const tracker = page.getByRole("dialog", { name: "Acompanhar rotas" });
   await expect(tracker).toBeVisible();
   await expect(tracker).toContainText("1 rota na rua · 1 aguardando retirada");
-  const r7 = tracker.getByRole("article", { name: "Acompanhamento da rota R-7" });
+  const r7 = tracker.getByRole("article", { name: "Rota R-7", exact: true });
   await expect(r7).toContainText("Ana Souza");
   await expect(r7).toContainText("Saiu há 18 min · 0 de 2 entregues");
   const stops = r7.locator(".ops-tracker-stop");
@@ -320,7 +333,10 @@ test("acompanhar rotas: tela com cada rota na rua, entregas em ordem e ocorrênc
   await expect(stops.nth(0)).toContainText("Ocorrência");
   await expect(stops.nth(1)).toContainText("#1051 · Aclimação");
   await expect(stops.nth(1)).toContainText("Próxima");
-  await expect(tracker).toContainText("Aguardando retirada: R-6 · Dani Lima (liberar retirada)");
+  // The route waiting for the store comes first, with its release button.
+  const r6 = tracker.getByRole("article", { name: "Rota R-6", exact: true });
+  await expect(r6).toContainText("Dani Lima");
+  await expect(r6.getByRole("button", { name: "Liberar retirada" })).toBeVisible();
   // Deciding the occurrence leaves this screen for the Central.
   await r7.getByRole("button", { name: "Decidir ocorrência #1050" }).click();
   await expect(tracker).toBeHidden();

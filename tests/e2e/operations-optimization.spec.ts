@@ -16,6 +16,12 @@ async function open(page:Page,scenario="opt-urgent",count=3){
   await page.clock.pauseAt(new Date(current+1000));
 }
 const dialog=(page:Page)=>page.getByRole("dialog",{name:"Sugerir sequência",exact:true});
+/** Routes live in "Acompanhar rotas" (a modal). */
+async function routes(page:Page) {
+  const tracker=page.getByRole("dialog",{name:"Acompanhar rotas"});
+  if(!(await tracker.isVisible()))await page.locator(".ops-follow-routes").click();
+  await expect(tracker).toBeVisible();
+}
 async function calculate(page:Page){
   await dialog(page).getByRole("button",{name:"Calcular sugestão (demo)"}).click();
   await expect(dialog(page).getByText("Calculando com a matriz simulada…",{exact:true})).toBeVisible();
@@ -44,6 +50,7 @@ test("sugestão explica urgência, compara hipóteses e só aplica após confirm
   await dialog(page).getByRole("button",{name:"Aplicar sequência"}).click();
   await expect(page.locator(".ops-stop-content strong")).toHaveText(expectedOrder);
   await page.getByRole("button",{name:"Atribuir rota (demo)"}).click();
+  await routes(page);
   await expect(page.getByRole("article",{name:"Rota R-43",exact:true})).toContainText("Em preparação");
   await expect(page.getByRole("article",{name:"Rota R-43",exact:true})).toContainText("Aguardando liberação");
   expect(errors).toEqual([]);expect(external).toEqual([]);
@@ -126,6 +133,7 @@ test("aplicar reordenação em PREPARING preserva liberação e bloqueia otimiza
   await open(page);
   await dialog(page).getByRole("button",{name:"Manter ordem atual",exact:true}).click();
   await page.getByRole("button",{name:"Atribuir rota (demo)"}).click();
+  await routes(page);
   const card=page.getByRole("article",{name:"Rota R-43",exact:true});
   await card.getByRole("button",{name:"Liberar retirada",exact:true}).click();
   await card.getByRole("button",{name:"Editar montagem",exact:true}).click();
@@ -135,6 +143,7 @@ test("aplicar reordenação em PREPARING preserva liberação e bloqueia otimiza
   const expected=await dialog(page).getByRole("region",{name:"Ordem sugerida"}).locator("li > strong").allTextContents();
   await dialog(page).getByRole("button",{name:"Aplicar sequência"}).click();
   await page.getByRole("button",{name:"Salvar montagem (demo)"}).click();
+  await routes(page);
   await expect(card).toContainText("Pronto para retirada");
   await card.getByRole("button",{name:"Visão do motoboy (demo)"}).click();
   const driver=page.getByRole("dialog",{name:"Aplicativo do motoboy"});
@@ -143,6 +152,7 @@ test("aplicar reordenação em PREPARING preserva liberação e bloqueia otimiza
   await expect(driver).toContainText("Em rota");
   await page.keyboard.press("Escape");
   await expect(card.getByRole("button",{name:"Editar montagem"})).toHaveCount(0);
+  await page.keyboard.press("Escape");
   const tab=page.getByRole("tab",{name:/^Montagem/});if(await tab.isVisible())await tab.click();
   await expect(page.getByRole("button",{name:"Sugerir sequência",exact:true})).toBeDisabled();
 });

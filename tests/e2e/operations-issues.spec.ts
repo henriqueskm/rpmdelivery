@@ -17,8 +17,16 @@ async function open(page:Page,scenario="issues-new") {
   await page.goto(`/preview/operacao?scenario=${scenario}`);
   await expect(page.getByRole("heading",{name:"Central de operações",exact:true})).toBeVisible();
 }
+/** Routes live in "Acompanhar rotas" (a modal). */
+const tracker=(page:Page)=>page.getByRole("dialog",{name:"Acompanhar rotas"});
 async function routes(page:Page) {
-  const tab=page.getByRole("tab",{name:"Rotas",exact:true});if(await tab.isVisible())await tab.click();
+  if(!(await tracker(page).isVisible()))await page.locator(".ops-follow-routes").click();
+  await expect(tracker(page)).toBeVisible();
+}
+/** Back to the panel behind "Acompanhar rotas". */
+async function leaveRoutes(page:Page) {
+  if(await tracker(page).isVisible())await page.keyboard.press("Escape");
+  await expect(tracker(page)).toBeHidden();
 }
 async function courier(page:Page,ref="R-41") {
   await routes(page);await route(page,ref).getByRole("button",{name:"Visão do motoboy (demo)"}).click();
@@ -34,7 +42,7 @@ test("falha obrigatória, aviso dispensável, nova tentativa, entregas individua
   await driver(page).getByRole("textbox").fill("Portão lateral fechado; confirmar referência com a loja.");
   await driver(page).getByRole("button",{name:"Registrar falha"}).click();
   await expect(driver(page).getByRole("heading",{name:/#1039/})).toBeFocused();
-  await page.keyboard.press("Escape");
+  await page.keyboard.press("Escape");await leaveRoutes(page);
   await expect(page.getByRole("heading",{name:"Nova ocorrência de entrega"})).toBeVisible();
   await expect(page.locator(".ops-new-issue")).toBeInViewport();
   await page.getByRole("button",{name:"Fechar aviso sem resolver ocorrências"}).click();
@@ -57,6 +65,7 @@ test("falha obrigatória, aviso dispensável, nova tentativa, entregas individua
   // Finished routes fold under "Concluídas hoje".
   await page.locator(".ops-routes-done > summary").click();
   await expect(route(page)).toContainText("Concluída");
+  await leaveRoutes(page);
   const tab=page.getByRole("tab",{name:"Motoboys",exact:true});if(await tab.isVisible())await tab.click();
   await expect(page.locator(".ops-courier").filter({hasText:"Rafa Santos"})).toContainText("Disponível");
   const queue=await page.locator(".ops-courier").allTextContents();expect(queue.findIndex(t=>t.includes("Rafa Santos"))).toBeGreaterThan(queue.findIndex(t=>t.includes("Bianca Souza")));
@@ -82,6 +91,7 @@ test("timeout compartilhado e fim das demais entregas não prendem motoboy",asyn
   await expect(driver(page)).toContainText("Retornando");await page.keyboard.press("Escape");
   await open(page,"issues-last");await courier(page);await driver(page).getByRole("button",{name:"Entregue",exact:true}).click();
   await expect(driver(page)).toContainText("Retornando");await expect(driver(page)).toContainText("Retornar pedido à loja");await page.keyboard.press("Escape");
+  await leaveRoutes(page);
   await page.getByRole("button",{name:"Ocorrências: sem pendências"}).click();await center(page).getByRole("tab",{name:"Histórico (1)"}).click();
   await expect(center(page)).toContainText("Demais entregas encerradas");
 });
@@ -157,8 +167,10 @@ for(const width of [320,375,390,1280,1440])test(`alerta, foco, textos longos, to
   const alert=page.locator(".ops-new-issue");await expect(alert).toBeVisible();
   expect(await alert.evaluate(el=>getComputedStyle(el).transitionDuration)).toBe("0s");
   await alert.getByRole("button",{name:"Acompanhar rotas"}).click();
-  await expect(width<1100?route(page):page.locator("#ops-panel-routes")).toBeFocused();await expect(route(page)).toHaveClass(/is-highlighted/);
-  if(width<1100)await expect(page.getByRole("tab",{name:"Rotas",exact:true})).toHaveAttribute("aria-selected","true");
+  // "Acompanhar rotas" opens on that route, focused and highlighted, at every width.
+  await expect(route(page)).toBeFocused();await expect(route(page)).toHaveClass(/is-highlighted/);
+  await expect(route(page)).toBeInViewport();
+  await leaveRoutes(page);
   await page.getByRole("button",{name:/^Ocorrências:/}).click();
   await center(page).getByText("Detalhes e histórico",{exact:true}).first().click();await expect(center(page)).toContainText("Alergia alimentar: conferir etiqueta");
   await expect(center(page)).toContainText("Entrada pela portaria de visitantes");

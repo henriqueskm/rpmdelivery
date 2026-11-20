@@ -76,11 +76,9 @@ test("painel avisa a entrega confirmada longe do endereço", async ({ page }) =>
   await mockSupabase(page, { existing: true, rpc: { get_operations_board: () => ({ json: board }) } });
   await signIn(page);
   await expect(page.getByRole("heading", { name: "Central de operações" })).toBeVisible();
-  // On phones each area is a tab.
-  const tab = page.getByRole("tab", { name: /Rotas/ });
-  if (await tab.isVisible()) await tab.click();
-  // The "Acompanhar rotas" screen repeats the warning; this checks the Rotas column.
-  const routes = page.locator("#ops-panel-routes");
+  // Routes live in "Acompanhar rotas".
+  await page.locator(".ops-follow-routes").click();
+  const routes = page.getByRole("dialog", { name: "Acompanhar rotas" });
   await expect(routes.getByText("! Entregue a 1,2 km do endereço")).toBeVisible();
   await expect(routes.getByText("1 entrega confirmada longe do endereço")).toBeVisible();
 });
