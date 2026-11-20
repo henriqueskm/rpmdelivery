@@ -255,7 +255,7 @@ class WorkScreensTest {
         node("Pronto para os avisos").assertIsDisplayed()
         node("Notificações · ligado").assertIsDisplayed()
         node("Localização · ligado").assertIsDisplayed()
-        node("Economia de bateria · desligado").assertIsDisplayed()
+        node("Uso de bateria · restrito").assertIsDisplayed()
         node("Ativar").assertHeightIsAtLeast(48.dp)
         node("Seu dia").assertIsDisplayed()
         node("Na fila desde").assertIsDisplayed()

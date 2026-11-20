@@ -11,6 +11,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNull
@@ -56,8 +57,7 @@ class SupabaseCourierWorkTest {
         }
     }
 
-    private fun repositories(): Pair<SupabaseCourierAuth, SupabaseCourierWork> {
-        val gate = Mutex()
+    private fun repositories(gate: Mutex = Mutex()): Pair<SupabaseCourierAuth, SupabaseCourierWork> {
         val client = courierClient("https://auth-fixture.invalid", "sb_publishable_synthetic", MemorySecrets(), MockEngine { request ->
             val (text, status) = answer(request)
             respond(text, status, headersOf(HttpHeaders.ContentType, "application/json"))
@@ -109,6 +109,27 @@ class SupabaseCourierWorkTest {
             assertEquals("8.5", points[0].jsonObject["accuracy"]!!.jsonPrimitive.content)
             assertEquals(JsonNull, points[1].jsonObject["accuracy"])
             assertTrue(runCatching { work.recordLocations("route-1", emptyList()) }.isFailure)
+        } finally { auth.close() }
+    }
+
+    @Test fun gpsNeverWaitsForACommandAndNeverEndsTheSession() = runBlocking {
+        val gate = Mutex()
+        val (auth, work) = repositories(gate)
+        try {
+            auth.login("synthetic@example.invalid", "synthetic-pass")
+            val point = listOf(GpsPoint(-23.55, -46.63, 8.5, "2026-11-14T12:00:00Z"))
+            // A command holds the gate (slow network on the street): the GPS batch still goes out.
+            gate.lock()
+            try { withTimeout(5_000) { work.recordLocations("route-1", point) } } finally { gate.unlock() }
+
+            // An expired token on a GPS batch: the points wait, the session is neither renewed nor cleared here.
+            val logins = requests.count { it.url.encodedPath == "/auth/v1/token" }
+            override = { name -> if (name == "record_courier_locations") "{}" to HttpStatusCode.Unauthorized else null }
+            val problem = runCatching { work.recordLocations("route-1", point) }.exceptionOrNull() as WorkProblem
+            assertTrue(problem.network)
+            assertEquals(logins, requests.count { it.url.encodedPath == "/auth/v1/token" })
+            override = null
+            assertEquals("the session survives", "Cozinha", work.home().stores.single().name)
         } finally { auth.close() }
     }
 
