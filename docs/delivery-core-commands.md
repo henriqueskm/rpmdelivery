@@ -345,3 +345,18 @@ Antes, o QR Code do convite abria o site e o app só dizia "Nenhuma loja aprovad
 - **Dentro do app.** "Ler QR Code do convite" abre a câmera numa folha de 75% da tela (CameraX + ML Kit com o modelo de QR embutido, sem download e sem enviar imagens). "Digitar o código do convite" aceita os 20 caracteres com ou sem hífens. Com loja já aprovada, "Ler convite de outra loja" fica como link discreto.
 - **O pedido.** O app usa os mesmos RPCs do site: `inspect_courier_invite` mostra o nome da loja, só "Pedir vínculo" chama `request_courier_membership` (idempotente no servidor). O código fica só na memória: nunca na tela, em logs ou salvo. Um convite aberto antes do login espera a conta e o cadastro completo.
 - Nenhuma migration.
+
+## Menu lateral do app do motoboy
+
+O topo do app tem ☰ à esquerda e, com turno aberto, a pílula de ganhos no centro. O "Sair" foi para o menu. O menu abre só pelo ☰: abrir deslizando pela borda brigaria com os deslizes de confirmação da rota. Aberto, fecha com um deslize, um toque fora ou o voltar.
+
+- **Topo do menu:** símbolo, nome, moto · placa e "Em turno · Loja" com turno aberto.
+- **Início:** acompanha o momento do motoboy. Sem loja aprovada mostra o convite, sem turno mostra as lojas com "Cheguei · pedir turno", com turno mostra a fila e em rota mostra a rota.
+- **Estabelecimentos:** vínculos aprovados e aguardando, além de ler ou digitar o convite de outra loja. Telefone e endereço da loja e vínculos recusados ficaram de fora, porque `get_courier_home` não traz isso e exigiria migration.
+- **Ganhos:** o histórico de 30 dias, o mesmo aberto pela pílula.
+- **Meu cadastro:** só para leitura, porque o servidor preserva os dados já salvos.
+- **Avisos e permissões:** notificações, localização e bateria, as mesmas verificações da fila.
+- **Ajuda:** respostas curtas para as dúvidas comuns.
+- **Sair:** pede confirmação. Com turno aberto, avisa que o turno continua na loja.
+
+O voltar de qualquer parte do menu leva ao Início. Um convite lido de qualquer lugar abre no Início. Sem migration.

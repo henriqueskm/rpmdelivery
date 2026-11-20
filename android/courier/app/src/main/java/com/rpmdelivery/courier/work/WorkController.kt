@@ -23,14 +23,30 @@ data class WorkState(
     val message: String? = null,
     /** What just worked. */
     val notice: String? = null,
+    /** Which part of the app is on screen, chosen in the side menu. */
+    val section: Section = Section.Home,
     /** Earnings history: read only when the courier opens it; [historyError] when it could not be read. */
-    val historyOpen: Boolean = false,
     val history: List<HistoryDay>? = null,
     val historyLoading: Boolean = false,
     val historyError: String? = null,
     /** A store's invite from a QR Code, a link or a typed code. Survives sign-in, never a restart. */
     val invite: InviteCard? = null,
-)
+) {
+    val historyOpen: Boolean get() = section == Section.Earnings
+}
+
+/**
+ * The side menu. [Home] follows the courier's moment: invite, stores, line or route.
+ * The others are looked at off the street and never change the shift.
+ */
+enum class Section(val label: String) {
+    Home("Início"),
+    Stores("Estabelecimentos"),
+    Earnings("Ganhos"),
+    Profile("Meu cadastro"),
+    Alerts("Avisos e permissões"),
+    Help("Ajuda"),
+}
 
 /**
  * The courier's shift and route. Reads every [refreshMillis] while the screen is shown and the app is in
@@ -75,7 +91,8 @@ class WorkController(
     /** An invite code (already normalized). It is checked as soon as the courier's day is on screen. */
     fun receiveInvite(code: String) {
         inviteCode = code
-        mutable.update { it.copy(invite = InviteCard(InvitePhase.Waiting)) }
+        // The invite card lives on Início: a QR Code read from anywhere lands there.
+        mutable.update { it.copy(invite = InviteCard(InvitePhase.Waiting), section = Section.Home) }
         if (foreground && shown) checkInvite()
     }
     fun dismissInvite() { inviteCode = null; mutable.update { it.copy(invite = null) } }
@@ -141,10 +158,16 @@ class WorkController(
 
     /** Opens the history and reads it then; nothing about past days is read before that. */
     fun openHistory() {
-        mutable.update { it.copy(historyOpen = true) }
+        mutable.update { it.copy(section = Section.Earnings) }
         loadHistory()
     }
-    fun closeHistory() = mutable.update { it.copy(historyOpen = false) }
+    fun closeHistory() = show(Section.Home)
+
+    /** Opens a part of the side menu. Ganhos reads the history each time it opens. */
+    fun show(section: Section) {
+        if (section == Section.Earnings) openHistory()
+        else mutable.update { it.copy(section = section) }
+    }
 
     /** Reads the last 30 days, each time the history opens or the courier retries. */
     fun loadHistory() {

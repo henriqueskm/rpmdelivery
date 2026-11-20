@@ -49,8 +49,7 @@ import com.rpmdelivery.courier.ui.screens.RouteScreen
 import com.rpmdelivery.courier.ui.screens.WelcomeScreen
 import androidx.compose.ui.platform.LocalContext
 import com.rpmdelivery.courier.shift.ShiftService
-import com.rpmdelivery.courier.ui.screens.WorkHeader
-import com.rpmdelivery.courier.ui.screens.WorkScreen
+import com.rpmdelivery.courier.ui.screens.WorkShell
 import com.rpmdelivery.courier.work.WorkController
 
 @Composable
@@ -71,13 +70,11 @@ fun CourierApp(controller: AuthController, work: WorkController? = null) {
     val back ={ controller.navigate(if (state.authenticated) AuthScreen.Home else AuthScreen.Welcome) }
     BackHandler(state.screen !in setOf(AuthScreen.Welcome, AuthScreen.Home, AuthScreen.Loading), onBack = back)
     Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize().safeDrawingPadding().imePadding(), horizontalAlignment = Alignment.CenterHorizontally) {
-          // The courier's home has a fixed top line: symbol, today's earnings (open shift only) and "Sair".
-          if (working && work != null) WorkHeader(work, state.busy, controller::logout)
+        // Signed in with a complete profile: the courier's day, with the side menu.
+        if (working && work != null) WorkShell(work, state.registration, state.busy, controller::logout)
+        else Column(Modifier.fillMaxSize().safeDrawingPadding().imePadding(), horizontalAlignment = Alignment.CenterHorizontally) {
           Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
-            // The courier's day scrolls on its own terms: the queue scrolls, the route stays put.
-            if (working && work != null) WorkScreen(work)
-            else key(state.screen) {
+            key(state.screen) {
                 Column(Modifier.widthIn(max = 480.dp).fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(20.dp)) {
                     if (state.screen != AuthScreen.Welcome && !working) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

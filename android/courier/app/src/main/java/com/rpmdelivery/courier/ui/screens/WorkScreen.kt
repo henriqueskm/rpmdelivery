@@ -32,7 +32,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import kotlinx.coroutines.launch
-import com.rpmdelivery.courier.ui.components.BrandMark
+import androidx.compose.material3.IconButton
+import com.rpmdelivery.courier.auth.CourierRegistration
+import com.rpmdelivery.courier.registration.BrazilianPhone
+import com.rpmdelivery.courier.work.Section
 import com.rpmdelivery.courier.ui.theme.Ink
 import com.rpmdelivery.courier.work.Today
 import com.rpmdelivery.courier.work.historyDate
@@ -113,7 +116,7 @@ import com.rpmdelivery.courier.work.stopLabel
 
 /** The signed-in courier's day: ask for a shift, wait in line, run the route, come back. */
 @Composable
-fun WorkScreen(work: WorkController) {
+fun WorkScreen(work: WorkController, registration: CourierRegistration = CourierRegistration()) {
     val state by work.state.collectAsState()
     DisposableEffect(work) {
         work.setShown(true)
@@ -174,10 +177,23 @@ fun WorkScreen(work: WorkController) {
         ),
     )
     if (scanning) InviteScanner(onInvite = { code -> scanning = false; work.receiveInvite(code) }, onClose = { scanning = false })
-    BackHandler(enabled = state.historyOpen) { work.closeHistory() }
+    // Back from any part of the menu returns to Início.
+    BackHandler(enabled = state.section != Section.Home) { work.show(Section.Home) }
     val route = state.home?.route
+    val home = { work.show(Section.Home) }
+    when (state.section) {
+        Section.Earnings -> Scrolling { HistoryContent(state, onBack = home, onRetry = work::loadHistory) }
+        Section.Stores -> Scrolling { StoresDirectory(state, actions, onBack = home) }
+        Section.Profile -> Scrolling { ProfileContent(registration, onBack = home) }
+        Section.Alerts -> Scrolling { AlertsContent(onBack = home) }
+        Section.Help -> Scrolling { HelpContent(onBack = home) }
+        Section.Home -> HomeContent(state, route, actions)
+    }
+}
+
+@Composable
+private fun HomeContent(state: WorkState, route: CourierRoute?, actions: WorkActions) {
     when {
-        state.historyOpen -> Scrolling { HistoryContent(state, onBack = work::closeHistory, onRetry = work::loadHistory) }
         // On the street the screen stays put; the route's stops slide up from the bottom.
         route != null && (route.status == "ON_ROUTE" || route.status == "RETURNING") -> RouteSheetScreen(state, route, actions)
         else -> Scrolling { WorkContent(state, actions) }
@@ -262,20 +278,23 @@ private fun RouteSheetScreen(state: WorkState, route: CourierRoute, actions: Wor
 }
 
 /**
- * The courier's fixed top line: the brand symbol, today's earnings in the middle and "Sair".
+ * The courier's fixed top line: the menu, and today's earnings in the middle.
  * The earnings only show with an open shift: off duty there is nothing to follow.
  */
 @Composable
-fun WorkHeader(work: WorkController, busy: Boolean, onSignOut: () -> Unit) {
+fun WorkHeader(work: WorkController, onMenu: () -> Unit) {
     val state by work.state.collectAsState()
-    Row(Modifier.widthIn(max = 480.dp).fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 12.dp, bottom = 4.dp),
+    Row(Modifier.widthIn(max = 480.dp).fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 12.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        BrandMark()
+        IconButton(onClick = onMenu, modifier = Modifier.size(48.dp)) {
+            Icon(painterResource(R.drawable.menu), contentDescription = "Abrir menu", tint = MaterialTheme.colorScheme.onSurface)
+        }
         Box(Modifier.weight(1f).padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
             val today = state.home?.today
             if (today != null && state.home?.shift != null && !state.historyOpen) EarningsPill(today, work::openHistory)
         }
-        TextButton(onClick = onSignOut, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text("Sair") }
+        // Same width as the ☰, so the middle stays centered.
+        Spacer(Modifier.size(48.dp))
     }
 }
 
@@ -850,5 +869,99 @@ private fun FailureForm(busy: Boolean, onBack: () -> Unit, onSend: (FailureReaso
             Text("Enviar para a loja", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         }
         Secondary("Voltar", busy, onBack)
+    }
+}
+
+// ---------------------------------------------------------------- side menu parts
+
+/** Every store link: approved ones work on Início; pending ones wait for the store. Another store's invite starts here too. */
+@Composable
+private fun StoresDirectory(state: WorkState, actions: WorkActions, onBack: () -> Unit) {
+    val stores = state.home?.stores.orEmpty()
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Feedback(state)
+        Card {
+            Heading("Estabelecimentos", "Lojas em que você trabalha ou pediu para trabalhar")
+            when {
+                state.home == null -> Text("Carregando suas lojas…")
+                stores.isEmpty() -> Text("Nenhuma loja ainda. Leia o QR Code do convite que a loja mostra no painel.",
+                    style = MaterialTheme.typography.bodyLarge)
+                else -> stores.sortedBy { !it.active }.forEach { store ->
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) { }, verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text(store.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                        StatusChip(if (store.active) "Aprovado" else "Aguardando a loja", store.active)
+                    }
+                }
+            }
+            Primary(if (stores.isEmpty()) "Ler QR Code do convite" else "Ler convite de outra loja", state.busy, actions.invite.scan)
+            InviteCodeEntry(state.busy, actions.invite.enter)
+        }
+        Secondary("Voltar ao início", false, onBack)
+    }
+}
+
+@Composable
+private fun StatusChip(text: String, ok: Boolean) {
+    Surface(color = if (ok) SoftGreen else MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = if (ok) Green else MaterialTheme.colorScheme.onSurfaceVariant, shape = RoundedCornerShape(100.dp)) {
+        Text(text, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp), style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold)
+    }
+}
+
+/** What the stores see when they approve a link. Read only: the server keeps saved data as it is. */
+@Composable
+private fun ProfileContent(registration: CourierRegistration, onBack: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Card {
+            Heading("Meu cadastro", "O que a loja vê ao aprovar seu vínculo")
+            DayLine("Nome", registration.name.ifBlank { "—" })
+            DayLine("Celular", if (registration.hasStoredPhone) BrazilianPhone.format(registration.phone.removePrefix("+55")) else "Não informado")
+            DayLine("Moto", registration.model.ifBlank { "—" })
+            DayLine("Placa", registration.plate.ifBlank { "—" })
+            DayLine("Cor", registration.color.ifBlank { "—" })
+            Text("Ainda não dá para alterar estes dados pelo aplicativo.", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Secondary("Voltar ao início", false, onBack)
+    }
+}
+
+@Composable
+private fun AlertsContent(onBack: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        ReadyChecks()
+        Text("Os avisos chegam quando a loja aprova seu turno, quando você é o próximo da fila e quando a rota é liberada. A localização só é usada durante a rota.",
+            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Secondary("Voltar ao início", false, onBack)
+    }
+}
+
+private val helpTopics = listOf(
+    "A loja não aparece em Início" to "Ela aparece depois que a loja aprovar seu vínculo no painel. Em Estabelecimentos você vê se ainda está aguardando.",
+    "Pedi turno e nada aconteceu" to "A loja precisa aprovar o turno no painel. Você recebe um aviso quando ela aprovar.",
+    "Não recebo os avisos" to "Abra Avisos e permissões e ative o que estiver desligado. Sem restrição de bateria, o aviso chega com a tela apagada.",
+    "O cliente não vê a moto no mapa" to "O mapa usa sua localização só durante a rota. Permita a localização em Avisos e permissões.",
+    "Como recebo meus ganhos?" to "Os valores seguem as taxas da loja: encosta uma vez por dia e cada entrega concluída. O pagamento é combinado com a loja.",
+)
+
+@Composable
+private fun HelpContent(onBack: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Card {
+            Heading("Ajuda")
+            helpTopics.forEachIndexed { index, (question, answer) ->
+                if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Column(Modifier.semantics(mergeDescendants = true) { }, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(question, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text(answer, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            Text("Em dúvida durante uma rota, ligue para a loja pela lista de entregas.", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Secondary("Voltar ao início", false, onBack)
     }
 }
