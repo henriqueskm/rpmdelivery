@@ -102,6 +102,13 @@ import com.rpmdelivery.courier.work.Store
 import com.rpmdelivery.courier.work.WorkController
 import com.rpmdelivery.courier.work.WorkState
 import com.rpmdelivery.courier.work.clockTime
+import com.rpmdelivery.courier.work.InviteCard
+import com.rpmdelivery.courier.work.InviteLink
+import com.rpmdelivery.courier.work.InvitePhase
+import com.rpmdelivery.courier.ui.components.InviteScanner
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.rpmdelivery.courier.work.stopLabel
 
 /** The signed-in courier's day: ask for a shift, wait in line, run the route, come back. */
@@ -135,6 +142,7 @@ fun WorkScreen(work: WorkController) {
         pendingRoute?.let(work::startRoute); pendingRoute = null
     }
     val askLocation = { locationAsk.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) }
+    var scanning by remember { mutableStateOf(false) }
 
     val actions = WorkActions(
         requestShift = { store ->
@@ -157,7 +165,15 @@ fun WorkScreen(work: WorkController) {
         openHistory = work::openHistory,
         navigate = { query -> open(Intent(Intent.ACTION_VIEW, query.toUri()), "Nenhum aplicativo de mapas encontrado neste aparelho.") },
         dial = { phone -> open(Intent(Intent.ACTION_DIAL, "tel:$phone".toUri()), "Nenhum aplicativo de telefone encontrado neste aparelho.") },
+        invite = InviteActions(
+            scan = { scanning = true },
+            enter = work::receiveInvite,
+            request = work::requestLink,
+            dismiss = work::dismissInvite,
+            retry = work::retryInvite,
+        ),
     )
+    if (scanning) InviteScanner(onInvite = { code -> scanning = false; work.receiveInvite(code) }, onClose = { scanning = false })
     BackHandler(enabled = state.historyOpen) { work.closeHistory() }
     val route = state.home?.route
     when {
@@ -299,6 +315,17 @@ class WorkActions(
     /** Opens a geo: URI in the installed maps app. */
     val navigate: (String) -> Unit,
     val dial: (String) -> Unit,
+    val invite: InviteActions = InviteActions(),
+)
+
+/** A store's invite: read its QR Code, type its code, then ask that store for a link. */
+class InviteActions(
+    val scan: () -> Unit = {},
+    /** A code already normalized by [InviteLink.normalize]. */
+    val enter: (String) -> Unit = {},
+    val request: () -> Unit = {},
+    val dismiss: () -> Unit = {},
+    val retry: () -> Unit = {},
 )
 
 /** geo: URI for a place: exact coordinates when known, otherwise the written address. */
@@ -311,6 +338,7 @@ fun WorkContent(state: WorkState, actions: WorkActions) {
     val home = state.home
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Feedback(state)
+        state.invite?.let { InviteContent(it, state.busy, actions.invite) }
         when {
             home == null && state.loading -> Text("Carregando suas lojas e seu turno…")
             home == null -> OutlinedButton(onClick = actions.retry, enabled = !state.busy,
@@ -322,6 +350,8 @@ fun WorkContent(state: WorkState, actions: WorkActions) {
                 ReadyChecks()
                 home.today?.let { YourDay(it, home.shift, actions.openHistory) }
             }
+            // With an invite open, its card is the one action: no second reader or code field below it.
+            state.invite != null -> if (home.stores.isNotEmpty()) StoresContent(home.stores, state.busy, actions, inviting = true)
             else -> StoresContent(home.stores, state.busy, actions)
         }
         StationaryNotice()
@@ -438,14 +468,18 @@ private fun NavigationButton(title: String, hint: String, onClick: () -> Unit) {
 // ---------------------------------------------------------------- stores and shift
 
 @Composable
-private fun StoresContent(stores: List<Store>, busy: Boolean, actions: WorkActions) {
+private fun StoresContent(stores: List<Store>, busy: Boolean, actions: WorkActions, inviting: Boolean = false) {
     val active = stores.filter { it.active }
     val waiting = stores.filterNot { it.active }
     Card {
         if (active.isEmpty()) {
             Heading("Nenhuma loja aprovada")
-            Text("Peça o convite à loja, abra o link no navegador do celular e entre com esta mesma conta. Quando a loja aprovar, ela aparece aqui.",
-                style = MaterialTheme.typography.bodyLarge)
+            if (!inviting) {
+                Text("Peça o convite à loja e leia o QR Code aqui no aplicativo. Quando a loja aprovar, ela aparece aqui.",
+                    style = MaterialTheme.typography.bodyLarge)
+                Primary("Ler QR Code do convite", busy, actions.invite.scan)
+                InviteCodeEntry(busy, actions.invite.enter)
+            }
         } else {
             Heading("Pronto para começar?", "Ao chegar na loja, peça seu turno. A loja aprova e você entra na fila.")
             active.forEach { store ->
@@ -458,6 +492,59 @@ private fun StoresContent(stores: List<Store>, busy: Boolean, actions: WorkActio
         waiting.forEach {
             Text("Aguardando a loja ${it.name} aprovar seu vínculo.", style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        // Already working for a store: another store's invite is a quiet link, not the main action.
+        if (active.isNotEmpty() && !inviting) TextButton(onClick = actions.invite.scan, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) {
+            Text("Ler convite de outra loja")
+        }
+    }
+}
+
+/** The code printed under the QR Code, for when the camera cannot read it. */
+@Composable
+private fun InviteCodeEntry(busy: Boolean, onCode: (String) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    var text by remember { mutableStateOf("") }
+    var wrong by remember { mutableStateOf(false) }
+    if (!open) {
+        TextButton(onClick = { open = true }, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text("Digitar o código do convite") }
+        return
+    }
+    OutlinedTextField(value = text, onValueChange = { text = it.take(30); wrong = false }, label = { Text("Código do convite") },
+        supportingText = { Text(if (wrong) "Digite os 20 caracteres do código, com ou sem hífens." else "20 caracteres, com ou sem hífens") },
+        isError = wrong, singleLine = true, enabled = !busy, modifier = Modifier.fillMaxWidth(),
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, autoCorrectEnabled = false, imeAction = ImeAction.Done))
+    Secondary("Continuar com o código", busy) {
+        val code = InviteLink.normalize(text)
+        if (code == null) wrong = true else { onCode(code); text = ""; open = false }
+    }
+}
+
+/** The invite just read: which store it is and the request for a link. */
+@Composable
+private fun InviteContent(card: InviteCard, busy: Boolean, actions: InviteActions) {
+    Card {
+        val name = card.restaurantName
+        when (card.phase) {
+            InvitePhase.Waiting, InvitePhase.Checking -> {
+                Heading("Convite recebido")
+                Text("Conferindo o convite…", modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+            }
+            InvitePhase.Ready, InvitePhase.Sending -> {
+                Heading(name ?: "Convite de uma loja", "Convite para trabalhar com esta loja")
+                Text("Peça o vínculo. A loja confere seu cadastro e aprova pelo painel.",
+                    style = MaterialTheme.typography.bodyLarge)
+                card.message?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
+                Primary(if (card.phase == InvitePhase.Sending) "Enviando…" else "Pedir vínculo", busy || card.phase == InvitePhase.Sending, actions.request)
+                TextButton(onClick = actions.dismiss, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text("Agora não") }
+            }
+            InvitePhase.Failed -> {
+                Heading(name ?: "Convite")
+                card.message?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
+                if (card.retry) Secondary("Tentar novamente", busy, actions.retry)
+                TextButton(onClick = actions.dismiss, enabled = !busy, modifier = Modifier.heightIn(min = 48.dp)) { Text("Fechar") }
+            }
         }
     }
 }

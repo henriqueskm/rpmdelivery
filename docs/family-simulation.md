@@ -20,7 +20,7 @@ Duração sugerida: 1 h a 1 h 30, numa tarde de fim de semana, no bairro (entreg
 - [ ] WhatsApp: números da família verificados, modelo "saiu para entrega" aprovado, segredos no Supabase e a função `dispatch-notifications` publicada (com autorização).
 - [ ] App Android compilado com `auth.local.properties` e instalado no(s) celular(es) do motoboy.
 - [ ] Conta da loja criada, endereço confirmado, e em **Pagamentos** (área Motoboys): encosta e valor por entrega (ex.: R$ 30,00 e R$ 7,00).
-- [ ] Cada motoboy: conta criada no app, cadastro da moto completo, convite da loja aberto no navegador do celular e vínculo **aprovado** no painel.
+- [ ] Cada motoboy: conta criada no app, cadastro da moto completo, convite da loja lido no app (botão **Ler QR Code do convite**, a câmera do celular ou o código digitado), **Pedir vínculo** e vínculo **aprovado** no painel.
 - [ ] No celular do motoboy, em "Pronto para os avisos": notificações, localização e economia de bateria **ligadas**.
 
 ## Roteiro

@@ -336,3 +336,12 @@ Ajustes depois do primeiro teste no celular (2026-11-18):
 - **Perto da loja primeiro.** O servidor lê a localização da loja do usuário (`restaurants`, com o token dele, então o RLS limita às suas lojas) e manda como `proximity` ao Mapbox. Sem isso, "Rua Jovino" listava ruas do país inteiro. Sem loja ainda (cadastro) ou se a leitura falhar, a busca segue sem esse viés.
 - **Bairro preenchido sozinho.** O Mapbox quase nunca tem o bairro de endereços brasileiros; o servidor consulta o ViaCEP (gratuito, sem chave, só recebe CEP ou cidade + rua, nunca dados do cliente): primeiro pelo CEP completo, senão pela rua na cidade, e só usa o bairro se a rua inteira estiver em um só. A loja pode trocar o bairro; ele só é sobrescrito se o campo estiver vazio ou com o valor que a busca pôs. Falha do ViaCEP deixa o campo para a loja.
 - **"Nº do pedido".** O antigo "Número / referência" era o número do pedido (cupom/app), não o da casa; o rótulo agora diz isso.
+
+## Convite da loja dentro do app do motoboy
+
+Antes, o QR Code do convite abria o site e o app só dizia "Nenhuma loja aprovada". Agora o vínculo é pedido no próprio app, com a conta já logada:
+
+- **Câmera do celular.** O link do convite (`https://rpmdelivery.vercel.app/convite#c=…`) é um App Link do app: `public/.well-known/assetlinks.json` autoriza o pacote `com.rpmdelivery.courier.demo` assinado com a chave de debug do PC de desenvolvimento (só a impressão digital pública). Outro PC, chave de release ou a Play Store pedem outra impressão digital nesse arquivo. Sem o app, o link continua abrindo o site como antes.
+- **Dentro do app.** "Ler QR Code do convite" abre a câmera numa folha de 75% da tela (CameraX + ML Kit com o modelo de QR embutido, sem download e sem enviar imagens). "Digitar o código do convite" aceita os 20 caracteres com ou sem hífens. Com loja já aprovada, "Ler convite de outra loja" fica como link discreto.
+- **O pedido.** O app usa os mesmos RPCs do site: `inspect_courier_invite` mostra o nome da loja, só "Pedir vínculo" chama `request_courier_membership` (idempotente no servidor). O código fica só na memória: nunca na tela, em logs ou salvo. Um convite aberto antes do login espera a conta e o cadastro completo.
+- Nenhuma migration.
