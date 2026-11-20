@@ -14,6 +14,7 @@ type Database = {
         id: string;
         restaurant_id: string;
         user_id: string;
+        role: "OWNER" | "MANAGER" | "OPERATOR";
         active: boolean;
         created_at: string;
       }>;
@@ -22,6 +23,8 @@ type Database = {
         name: string;
         address: string;
         phone: string | null;
+        latitude: number | null;
+        longitude: number | null;
       }>;
     };
     Views: Record<string, never>;
@@ -48,6 +51,19 @@ type Database = {
       review_shift: { Args: Record<string, unknown>; Returns: unknown };
       get_courier_pay: { Args: { p_restaurant_id: string; p_day?: string }; Returns: unknown };
       set_courier_pay: { Args: { p_restaurant_id: string; p_shift_fee_cents: number; p_delivery_fee_cents: number }; Returns: unknown };
+      update_restaurant_profile: {
+        Args: {
+          p_restaurant_id: string;
+          p_name: string;
+          p_phone: string;
+          p_address?: string;
+          p_latitude?: number;
+          p_longitude?: number;
+          p_address_provider?: string;
+          p_address_provider_id?: string;
+        };
+        Returns: unknown;
+      };
       create_restaurant: {
         Args: {
           p_name: string;

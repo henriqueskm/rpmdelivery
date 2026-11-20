@@ -63,9 +63,15 @@ internal class FakeWork : CourierWorkRepository {
         home = home.copy(shift = home.shift!!.copy(status = "ON_ROUTE"),
             route = advance(route.copy(status = "ON_ROUTE"), route.stops.map { it.copy(status = "ON_ROUTE") }))
     }
-    override suspend fun completeDelivery(requestId: String, routeId: String, deliveryId: String) {
+    /** Meters between the phone and the next address (or the store), as the server would measure. */
+    var farFromAddress: Int? = null
+    var farFromStore: Int? = null
+    val positions = mutableListOf<GpsPoint?>()
+    override suspend fun completeDelivery(requestId: String, routeId: String, deliveryId: String, position: GpsPoint?, confirmFar: Boolean) {
         requestIds += requestId
-        record("complete_delivery:$deliveryId")
+        positions += position
+        record("complete_delivery:$deliveryId${if (confirmFar) ":far" else ""}")
+        farFromAddress?.let { if (position != null && !confirmFar) throw WorkProblem.fromServer("RPM_FAR_FROM_ADDRESS $it") }
         update(deliveryId, "DELIVERED")
     }
     override suspend fun reportFailure(requestId: String, routeId: String, deliveryId: String, reason: FailureReason, notes: String) {
@@ -73,8 +79,9 @@ internal class FakeWork : CourierWorkRepository {
         record("report_delivery_failure:$deliveryId:${reason.name}:$notes")
         update(deliveryId, "ATTEMPT_FAILED")
     }
-    override suspend fun arriveAtStore(routeId: String) {
+    override suspend fun arriveAtStore(routeId: String, position: GpsPoint?) {
         record("arrive_at_store")
+        farFromStore?.let { if (position != null) throw WorkProblem.fromServer("RPM_FAR_FROM_STORE $it") }
         home = home.copy(route = null, shift = home.shift!!.copy(status = "AVAILABLE", queuePosition = 2))
     }
     val sentPoints = mutableListOf<GpsPoint>()

@@ -52,3 +52,6 @@
 @media(max-width:480px){.ops-new-issue{padding:12px;margin:8px 0}.ops-new-issue h2{font-size:18px}.ops-new-issue-top{gap:8px}.ops-new-issue-icon{display:none}.ops-new-issue-bottom>div{width:100%;display:grid;grid-template-columns:1fr 1fr}.ops-new-issue-bottom button{padding:8px;font-size:13px}.ops-issue-center{padding:12px;gap:8px!important}.ops-issue-card{padding:12px}.ops-issue-decisions{display:grid;grid-template-columns:1fr}.ops-driver-actions{gap:6px}.ops-dialog-heading h2{font-size:19px}}
 @media(prefers-reduced-motion:reduce){.ops-new-issue{transition:none;transform:none}}
 @media(max-width:600px){.ops-demo-explanation{display:none}.ops-panel{height:clamp(400px,calc(100dvh - 340px),720px)}}
+/* Delivered more than 300 m from the pin: worth a look, not a decision. */
+.ops-route-far-summary{padding:10px 14px;background:#fff7e8;border:1px solid #e7b778;border-radius:10px;margin:0 0 12px;color:#774200;font-size:13px}
+.ops-route-far{display:inline-block;color:#8a4b00;font-size:12px;font-weight:650}

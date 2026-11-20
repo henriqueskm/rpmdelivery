@@ -4,6 +4,15 @@ import { DEMO_STORE_ACTOR, deliveryEligible } from "./issue-types";
 import { Badge, Empty, Icon, RouteBadge } from "./ui";
 import { DeadlineButton } from "./deadline-view";
 
+/** Orders delivered more than 300 m from their pin (real data only). */
+export const farDeliveries = (state: DemoState) => state.orders.filter(o => o.farMeters !== undefined);
+
+/** "350 m", "1,2 km". */
+export function distanceLabel(meters: number) {
+  return meters < 1000 ? `${Math.round(meters / 10) * 10} m`
+    : `${(meters / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km`;
+}
+
 export function RoutesPanel({
   state,
   onEdit,
@@ -28,6 +37,7 @@ export function RoutesPanel({
   onIssues: () => void; onCommand: (command: Command) => boolean | Promise<boolean>; highlightedRoute?: string;
 }) {
   const issues = pendingIssues(state);
+  const far = farDeliveries(state);
   return (
     <>
       <div className="ops-routes-heading">
@@ -37,6 +47,7 @@ export function RoutesPanel({
         <span>Preparação, saída e retorno em um só lugar</span>
       </div>
       {issues.length>0&&<div className="ops-route-pending"><strong>! {plural(issues.length,"ocorrência aguardando decisão","ocorrências aguardando decisão")}</strong><button onClick={onIssues}>Abrir Central de ocorrências</button></div>}
+      {far.length>0&&<p className="ops-route-far-summary" role="note"><strong>{plural(far.length,"entrega confirmada longe do endereço","entregas confirmadas longe do endereço")}</strong> · confira com o motoboy e o cliente.</p>}
       {!state.routes.length ? (
         <Empty title="Nenhuma rota neste momento">
           Atribua pedidos a um motoboy disponível para criar uma rota em
@@ -79,6 +90,7 @@ export function RoutesPanel({
                           <button className="ops-route-issue-link" onClick={onIssues}>! Decisão pendente</button>
                         )}
                         {o.delivery!=="ATTEMPT_FAILED"&&o.delivery!=="ASSIGNED"&&o.delivery!=="ON_ROUTE"&&o.delivery!=="NEXT"&&<Badge tone={o.delivery==="DELIVERED"?"green":"neutral"}>{deliveryLabels[o.delivery]}</Badge>}
+                        {o.farMeters!==undefined&&<span className="ops-route-far">! Entregue a {distanceLabel(o.farMeters)} do endereço</span>}
                         {r.status==="ON_ROUTE"&&deliveryEligible(o.delivery)&&<details className="ops-route-cancel"><summary>Mais ações · #{o.reference}</summary><button onClick={()=>{
                           onCommand({type:"delivery-cancel",routeId:r.id,orderId:o.id,actorId:DEMO_STORE_ACTOR,now:Date.now(),commandId:`store:${o.id}:cancel`});
                         }}>Cancelar entrega #{o.reference}{onCancelRoute ? "" : " — simulação"}</button></details>}

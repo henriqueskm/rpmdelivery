@@ -25,6 +25,8 @@ export type DemoOrder = {
   status: "OPEN" | "DELIVERING" | "DELIVERED" | "CANCELLED";
   delivery: DeliveryStatus;
   attemptNumber?: number;
+  /** Real data: delivered more than 300 m from the address pin (meters). */
+  farMeters?: number;
 };
 export type DemoCourier = {
   id: string;

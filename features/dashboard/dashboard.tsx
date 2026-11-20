@@ -17,11 +17,12 @@ export function Dashboard() {
   return (
     <Operations
       courierManagementHref="/motoboys"
+      storeHref="/loja"
       key={state.restaurant.id}
       restaurantId={state.restaurant.id}
       restaurantName={state.restaurant.name}
       email={state.user.email}
-      accountAction={<SignOut />}
+      accountAction={<SignOut className="ops-primary" label="Sair da conta" />}
     />
   );
 }

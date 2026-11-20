@@ -135,8 +135,14 @@ test("sem conexão: primeira leitura permite tentar de novo e queda depois mant�
   await signIn(page);
   await expect(page.getByRole("alert").filter({ hasText: "Não foi possível carregar a operação." })).toBeVisible();
   // The store can still see which account is signed in and leave.
-  await expect(page.getByText(testRestaurant.name, { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Sair" })).toBeVisible();
+  await page.getByRole("button", { name: `${testRestaurant.name}, abrir menu` }).click();
+  const menu = page.getByRole("dialog", { name: "Menu da loja" });
+  await expect(menu.getByText("operador@example.test")).toBeVisible();
+  await expect(menu.getByRole("button", { name: "Sair", exact: true })).toBeVisible();
+  // Before the board loads there is nothing to pay yet.
+  await expect(menu.getByRole("button", { name: "Pagamentos dos motoboys" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
 
   backend.setOffline(false);
   await page.getByRole("button", { name: "Tentar novamente" }).click();

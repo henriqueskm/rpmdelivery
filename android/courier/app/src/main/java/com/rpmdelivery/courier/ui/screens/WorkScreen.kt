@@ -54,6 +54,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.rpmdelivery.courier.shift.ShiftService
 import com.rpmdelivery.courier.shift.RouteBubble
+import com.rpmdelivery.courier.shift.CurrentPosition
+import com.rpmdelivery.courier.work.WorkCopy
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -175,9 +177,10 @@ fun WorkScreen(work: WorkController, registration: CourierRegistration = Courier
         },
         askLocation = askLocation,
         locationOn = locationOn,
-        complete = work::completeDelivery,
+        // Each swipe carries where the phone is: the server compares it with the address or the store.
+        complete = { route, stop -> work.completeDelivery(route, stop, CurrentPosition.read(context)) },
         fail = work::reportFailure,
-        arrive = work::arriveAtStore,
+        arrive = { route -> work.arriveAtStore(route, CurrentPosition.read(context)) },
         retry = work::refresh,
         openHistory = work::openHistory,
         navigate = { query -> open(Intent(Intent.ACTION_VIEW, query.toUri()), "Nenhum aplicativo de mapas encontrado neste aparelho.") },
@@ -191,6 +194,21 @@ fun WorkScreen(work: WorkController, registration: CourierRegistration = Courier
         ),
     )
     if (scanning) InviteScanner(onInvite = { code -> scanning = false; work.receiveInvite(code) }, onClose = { scanning = false })
+    // "Entregue" far from the address: confirm only if it really was delivered; the store sees the distance.
+    state.farPrompt?.let { prompt ->
+        AlertDialog(onDismissRequest = work::cancelFarDelivery,
+            title = { Text("Você está longe do endereço") },
+            text = {
+                Text("O celular está a ${WorkCopy.distance(prompt.meters)} do endereço de ${prompt.customerName}. " +
+                    "Confirme só se entregou mesmo: a loja vai ver a distância.")
+            },
+            confirmButton = {
+                TextButton(onClick = work::confirmFarDelivery, modifier = Modifier.heightIn(min = 48.dp)) { Text("Confirmar entrega") }
+            },
+            dismissButton = {
+                TextButton(onClick = work::cancelFarDelivery, modifier = Modifier.heightIn(min = 48.dp)) { Text("Cancelar") }
+            })
+    }
     // Back from any part of the menu returns to Início.
     BackHandler(enabled = state.section != Section.Home) { work.show(Section.Home) }
     val route = state.home?.route
