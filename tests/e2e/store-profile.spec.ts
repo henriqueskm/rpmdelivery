@@ -79,8 +79,10 @@ test("painel avisa a entrega confirmada longe do endereço", async ({ page }) =>
   // On phones each area is a tab.
   const tab = page.getByRole("tab", { name: /Rotas/ });
   if (await tab.isVisible()) await tab.click();
-  await expect(page.getByText("! Entregue a 1,2 km do endereço")).toBeVisible();
-  await expect(page.getByText("1 entrega confirmada longe do endereço")).toBeVisible();
+  // The "Acompanhar rotas" screen repeats the warning; this checks the Rotas column.
+  const routes = page.locator("#ops-panel-routes");
+  await expect(routes.getByText("! Entregue a 1,2 km do endereço")).toBeVisible();
+  await expect(routes.getByText("1 entrega confirmada longe do endereço")).toBeVisible();
 });
 
 test("menu da loja: páginas, pagamentos e sair com confirmação", async ({ page }) => {

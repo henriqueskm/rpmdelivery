@@ -303,3 +303,54 @@ test("pagamento dos motoboys: operador vê o acerto sem alterar valores", async 
   await expect(dialog.getByLabel("Taxa de encosta (por dia)")).toHaveAttribute("readonly", "");
   await expect(dialog.getByRole("button", { name: "Salvar valores" })).toHaveCount(0);
 });
+
+test("acompanhar rotas: tela com cada rota na rua, entregas em ordem e ocorrência para decidir", async ({ page }) => {
+  const backend = storeBackend();
+  await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  await openPanel(page);
+  await page.getByRole("button", { name: "Acompanhar rotas" }).click();
+  const tracker = page.getByRole("dialog", { name: "Rotas em andamento" });
+  await expect(tracker).toBeVisible();
+  await expect(tracker).toContainText("1 rota na rua · 1 aguardando retirada");
+  const r7 = tracker.getByRole("article", { name: "Acompanhamento da rota R-7" });
+  await expect(r7).toContainText("Ana Souza");
+  await expect(r7).toContainText("Saiu há 18 min · 0 de 2 entregues");
+  const stops = r7.locator(".ops-tracker-stop");
+  await expect(stops.nth(0)).toContainText("#1050 · Liberdade");
+  await expect(stops.nth(0)).toContainText("Ocorrência");
+  await expect(stops.nth(1)).toContainText("#1051 · Aclimação");
+  await expect(stops.nth(1)).toContainText("Próxima");
+  await expect(tracker).toContainText("Aguardando retirada: R-6 · Dani Lima (liberar retirada)");
+  // Deciding the occurrence leaves this screen for the Central.
+  await r7.getByRole("button", { name: "Decidir ocorrência #1050" }).click();
+  await expect(tracker).toBeHidden();
+  await expect(page.getByRole("dialog", { name: "Central de ocorrências" })).toBeVisible();
+});
+
+test("novo pedido: trocar o endereço troca o bairro preenchido sozinho", async ({ page }) => {
+  const backend = storeBackend();
+  await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  await mockGeocoding(page, { neighborhood: ["Vila Mariana", "Pinheiros", "", "Lapa"] });
+  await openPanel(page);
+  await page.getByRole("button", { name: "Novo pedido" }).click();
+  const form = page.locator("dialog[open]");
+  const address = form.getByRole("combobox", { name: "Endereço" });
+  const bairro = form.locator('input[name="neighborhood"]');
+  const pick = async () => {
+    await address.fill("Rua das Flores, 120");
+    await form.getByRole("option", { name: "Rua das Flores, 120 São Paulo, Brasil" }).click();
+    await expect(form.getByText("✓ Endereço confirmado", { exact: true })).toBeVisible();
+  };
+  await pick();
+  await expect(bairro).toHaveValue("Vila Mariana");
+  // Another address: its own bairro, not the previous street's.
+  await pick();
+  await expect(bairro).toHaveValue("Pinheiros");
+  // An address whose bairro was not found clears the old one instead of keeping it.
+  await pick();
+  await expect(bairro).toHaveValue("");
+  // A bairro typed by the store is never overwritten.
+  await bairro.fill("Centro");
+  await pick();
+  await expect(bairro).toHaveValue("Centro");
+});
