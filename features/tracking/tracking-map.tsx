@@ -4,6 +4,7 @@ import type { Map as MapboxMap, Marker } from "mapbox-gl";
 import { useEffect, useRef, useState } from "react";
 import { REFRAME_AFTER_MS, glideMs, pointAlong, pointsBounds, publicMapToken } from "@/lib/tracking/motion";
 import { clockTime, refreshSeconds, type Tracking, type TrackingPoint } from "@/lib/tracking/view";
+import { courierMarkerElement } from "@/lib/maps/courier-marker";
 
 type Points = Pick<Tracking, "courier" | "destination">;
 
@@ -41,14 +42,17 @@ function lngLat(point: TrackingPoint): [number, number] {
 }
 
 function markerElement(kind: "courier" | "destination") {
+  if (kind === "courier") {
+    // The rider on a motorcycle, same drawing as the store's map, without the route tag.
+    const rider = courierMarkerElement();
+    rider.classList.add("tracking-marker-courier");
+    return rider;
+  }
   const element = document.createElement("div");
   element.className = `tracking-marker tracking-marker-${kind}`;
   element.setAttribute("aria-hidden", "true");
-  element.innerHTML = kind === "courier"
-    // Scooter
-    ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="17" r="2.5"/><circle cx="18" cy="17" r="2.5"/><path d="M8.5 17h7M15 6h2l2.5 8.5M11 12h4.5"/></svg>'
-    // House
-    : '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7M6.5 9.5V20h11V9.5"/></svg>';
+  // House
+  element.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7M6.5 9.5V20h11V9.5"/></svg>';
   return element;
 }
 

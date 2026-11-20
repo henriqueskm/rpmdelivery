@@ -412,3 +412,15 @@ Pendências, Acompanhar rotas e som continuam no topo. Os atalhos "Convites e v�
   Embaixo vem a lista das rotas aguardando retirada. Esta tela não tem mapa nem migration. O horário exato de cada entrega e o mini mapa ficam para depois.
 - **Motoboys compacto:** uma linha por motoboy, com posição na fila (1º, 2º…), nome e a etiqueta colorida do status. A cor fica só na etiqueta. "Aprovar/Recusar" aparece numa segunda linha só para turno pendente. Cabem uns 15 motoboys sem rolar.
 - **Bairro:** o bairro preenchido pela busca acompanha o endereço. Muda quando o endereço muda e fica vazio quando o novo endereço não tem bairro encontrado. Antes, ficava o bairro da rua anterior. Um bairro digitado pela loja nunca é sobrescrito.
+
+## A loja sempre decide, mini mapa, horários e link de acompanhamento (migrations 20261121180000 e 20261121190000)
+
+- **A loja sempre decide a ocorrência, também na última entrega.** Antes, quando a falha era na última entrega que restava, a rota fechava a ocorrência sozinha (`OTHERS_FINISHED`) e o motoboy voltava. Agora `private.advance_route` só manda a rota voltar quando não há ocorrência aberta. Enquanto houver, a rota fica na rua e o app diz "A loja está decidindo… Se ela não decidir em 10 minutos, você volta com o pedido".
+  - **Quem decide:** a loja, com Tentar de novo (vira a próxima), Devolver ou Cancelar. Ou o prazo: ao vencer, fecha como `TIMEOUT`, o pedido volta para a loja e a rota retorna.
+  - **Como o prazo é cobrado:** pelo comando novo `settle_courier_route(route)`. O app do motoboy chama esse comando a cada leitura enquanto espera, inclusive pelo serviço do turno com o celular no bolso. Antes do prazo ele não muda nada.
+  - **App antigo:** a versão sem esse comando só sai da espera quando a loja decide.
+  - **Concorrência no PostgreSQL 17 (corrida 10):** com o motoboy terminando a última outra entrega enquanto a loja decide, a decisão espera a vez e é aceita, e só então a rota volta.
+- **Mini mapa em "Acompanhar rotas".** Mostra a loja, cada motoboy na rua (marcador com o número da rota, pelo GPS dos últimos 15 min) e a próxima entrega de cada rota (pino com o nº do pedido). O mapa só existe enquanto a tela está aberta, porque a Mapbox cobra por mapa criado. Ele aparece quando há posição ou pino para mostrar.
+- **Horário de cada entrega:** "Entregue às 10:25", vindo de `routeOutcomes.at`.
+- **Copiar link de acompanhamento:** o botão fica em cada pedido aguardando despacho e em cada entrega ainda na rota, dentro de "Acompanhar rotas". Ele copia `…/acompanhar/<token>` para a loja mandar à mão, por exemplo no WhatsApp, enquanto o envio automático não estiver ativo. Sem acesso à área de transferência, o link aparece num campo para copiar.
+- **Quadro:** `get_operations_board` ganhou `routePositions`, `trackingTokens`, `storeLocation` e `routeOutcomes[].at`. O quadro é só da loja: o motoboy nunca lê os links nem os telefones dos clientes.

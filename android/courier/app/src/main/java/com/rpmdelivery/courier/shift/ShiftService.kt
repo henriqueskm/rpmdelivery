@@ -80,7 +80,15 @@ class ShiftService : Service() {
     }
 
     private suspend fun tick() {
-        val home = try { repository.home() }
+        val home = try {
+            val read = repository.home()
+            // Phone in the pocket while the store decides the last occurrence: past its deadline the
+            // server sends the route back, so the courier is told to return without opening the app.
+            if (read.route?.let { it.status == "ON_ROUTE" && it.nextDeliveryId == null } == true) {
+                repository.settleRoute(read.route.routeId)
+                repository.home()
+            } else read
+        }
         catch (error: CancellationException) { throw error }
         catch (error: WorkProblem) {
             if (error.expired) { ShiftNotifications.sessionEnded(this); finish() }

@@ -87,3 +87,7 @@ aparelho real, teclado/IME real, TalkBack ou Keystore em hardware.
 O navegador integrado e Playwright validam o projeto web, não executam APKs.
 Não se usa uma réplica HTML como evidência de Android. Testes conectados de Auth,
 confirmação e rotas reais dependem de autorização e homologação próprias.
+
+## Ocorrência na última entrega
+
+Quando a entrega que falhou era a última da rota, o app espera a loja decidir ("A loja está decidindo…"). Enquanto espera, cada leitura chama `settle_courier_route`, tanto com a tela aberta quanto pelo serviço do turno com o celular no bolso. Se a loja não decidir em 10 minutos, o servidor fecha a ocorrência e a rota passa para "Volte para a loja".

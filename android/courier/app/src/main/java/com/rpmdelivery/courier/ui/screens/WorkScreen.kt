@@ -813,7 +813,8 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
                     }) { next ->
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         if (next == null) {
-                            Text("Aguardando a loja decidir as ocorrências. A tela se atualiza sozinha.", style = MaterialTheme.typography.bodyLarge)
+                            Text("A loja está decidindo o que fazer com a entrega que não deu certo. Se ela não decidir em 10 minutos, você volta com o pedido para a loja. A tela se atualiza sozinha.",
+                                style = MaterialTheme.typography.bodyLarge)
                         } else if (failing) {
                             NextStop(next)
                             FailureForm(busy, onBack = { failing = false },

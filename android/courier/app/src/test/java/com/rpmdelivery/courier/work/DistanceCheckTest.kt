@@ -73,6 +73,26 @@ class DistanceCheckTest {
         assertEquals("Entrega concluída.", work.state.value.notice)
     }
 
+    @Test fun waitingForTheStoreSettlesTheRouteOnEachRead() = runTest {
+        val work = onRoute()
+        // Last stop failed and the store has not decided: nothing next, still on the route.
+        fake.home = fake.home.copy(route = fake.home.route!!.copy(nextDeliveryId = null,
+            stops = fake.home.route!!.stops.map { it.copy(status = "ATTEMPT_FAILED") }))
+        work.refresh(); advanceUntilIdle()
+        assertEquals("ON_ROUTE", work.state.value.home!!.route!!.status)
+        assertTrue("the read asks the server to settle", "settle_courier_route" in fake.calls)
+        // Ten minutes later the deadline passes: the same read brings the route back home.
+        fake.deadlinePassed = true
+        work.refresh(); advanceUntilIdle()
+        assertEquals("RETURNING", work.state.value.home!!.route!!.status)
+    }
+
+    @Test fun aRouteWithANextStopIsNeverSettled() = runTest {
+        val work = onRoute()
+        work.refresh(); advanceUntilIdle()
+        assertFalse("settle_courier_route" in fake.calls)
+    }
+
     @Test fun arrivalFarFromTheStoreSaysHowFar() = runTest {
         val work = onRoute()
         fake.home = fake.home.copy(route = fake.home.route!!.copy(status = "RETURNING", nextDeliveryId = null))

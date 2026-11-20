@@ -77,6 +77,8 @@ select core_test.as_actor(18,format($s$select public.report_delivery_failure(cor
  core_test.s('route_e'),core_test.s('e2')));
 select core_test.check('a failed stop pays nothing',
  (select courier_fee_cents from public.delivery_attempts where client_request_id=core_test.id(9812)) is null);
+-- The last stop failed: the store decides (back to the store) before the courier can return.
+select core_test.as_actor(4,format($s$select to_jsonb(public.decide_delivery_failure(core_test.id(102),%L,'RETURN'))$s$,core_test.s('e2')));
 select core_test.as_actor(18,format($s$select public.arrive_at_store(%L)$s$,core_test.s('route_e')));
 
 -- A second shift the same day adds no second encosta.

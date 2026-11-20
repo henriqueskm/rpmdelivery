@@ -24,7 +24,7 @@
 .tracking-map-canvas { width: 100%; height: clamp(220px, 50vw, 300px); }
 .tracking-map .map-unavailable { margin: 0; }
 .tracking-marker { display: grid; place-items: center; color: white; }
-.tracking-marker-courier { width: 36px; height: 36px; border-radius: 50%; background: #1d2c24; border: 3px solid white; box-shadow: 0 2px 8px rgb(29 44 36 / 0.35); }
+/* The courier is the rider drawing (lib/maps/courier-marker.ts); styles in globals.css. */
 .tracking-marker-destination { width: 32px; height: 32px; border-radius: 50%; background: #bd401b; border: 3px solid white; box-shadow: 0 2px 6px rgb(29 44 36 / 0.3); }
 .tracking-map figcaption { display: flex; align-items: center; gap: 8px; padding: 12px 14px; font-size: 12px; color: var(--muted); background: white; border-top: 1px solid var(--line); }
 .tracking-live { width: 8px; height: 8px; border-radius: 50%; background: #397544; box-shadow: 0 0 0 3px #3975442e; flex-shrink: 0; }

@@ -174,21 +174,22 @@ grep -q RPM_DELIVERY_STATE /tmp/core-cancel-b.txt || { echo 'FAIL: unexpected ca
  and not exists (select 1 from public.delivery_attempts where delivery_id='$x3')
  and (select status='NEXT' from public.deliveries where id='$x4'));"
 
-# Race 10: the store retries a failure while the courier finishes the last
-# stop. The finished route returns the failure first; the decision is refused.
+# Race 10: the store decides a failure while the courier finishes the last
+# other stop. The route no longer closes the failure on its own: finishing
+# leaves it waiting for the store, the decision (blocked on the route lock)
+# then goes through, and only then does the route return.
 as_actor 15 "select public.report_delivery_failure(gen_random_uuid(),'$route_s','$x4','CUSTOMER_NOT_FOUND')->>'outcome'" >/dev/null
 as_actor 15 "begin; select public.complete_delivery(gen_random_uuid(),'$route_s','$x5')->>'status'; select pg_sleep(2); commit;" \
  >/tmp/core-decide-a.txt 2>&1 &
 first=$!
 sleep 0.5
-if as_actor 1 "select public.decide_delivery_failure(core_test.id(101),'$x4','RETRY')" >/tmp/core-decide-b.txt 2>&1; then
- echo 'FAIL: retry decided on a finished route'; cat /tmp/core-decide-*.txt; exit 1
-fi
+as_actor 1 "select public.decide_delivery_failure(core_test.id(101),'$x4','RETURN')" >/tmp/core-decide-b.txt 2>&1 \
+ || { echo 'FAIL: the store decision was refused'; cat /tmp/core-decide-*.txt; exit 1; }
 wait "$first"
-grep -q RPM_ISSUE_CLOSED /tmp/core-decide-b.txt || { echo 'FAIL: unexpected decision race error'; cat /tmp/core-decide-b.txt; exit 1; }
-"${psql[@]}" -c "select core_test.check('decision racing the end of the route keeps the return',
+grep -qx ON_ROUTE /tmp/core-decide-a.txt || { echo 'FAIL: finishing the last stop did not wait for the store'; cat /tmp/core-decide-a.txt; exit 1; }
+"${psql[@]}" -c "select core_test.check('decision racing the end of the route: the store decides, then the route returns',
  (select status='RETURN_TO_STORE' from public.deliveries where id='$x4')
- and (select decision='OTHERS_FINISHED' from public.delivery_attempts where delivery_id='$x4')
+ and (select decision='RETURN' and decided_by=core_test.id(1) from public.delivery_attempts where delivery_id='$x4')
  and (select status='RETURNING' from public.routes where id='$route_s'));"
 
 "${psql[@]}" -f tests/sql/delivery-core/contracts.sql

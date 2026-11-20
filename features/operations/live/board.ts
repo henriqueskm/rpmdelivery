@@ -10,6 +10,8 @@ type BoardOrder = {
   address: string; neighborhood: string | null; complement: string | null; notes: string | null;
   orderedAt: string; createdAt: string; promisedMinutes: number;
   orderStatus: DemoOrder["status"]; deliveryStatus: DeliveryStatus; failedAttempts: number;
+  /** The pin, when the address was picked from the search. */
+  latitude?: number | null; longitude?: number | null;
 };
 type BoardCourier = {
   shiftId: string; name: string; status: ShiftStatus; linkActive: boolean;
@@ -35,7 +37,10 @@ export type Board = {
   /** Absent before the distance migration: read as none. */
   farDeliveries?: BoardFarDelivery[];
   /** Absent before the outcomes migration: every stop shows its live status. */
-  routeOutcomes?: { routeId: string; deliveryId: string; outcome: RouteOutcome }[];
+  routeOutcomes?: { routeId: string; deliveryId: string; outcome: RouteOutcome; at?: string | null }[];
+  routePositions?: { routeId: string; latitude: number; longitude: number; recordedAt: string }[];
+  trackingTokens?: { deliveryId: string; token: string }[];
+  storeLocation?: { latitude: number; longitude: number } | null;
 };
 
 /** What the commands need beyond the rendered state. */
@@ -63,6 +68,8 @@ const isOptionalText = (value: unknown) => value === null || isText(value);
 const isTime = (value: unknown) => isText(value) && !Number.isNaN(Date.parse(value));
 const isOptionalTime = (value: unknown) => value === null || isTime(value);
 const isCount = (value: unknown) => Number.isInteger(value) && (value as number) >= 0;
+const isLatitude = (value: unknown) => typeof value === "number" && value >= -90 && value <= 90;
+const isLongitude = (value: unknown) => typeof value === "number" && value >= -180 && value <= 180;
 const isIdList = (value: unknown) => Array.isArray(value) && value.every(isText);
 const oneOf = (values: string[]) => (value: unknown) => isText(value) && values.includes(value);
 const list = (value: unknown, valid: (item: Record<string, unknown>) => boolean) =>
@@ -91,7 +98,12 @@ export function parseBoard(value: unknown): Board | null {
     && (value.farDeliveries === undefined || list(value.farDeliveries, f => isText(f.deliveryId) && isText(f.routeId)
       && isCount(f.distanceMeters) && isTime(f.reportedAt)))
     && (value.routeOutcomes === undefined || list(value.routeOutcomes, o => isText(o.routeId) && isText(o.deliveryId)
-      && oneOf(["DELIVERED", "RETURNED", "CANCELLED"])(o.outcome)));
+      && oneOf(["DELIVERED", "RETURNED", "CANCELLED"])(o.outcome) && (o.at === undefined || isOptionalTime(o.at))))
+    && (value.routePositions === undefined || list(value.routePositions, p => isText(p.routeId)
+      && isLatitude(p.latitude) && isLongitude(p.longitude) && isTime(p.recordedAt)))
+    && (value.trackingTokens === undefined || list(value.trackingTokens, t => isText(t.deliveryId) && isText(t.token)))
+    && (value.storeLocation === undefined || value.storeLocation === null
+      || (isRecord(value.storeLocation) && isLatitude(value.storeLocation.latitude) && isLongitude(value.storeLocation.longitude)));
   return valid ? value as Board : null;
 }
 
@@ -125,6 +137,7 @@ export function boardToState(board: Board, { now, receivedAt = now, alertReceipt
     .filter(issue => issue.decision === null && ms(issue.decisionDeadline) <= serverNow)
     .map(issue => issue.deliveryId));
   const far = new Map((board.farDeliveries ?? []).map(f => [f.deliveryId, f.distanceMeters]));
+  const tokens = new Map((board.trackingTokens ?? []).map(t => [t.deliveryId, t.token]));
 
   const orders: DemoOrder[] = board.orders.map(order => {
     const delivery = expired.has(order.deliveryId) ? "RETURN_TO_STORE" : order.deliveryStatus;
@@ -145,6 +158,9 @@ export function boardToState(board: Board, { now, receivedAt = now, alertReceipt
       delivery,
       attemptNumber: Math.max(1, order.failedAttempts + (onTheWay ? 1 : 0)),
       ...(far.has(order.deliveryId) ? { farMeters: far.get(order.deliveryId) } : {}),
+      ...(tokens.has(order.deliveryId) ? { trackingToken: tokens.get(order.deliveryId) } : {}),
+      ...(isLatitude(order.latitude) && isLongitude(order.longitude)
+        ? { location: { latitude: order.latitude!, longitude: order.longitude!, confirmed: true as const, source: "mapbox" as const } } : {}),
     };
   });
 
@@ -207,6 +223,10 @@ export function boardToState(board: Board, { now, receivedAt = now, alertReceipt
       nextRoute: 0,
       nextQueue: couriers.length,
       routeOutcomes: Object.fromEntries((board.routeOutcomes ?? []).map(o => [`${o.routeId}:${o.deliveryId}`, o.outcome])),
+      deliveredAt: Object.fromEntries((board.routeOutcomes ?? []).filter(o => o.at).map(o => [`${o.routeId}:${o.deliveryId}`, ms(o.at!)])),
+      routePositions: Object.fromEntries((board.routePositions ?? []).map(p =>
+        [p.routeId, { latitude: p.latitude, longitude: p.longitude, recordedAt: ms(p.recordedAt) }])),
+      ...(board.storeLocation ? { restaurantLocation: { ...board.storeLocation, confirmed: true as const, source: "mapbox" as const } } : {}),
     },
     versions: Object.fromEntries(board.routes.map(route => [route.id, route.compositionVersion])),
     orderIds: Object.fromEntries(board.orders.map(order => [order.deliveryId, order.orderId])),

@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import { CopyTrackingLink } from "./copy-tracking-link";
 import { editableOrders, normalized, plural, type DemoState } from "./model";
 import { Badge, Empty, Icon } from "./ui";
 import { DeadlineText } from "./deadline-view";
@@ -157,6 +158,8 @@ export function OrdersPanel({
               {onDeadline && <button className="ops-order-edit-promise" aria-label={`Editar prazo do pedido ${o.reference}`} title="Editar horário original e prazo prometido" onClick={() => onDeadline(o.id)}>Prazo</button>}
               {onCancelOrder && o.delivery === "WAITING" && <button className="ops-order-edit-promise" disabled={pending}
                 aria-label={`Cancelar pedido ${o.reference}`} onClick={() => onCancelOrder(o.id)}>Cancelar</button>}
+              {/* Real data: the customer's tracking link, to send by hand while WhatsApp is not automatic. */}
+              <CopyTrackingLink token={o.trackingToken} reference={o.reference} />
               {o.notes && (
                   <label htmlFor={`${checkboxPrefix}-${o.id}`} className="ops-order-note">
                     <span aria-hidden="true">!</span>
