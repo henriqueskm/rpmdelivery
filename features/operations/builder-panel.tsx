@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type RefObject } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { availableCouriers, plural, type DemoState } from "./model";
 import { Badge, Empty, Icon, RouteBadge } from "./ui";
 
@@ -17,6 +17,8 @@ type BuilderProps = {
   live?: boolean;
   /** A command is being saved. */
   pending?: boolean;
+  /** Demo only: "Montagem automática" in the heading (not in the enlarged view). */
+  headingAction?: ReactNode;
 };
 
 export function BuilderPanel(props: BuilderProps) {
@@ -87,6 +89,7 @@ function BuilderContent({
   onSuggest,
   live,
   pending,
+  headingAction,
 }: BuilderProps & {
   onExpand?: () => void;
   onClose?: () => void;
@@ -115,6 +118,7 @@ function BuilderContent({
           <Icon name="route" /> Montagem de rota
         </h2>
         {editing && <Badge>{editing.reference}</Badge>}
+        {!onClose && headingAction}
         {onExpand && (
           <button
             ref={expandButton}

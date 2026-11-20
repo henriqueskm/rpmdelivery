@@ -8,6 +8,11 @@ import { Badge, Empty, Icon } from "./ui";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+/** One color per moment of the shift; the word stays, so color is never the only signal. */
+const statusKey: Record<string, string> = {
+  "Disponível": "available", "Reservado": "reserved", "Em rota": "on-route", "Retornando": "returning", "Turno pendente": "pending",
+};
+
 export function CouriersPanel({ state, managementHref, onReviewShift, pending, pay }: {
   state: DemoState; managementHref?: string;
   /** Real data: the counter approves the shift of a courier who arrived. */
@@ -48,6 +53,7 @@ export function CouriersPanel({ state, managementHref, onReviewShift, pending, p
             return (
               <div
                 className={`ops-courier ${position === 0 ? "is-next" : ""}`}
+                data-status={statusKey[label]}
                 key={c.id}
               >
                 <span className="ops-avatar" aria-hidden="true">
@@ -56,10 +62,10 @@ export function CouriersPanel({ state, managementHref, onReviewShift, pending, p
                 <div>
                   <strong dir="auto">{c.name}</strong>
                   <span
-                    className={`ops-courier-status status-${label === "Disponível" ? "available" : "other"}`}
+                    className={`ops-courier-status status-${statusKey[label]}`}
                   >
-                    {label}
-                    {position >= 0 && ` · ${c.availableMinutes} min`}
+                    <span className="ops-courier-pill">{label}</span>
+                    {position >= 0 && <span className="ops-courier-wait"> · {c.availableMinutes} min</span>}
                   </span>
                   {position === 0 && (
                     <span className="ops-next">Próximo da fila</span>

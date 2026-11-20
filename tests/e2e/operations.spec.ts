@@ -88,7 +88,9 @@ test("pico preserva área útil no desktop e atribuição acessível no mobile",
         return rect.top >= Math.max(0, list.top) && rect.bottom <= Math.min(innerHeight, list.bottom);
       }).length;
     });
-    expect(await completeRows(".ops-order")).toBeGreaterThanOrEqual(width === 390 ? 4 : 6);
+    // Four columns side by side: on a touch screen (bigger rows) the orders column fits 5 at 1280.
+    const touch = test.info().project.name.startsWith("mobile");
+    expect(await completeRows(".ops-order")).toBeGreaterThanOrEqual(width === 390 ? 4 : touch ? 5 : 6);
     const builderTab = page.getByRole("tab", { name: /^Montagem/ });
     if (await builderTab.isVisible()) await builderTab.click();
     expect(await completeRows(".ops-sequence li")).toBeGreaterThanOrEqual(3);
@@ -226,6 +228,8 @@ test("cadastro e despacho locais: reserva, início pelo motoboy, bloqueio e reto
     driver.getByRole("button", { name: "Fechar visão do motoboy" }),
   ).toBeFocused();
   await page.keyboard.press("Escape");
+  // Finished routes fold under "Concluídas hoje".
+  await page.locator(".ops-routes-done > summary").click();
   await expect(created).toContainText("Concluída");
   await area(page, "Montagem");
   await expect(

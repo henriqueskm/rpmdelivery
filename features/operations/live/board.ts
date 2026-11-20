@@ -1,7 +1,7 @@
 // Turns get_operations_board into the state the operations screens already
 // render. Pure: no Supabase, no React.
 
-import type { DemoCourier, DemoOrder, DemoRoute, DemoState, RouteStatus, ShiftStatus } from "../model.ts";
+import type { DemoCourier, DemoOrder, DemoRoute, DemoState, RouteOutcome, RouteStatus, ShiftStatus } from "../model.ts";
 import type { AlertReceipt, DeliveryStatus, DemoIssue, IssueReason, IssueResolution } from "../issue-types.ts";
 import { formatBrazilianMobilePhone } from "../../../lib/brazilian-mobile-phone.ts";
 
@@ -32,6 +32,8 @@ export type Board = {
   couriers: BoardCourier[]; routes: BoardRoute[]; orders: BoardOrder[]; issues: BoardIssue[];
   /** Absent before the distance migration: read as none. */
   farDeliveries?: BoardFarDelivery[];
+  /** Absent before the outcomes migration: every stop shows its live status. */
+  routeOutcomes?: { routeId: string; deliveryId: string; outcome: RouteOutcome }[];
 };
 
 /** What the commands need beyond the rendered state. */
@@ -85,7 +87,9 @@ export function parseBoard(value: unknown): Board | null {
       && (i.decision === null || oneOf(DECISIONS)(i.decision)) && isOptionalTime(i.decidedAt)
       && isOptionalText(i.decidedBy))
     && (value.farDeliveries === undefined || list(value.farDeliveries, f => isText(f.deliveryId) && isText(f.routeId)
-      && isCount(f.distanceMeters) && isTime(f.reportedAt)));
+      && isCount(f.distanceMeters) && isTime(f.reportedAt)))
+    && (value.routeOutcomes === undefined || list(value.routeOutcomes, o => isText(o.routeId) && isText(o.deliveryId)
+      && oneOf(["DELIVERED", "RETURNED", "CANCELLED"])(o.outcome)));
   return valid ? value as Board : null;
 }
 
@@ -199,6 +203,7 @@ export function boardToState(board: Board, { now, receivedAt = now, alertReceipt
       nextOrder: 0,
       nextRoute: 0,
       nextQueue: couriers.length,
+      routeOutcomes: Object.fromEntries((board.routeOutcomes ?? []).map(o => [`${o.routeId}:${o.deliveryId}`, o.outcome])),
     },
     versions: Object.fromEntries(board.routes.map(route => [route.id, route.compositionVersion])),
     orderIds: Object.fromEntries(board.orders.map(order => [order.deliveryId, order.orderId])),

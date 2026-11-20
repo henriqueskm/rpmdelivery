@@ -391,3 +391,12 @@ O voltar de qualquer parte do menu leva ao Início. Um convite lido de qualquer 
 - Sair, que pede confirmação
 
 Pendências, Acompanhar rotas e som continuam no topo. Os atalhos "Convites e vínculos" e "Pagamentos" do painel de Motoboys continuam onde estão.
+
+## Painel fixo em 4 colunas (migration 20261121120000)
+
+- **Computador (≥1100 px):** a tela ocupa a altura da janela, a página não rola mais e cada coluna rola por dentro. As colunas são Aguardando despacho, Montagem de rota, **Rotas** e Motoboys. O título grande "Central de operações" saiu (o topo já diz "Central de despacho"; o título continua para leitores de tela), e o "+ Novo pedido" foi para o cabeçalho de Aguardando despacho. No celular continuam as abas, com o "+ Novo pedido" acima delas.
+- **Coluna Rotas:** a ordem é rotas aguardando liberação, depois prontas para retirada, em rota e voltando. As concluídas ficam recolhidas em "Concluídas hoje · N". A rota nova aparece no topo, com borda destacada e o botão **Liberar retirada** grande logo abaixo do nome do motoboy. "Cancelar liberação" fica no mesmo lugar, então o foco do teclado não se perde.
+- **Card da rota:** cada pedido ocupa uma linha, com o status à direita. O prazo só aparece enquanto o pedido está em jogo. O total mostra "N entregues · N devolvidos".
+- **Status por rota:** `get_operations_board` ganhou `routeOutcomes`, que diz o que aconteceu com cada pedido em cada rota (`DELIVERED`, `RETURNED`, `CANCELLED`). Antes, um pedido devolvido na R-1 e entregue na R-2 aparecia como "Entregue" nas duas. Um pedido conta como devolvido numa rota quando ela terminou sem entregá-lo, quando ele voltou para a fila ou quando outra rota em andamento o levou. A regra não compara horários.
+- **Motoboys com cor:** cada status vira uma etiqueta colorida, e a linha do motoboy ganha uma faixa da mesma cor à esquerda. Disponível é verde, Reservado âmbar, Em rota azul, Retornando roxo e Turno pendente laranja. O texto continua escrito, então a cor nunca é o único sinal.
+- **Botões do topo:** no computador, "+ Novo pedido" fica na barra do topo, ao lado de "Central de despacho", que encurta se faltar espaço. Na demonstração, "Montagem automática" fica no cabeçalho da Montagem. No celular, os dois ficam acima das abas.
