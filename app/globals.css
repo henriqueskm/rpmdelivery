@@ -175,3 +175,11 @@ fieldset:disabled { opacity: .72; }
 .address-confirmation strong { font-size: 12px; color: #345735; }
 .map-unavailable { padding: 16px; font-size: 12px; line-height: 1.6; color: var(--muted); }
 .primary:disabled { cursor: not-allowed; }
+
+/* Courier on maps (store and customer): a rider on a motorcycle, optional tag above. */
+.courier-marker { display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none; }
+.courier-marker-tag { padding: 2px 7px; border-radius: 999px; background: #234f8c; color: #fff; font: 700 11px/1.3 system-ui, sans-serif;
+  border: 2px solid #fff; box-shadow: 0 1px 4px rgb(29 44 36 / 0.35); white-space: nowrap; }
+/* No card: the drawing sits on the map with a thin white halo and a soft shadow. */
+.courier-marker-rider { display: block; line-height: 0;
+  filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) drop-shadow(0 2px 3px rgb(29 44 36 / 0.4)); }

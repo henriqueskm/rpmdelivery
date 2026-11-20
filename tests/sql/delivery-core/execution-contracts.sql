@@ -197,30 +197,48 @@ select core_test.check('retry is queued without touching the planned sequence or
  and (select decided_by=core_test.id(2) and decided_at is not null from public.delivery_attempts
    where delivery_id=core_test.s('e2')));
 
--- Retry comes after the remaining first attempts. Failing the last
--- remaining stop returns it at once and the route starts returning.
+-- Retry comes after the remaining first attempts. Failing the last remaining
+-- stop no longer returns it on its own: the route waits for the store's decision.
 select core_test.act(9);
 set role authenticated;
 select core_test.check('retry is the next stop after the first attempts',
  public.complete_delivery(core_test.id(9403),core_test.s('route_w'),core_test.s('e3'))->>'nextDeliveryId'=core_test.s('e2')::text);
 do $$declare v jsonb;begin
  v:=public.report_delivery_failure(core_test.id(9404),core_test.s('route_w'),core_test.s('e2'),'ADDRESS_PROBLEM');
- perform core_test.check('failing the last stop returns it and the route returns',
-  v->>'deliveryStatus'='RETURN_TO_STORE' and v->>'status'='RETURNING' and v->>'nextDeliveryId' is null);
+ perform core_test.check('failing the last stop waits for the store: still on route, nothing next',
+  v->>'deliveryStatus'='ATTEMPT_FAILED' and v->>'status'='ON_ROUTE' and v->>'nextDeliveryId' is null);
 end;$$;
-select core_test.raises('no execution once the route is returning',
- $s$select public.complete_delivery(gen_random_uuid(),core_test.s('route_w'),core_test.s('e2'))$s$,'RPM_ROUTE_STATE');
-select core_test.raises('shift still busy while returning',
+select core_test.check('settling before the deadline changes nothing',
+ public.settle_courier_route(core_test.s('route_w'))->>'status'='ON_ROUTE');
+select core_test.raises('no delivery of the failed stop while it waits',
+ $s$select public.complete_delivery(gen_random_uuid(),core_test.s('route_w'),core_test.s('e2'))$s$,'RPM_DELIVERY_STATE');
+select core_test.raises('no "cheguei" while the store decides',
+ $s$select public.arrive_at_store(core_test.s('route_w'))$s$,'RPM_ROUTE_STATE');
+select core_test.raises('shift still busy while waiting',
  $s$select public.end_shift(core_test.s('shift_w2'))$s$,'RPM_SHIFT_BUSY');
 reset role;
-select core_test.check('undecided failure closed by the end of the route, without actor',
- (select attempt=2 and decision='OTHERS_FINISHED' and decided_by is null from public.delivery_attempts
-   where delivery_id=core_test.s('e2') and attempt=2)
- and (select status='RETURNING' and returning_at is not null from public.routes where id=core_test.s('route_w'))
- and (select status='RETURNING' from public.courier_shifts where id=core_test.s('shift_w2')));
+select core_test.check('the occurrence is still open, the route still out',
+ (select decision is null from public.delivery_attempts where delivery_id=core_test.s('e2') and attempt=2)
+ and (select status='ON_ROUTE' from public.routes where id=core_test.s('route_w')));
+-- The store decides: back to the store. Now the route returns.
 select core_test.act(2);
 set role authenticated;
-select core_test.raises('store decision after the automatic return is refused',
+select public.decide_delivery_failure(core_test.id(101),core_test.s('e2'),'RETURN');
+reset role;
+select core_test.check('the store decided the last stop: it returns and so does the route',
+ (select attempt=2 and decision='RETURN' and decided_by=core_test.id(2) from public.delivery_attempts
+   where delivery_id=core_test.s('e2') and attempt=2)
+ and (select status='RETURN_TO_STORE' from public.deliveries where id=core_test.s('e2'))
+ and (select status='RETURNING' and returning_at is not null from public.routes where id=core_test.s('route_w'))
+ and (select status='RETURNING' from public.courier_shifts where id=core_test.s('shift_w2')));
+select core_test.act(9);
+set role authenticated;
+select core_test.raises('no execution once the route is returning',
+ $s$select public.complete_delivery(gen_random_uuid(),core_test.s('route_w'),core_test.s('e2'))$s$,'RPM_ROUTE_STATE');
+reset role;
+select core_test.act(2);
+set role authenticated;
+select core_test.raises('a second decision is refused',
  $s$select public.decide_delivery_failure(core_test.id(101),core_test.s('e2'),'RETRY')$s$,'RPM_ISSUE_CLOSED');
 select core_test.raises('returned order cannot be requeued while the courier is out',
  $s$select public.requeue_delivery(core_test.id(101),core_test.s('e2'))$s$,'RPM_DELIVERY_IN_TRANSIT');

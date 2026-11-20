@@ -44,6 +44,11 @@ interface CourierWorkRepository {
     suspend fun recordLocations(routeId: String, points: List<GpsPoint>)
     /** Best effort: asks the server to send the customers' "saiu para entrega" messages. */
     suspend fun notifyCustomers(routeId: String)
+    /**
+     * While the route waits for the store to decide an occurrence (nothing left to deliver): past the
+     * decision deadline the server closes it and the route starts returning. Harmless before that.
+     */
+    suspend fun settleRoute(routeId: String)
     /** Which store an invite belongs to. Never changes anything. */
     suspend fun inspectInvite(code: String): InviteCheck
     /** Asks the invite's store for a link; the store approves it in the panel. Repeating it is harmless. */
@@ -182,6 +187,10 @@ class SupabaseCourierWork(
     private fun JsonObject.flag(key: String) = (get(key) as? JsonPrimitive)?.booleanOrNull == true
     private fun JsonObject.text(key: String) = (get(key) as? JsonPrimitive)?.contentOrNull
 
+    override suspend fun settleRoute(routeId: String) {
+        rpc("settle_courier_route", buildJsonObject { put("p_route_id", routeId) })
+    }
+
     override suspend fun notifyCustomers(routeId: String) {
         val token = client.auth.currentSessionOrNull()?.accessToken ?: return
         withContext(Dispatchers.IO) {
@@ -261,6 +270,7 @@ class UnconfiguredWork : CourierWorkRepository {
     override suspend fun arriveAtStore(routeId: String, position: GpsPoint?) = refuse()
     override suspend fun recordLocations(routeId: String, points: List<GpsPoint>) = refuse()
     override suspend fun notifyCustomers(routeId: String) = Unit
+    override suspend fun settleRoute(routeId: String) = Unit
     override suspend fun inspectInvite(code: String): InviteCheck = refuse()
     override suspend fun requestMembership(code: String): InviteRequest = refuse()
 }

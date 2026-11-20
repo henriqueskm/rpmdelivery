@@ -27,6 +27,8 @@ export type DemoOrder = {
   attemptNumber?: number;
   /** Real data: delivered more than 300 m from the address pin (meters). */
   farMeters?: number;
+  /** Real data: the customer's tracking link token (the store copies the link). */
+  trackingToken?: string;
 };
 export type DemoCourier = {
   id: string;
@@ -67,6 +69,10 @@ export type DemoState = {
    * the order's live status — e.g. returned on R-1 and delivered later on R-2.
    */
   routeOutcomes?: Record<string, RouteOutcome>;
+  /** Real data: when each stop was delivered on its route ("routeId:orderId" → time). */
+  deliveredAt?: Record<string, number>;
+  /** Real data: last GPS point of each route on the street (from the last 15 minutes). */
+  routePositions?: Record<string, { latitude: number; longitude: number; recordedAt: number }>;
 };
 export type RouteOutcome = "DELIVERED" | "RETURNED" | "CANCELLED";
 export type NewOrder = Pick<

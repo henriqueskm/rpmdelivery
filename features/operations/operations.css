@@ -1537,3 +1537,18 @@
 .ops-tracker-customer { font-size: 12px; color: #536258; overflow-wrap: anywhere; }
 .operations .ops-tracker-decide { justify-self: start; margin-top: 4px; min-height: 40px; font-size: 12px; }
 .ops-tracker-waiting { margin: 14px 0 0; color: #647068; font-size: 12px; }
+
+/* Mini map in "Acompanhar rotas". */
+.ops-routes-map { margin: 0 0 14px; }
+.ops-routes-map-canvas { height: clamp(220px, 34dvh, 340px); border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+.ops-routes-map-off { margin: 0; padding: 18px; border: 1px dashed var(--line); border-radius: 10px; color: #647068; font-size: 13px; }
+.ops-routes-map figcaption { margin-top: 6px; font-size: 11px; color: #647068; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ops-map-marker { display: grid; place-items: center; font: 700 11px/1 system-ui, sans-serif; color: #fff; border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgb(29 44 36 / 0.35); white-space: nowrap; }
+.ops-map-marker-store { padding: 5px 8px; border-radius: 8px; background: #1d2c24; }
+.ops-map-marker-stop { min-width: 30px; height: 24px; padding: 0 6px; border-radius: 6px; background: #bd401b; }
+.ops-map-key { display: inline-grid; place-items: center; min-width: 26px; height: 18px; padding: 0 5px; border-radius: 999px; color: #fff; font-size: 10px; font-weight: 700; }
+.ops-map-key-courier { background: #234f8c; }
+.ops-map-key-stop { background: #bd401b; border-radius: 5px; }
+.ops-tracker-link { justify-self: start; }
+.ops-link-manual { width: 100%; font-size: 12px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; }

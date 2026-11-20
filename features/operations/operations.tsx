@@ -216,6 +216,7 @@ function OperationsWorkspace({
   const payMenu = useRef<CourierPayHandle>(null);
   /** "Acompanhar rotas": the detailed view of the routes on the street. */
   const trackerDialog = useRef<HTMLDialogElement>(null);
+  const [trackerOpen, setTrackerOpen] = useState(false);
   const automaticTriggerCompact = useRef<HTMLButtonElement>(null);
   return (
     <main className="operations">
@@ -227,7 +228,7 @@ function OperationsWorkspace({
           <button className="ops-primary ops-new-order" onClick={openNewOrder}>
             <Icon name="plus" /> Novo pedido
           </button></div>
-        <AlertsToolbar count={pending.length} onOpen={openIssues} onFollow={()=>trackerDialog.current?.showModal()}
+        <AlertsToolbar count={pending.length} onOpen={openIssues} onFollow={()=>{setTrackerOpen(true);trackerDialog.current?.showModal();}}
           enabled={alerts.enabled} activating={alerts.activating} onSound={alerts.toggleSound} message={alerts.message}/>
         <div className="ops-account">
           {/* Real store: everything about the account lives in the side menu, "Sair" included. */}
@@ -425,7 +426,8 @@ function OperationsWorkspace({
         onCommand={courierCommand}
         onCompletedClose={followRoute}
       />}
-      <RouteTracker dialogRef={trackerDialog} state={state} now={now} onIssues={openIssues} />
+      <RouteTracker dialogRef={trackerDialog} state={state} now={now} onIssues={openIssues}
+        open={trackerOpen} onClose={() => setTrackerOpen(false)} />
       <IssueCenter dialogRef={issueDialog} state={state} now={now} onCommand={issueCommand} onFollow={followRoute} live={!!live}/>
     </main>
   );

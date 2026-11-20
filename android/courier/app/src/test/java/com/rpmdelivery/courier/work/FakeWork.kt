@@ -91,6 +91,16 @@ internal class FakeWork : CourierWorkRepository {
     }
     override suspend fun notifyCustomers(routeId: String) { notified++ }
 
+    /** The store's decision deadline passed: the next settle sends the route back. */
+    var deadlinePassed = false
+    override suspend fun settleRoute(routeId: String) {
+        record("settle_courier_route")
+        val route = home.route ?: return
+        if (!deadlinePassed || route.status != "ON_ROUTE" || route.nextDeliveryId != null) return
+        home = home.copy(shift = home.shift?.copy(status = "RETURNING"), route = route.copy(status = "RETURNING",
+            stops = route.stops.map { if (it.status == "ATTEMPT_FAILED") it.copy(status = "RETURN_TO_STORE") else it }))
+    }
+
     // Store invites, as inspect_courier_invite / request_courier_membership answer them.
     val inviteCode = "0123456789abcdef0123"
     val invitingStore = Store("r-2", "Pizzaria do Bairro", "PENDING")

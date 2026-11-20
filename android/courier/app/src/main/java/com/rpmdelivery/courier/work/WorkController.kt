@@ -259,11 +259,21 @@ class WorkController(
     /** [afterCommand]: the read that follows a command keeps its notice or refusal on screen. */
     private suspend fun load(afterCommand: Boolean = false) = reads.withLock {
         try {
-            val home = repository.home()
+            var home = repository.home()
+            // Waiting for the store to decide an occurrence on the last stop: let the server close it once
+            // its deadline passes (the route then heads back). Best effort; the next read tries again.
+            val waiting = home.route?.takeIf { it.status == "ON_ROUTE" && it.nextDeliveryId == null }
+            if (waiting != null) {
+                val settled = try { repository.settleRoute(waiting.routeId); true }
+                    catch (error: CancellationException) { throw error }
+                    catch (_: Exception) { false }
+                if (settled) home = repository.home()
+            }
+            val shown = home
             mutable.update {
                 // Once the store changes something, an older notice or refusal no longer describes the screen.
-                val stale = it.home == null || (!afterCommand && home != it.home)
-                it.copy(home = home, loading = false, offline = false,
+                val stale = it.home == null || (!afterCommand && shown != it.home)
+                it.copy(home = shown, loading = false, offline = false,
                     message = if (stale) null else it.message, notice = if (stale) null else it.notice)
             }
         } catch (error: CancellationException) { throw error }
