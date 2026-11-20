@@ -10,9 +10,9 @@ import { getSupabase } from "@/lib/supabase/client";
 import { boardToState, type Board } from "./live/board";
 import { errorMessage, rpcFor, type StoreCommand } from "./live/commands";
 
+// Routes have no column: they live in "Acompanhar rotas", and a banner calls the store to release them.
 export const tabs = [
-  { id: "orders", label: "Pedidos" }, { id: "builder", label: "Montagem" },
-  { id: "couriers", label: "Motoboys" }, { id: "routes", label: "Rotas" },
+  { id: "orders", label: "Pedidos" }, { id: "builder", label: "Montagem" }, { id: "couriers", label: "Motoboys" },
 ] as const;
 type Tab = (typeof tabs)[number]["id"];
 
@@ -97,19 +97,20 @@ export function useOperationsController(scenario: Scenario, seedTime: number, li
       tabRefs.current[tabs.findIndex(t => t.id === tab)]?.focus();
   }
   function cancel() { setSelected([]); setEditingId(undefined); setCourierId(""); }
+  /** True when the route was created or updated. */
   async function assign() {
     const chosen = editingId ? state.routes.find(r => r.id === editingId)?.courierId
       : (availableCouriers(state).find(c => c.id === courierId)?.id ?? availableCouriers(state)[0]?.id);
-    if (!chosen) return;
+    if (!chosen) return false;
     const command: Command = { type: "assign", ids: selected, courierId: chosen, editingId };
     const next = operationsReducer(state, command);
     if (next === state) {
       setNotice("Não foi possível montar essa rota. Confira os pedidos e a disponibilidade.");
-      return;
+      return false;
     }
     const previous = state.routes.find(r => r.id === editingId);
     const updated = next.routes.find(r => r.id === editingId);
-    if (!(await run(command))) return;
+    if (!(await run(command))) return false;
     setNotice(editingId
       ? previous?.pickupReleasedAt && updated?.pickupReleasedAt === null
         ? "Pedidos alterados. Retirada voltou a Aguardando liberação; libere todos novamente."
@@ -117,7 +118,9 @@ export function useOperationsController(scenario: Scenario, seedTime: number, li
           : "Montagem atualizada. Aguardando liberação da loja e início manual pelo motoboy."
       : live ? "Rota em preparação. Motoboy reservado; aguardando a loja liberar a retirada."
         : "Rota em PREPARING. Motoboy reservado; aguardando liberação da loja. Nada foi enviado.");
-    cancel(); showArea("routes");
+    // Back to the queue for the next route; the release banner takes the focus (operations.tsx).
+    cancel(); setActiveTab("orders");
+    return true;
   }
   function acceptAutomatic(proposal:AssignmentProposal,groups:PlannedGroup[],parameters:PlanningParameters) {
     const command:Command={type:"batch-assign",proposal,groups,parameters,now:Date.now()};
@@ -126,7 +129,7 @@ export function useOperationsController(scenario: Scenario, seedTime: number, li
     }
     dispatch(command);
     const assignedIds=new Set(groups.flatMap(g=>g.ids));
-    setSelected(ids=>ids.filter(id=>!assignedIds.has(id)));setCourierId("");showArea("routes");
+    setSelected(ids=>ids.filter(id=>!assignedIds.has(id)));setCourierId("");setActiveTab("orders");
     const remaining=state.orders.filter(o=>o.delivery==="WAITING").length-groups.reduce((n,g)=>n+g.ids.length,0);
     setNotice(`${groups.length} rota(s) demonstrativas em preparação. ${remaining} pedidos seguem aguardando. Motoboys reservados; a loja libera e só eles iniciam. Nenhum tracking ou notificação.`);
     return true;
@@ -245,7 +248,7 @@ export function useOperationsController(scenario: Scenario, seedTime: number, li
   function tabKey(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return;
     event.preventDefault();
-    const next = event.key === "Home" ? 0 : event.key === "End" ? 3
+    const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1
       : (index + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
     setActiveTab(tabs[next].id); tabRefs.current[next]?.focus();
   }

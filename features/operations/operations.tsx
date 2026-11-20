@@ -13,7 +13,6 @@ import { pendingIssues } from "./issue-presentation";
 import { BuilderPanel } from "./builder-panel";
 import { CouriersPanel } from "./couriers-panel";
 import { OrdersPanel } from "./orders-panel";
-import { RoutesPanel } from "./routes-panel";
 import { NewOrderDialog } from "./dialogs";
 import { CourierDialog } from "./courier-dialog";
 import { DeadlineDialog } from "./deadline-dialog";
@@ -21,7 +20,7 @@ import { tabs, useOperationsController, type LiveSource } from "./use-operations
 import { useOperationsBoard } from "./live/use-operations-board";
 import { CourierPay, type CourierPayHandle } from "./live/courier-pay";
 import { StoreMenu } from "./store-menu";
-import { RouteTracker } from "./route-tracker";
+import { RouteTracker, routesToRelease } from "./route-tracker";
 import { ConfirmDialog, type Confirmation } from "./live/confirm-dialog";
 import { useOperationsClock } from "./use-operations-clock";
 import { Icon } from "./ui";
@@ -199,24 +198,32 @@ function OperationsWorkspace({
   const [suggesting, setSuggesting] = useState(false);
   const [automatic,setAutomatic]=useState(false);
   const automaticTrigger=useRef<HTMLButtonElement>(null);
-  const routesTarget=useRef<HTMLElement>(null);
   const [highlightedRoute,setHighlightedRoute]=useState<string>();
   const alerts=useIssueAlerts(state,viewedAlerts);
   const pending=pendingIssues(state);
   const pendingShifts=state.couriers.filter(c=>courierLabel(state,c)==="Turno pendente").length;
+  /** "Acompanhar rotas": every route, and every action on one, lives on this screen. */
+  const trackerDialog = useRef<HTMLDialogElement>(null);
+  const [trackerOpen, setTrackerOpen] = useState(false);
+  const toRelease = routesToRelease(state);
+  /** Opens "Acompanhar rotas", on a given route when there is one (scrolled to and focused). */
   function followRoute(id?:string) {
-    setActiveTab("routes");setHighlightedRoute(id);
-    window.requestAnimationFrame(()=>{
-      const target=id?document.getElementById(`ops-route-${id}`):routesTarget.current;
+    setHighlightedRoute(id);setTrackerOpen(true);
+    const tracker=trackerDialog.current;
+    if(tracker&&!tracker.open)tracker.showModal();
+    if(id)window.requestAnimationFrame(()=>{
+      const target=document.getElementById(`ops-route-${id}`);
       target?.scrollIntoView({block:"start",behavior:"instant"});
-      (window.matchMedia("(max-width: 1099px)").matches?target:routesTarget.current)?.focus({preventScroll:true});
+      target?.focus({preventScroll:true});
     });
+  }
+  /** A new route waits for its release: the banner's button takes the focus, one key away from releasing. */
+  function focusRelease() {
+    window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>
+      document.querySelector<HTMLButtonElement>(".ops-release-alert-open")?.focus()));
   }
   function openIssues(){issueDialog.current?.showModal();}
   const payMenu = useRef<CourierPayHandle>(null);
-  /** "Acompanhar rotas": the detailed view of the routes on the street. */
-  const trackerDialog = useRef<HTMLDialogElement>(null);
-  const [trackerOpen, setTrackerOpen] = useState(false);
   const automaticTriggerCompact = useRef<HTMLButtonElement>(null);
   return (
     <main className="operations">
@@ -228,7 +235,7 @@ function OperationsWorkspace({
           <button className="ops-primary ops-new-order" onClick={openNewOrder}>
             <Icon name="plus" /> Novo pedido
           </button></div>
-        <AlertsToolbar count={pending.length} onOpen={openIssues} onFollow={()=>{setTrackerOpen(true);trackerDialog.current?.showModal();}}
+        <AlertsToolbar count={pending.length} onOpen={openIssues} onFollow={()=>followRoute()} toRelease={toRelease.length}
           enabled={alerts.enabled} activating={alerts.activating} onSound={alerts.toggleSound} message={alerts.message}/>
         <div className="ops-account">
           {/* Real store: everything about the account lives in the side menu, "Sair" included. */}
@@ -281,6 +288,15 @@ function OperationsWorkspace({
               </select>
             </label>
           )}
+        </div>}
+        {/* A route waiting for its release holds a courier at the counter: impossible to miss, one click away. */}
+        {toRelease.length>0&&<div className="ops-release-alert" role="region" aria-label="Retiradas para liberar">
+          <span className="ops-release-alert-icon" aria-hidden="true">!</span>
+          <p>
+            <strong>{toRelease.length===1?"Rota esperando liberação":`${toRelease.length} rotas esperando liberação`}</strong>
+            <span dir="auto">{toRelease.map(r=>`${r.reference} · ${state.couriers.find(c=>c.id===r.courierId)?.name??"motoboy"}`).join(" · ")}</span>
+          </p>
+          <button className="ops-release-alert-open" onClick={()=>followRoute(toRelease[0].id)}>Abrir e liberar</button>
         </div>}
         {preview&&scenario.startsWith("issues-")&&<IssueDemoControls state={state} onCommand={courierCommand}/>}
         <NewIssueBanner issues={alerts.alerts} state={state} now={now} onDismiss={ids=>{
@@ -364,33 +380,8 @@ function OperationsWorkspace({
               pending={saving}
               onCourier={setCourierId}
               onSelect={setSelected}
-              onAssign={assign}
+              onAssign={async()=>{if(await assign())focusRelease();}}
               onCancel={cancel}
-            />
-          </section>
-          <section
-            ref={routesTarget}
-            tabIndex={-1}
-            id="ops-panel-routes"
-            role="tabpanel"
-            className={`ops-panel ops-routes ${activeTab === "routes" ? "is-active" : ""}`}
-            aria-labelledby="ops-tab-routes"
-          >
-            <RoutesPanel
-              state={state}
-              now={now}
-              highlightedRoute={highlightedRoute}
-              onIssues={openIssues}
-              onCommand={issueCommand}
-              onDeadline={live ? undefined : setDeadlineTarget}
-              onRelease={release}
-              onRevokeRelease={revokeRelease}
-              onCancelRoute={live ? askCancelRoute : undefined}
-              onEdit={edit}
-              onCourierView={live ? undefined : (id) => {
-                setCourierRouteId(id);
-                courierDialog.current?.showModal();
-              }}
             />
           </section>
           <section
@@ -412,7 +403,7 @@ function OperationsWorkspace({
       <NewOrderDialog dialogRef={newDialog} now={now} defaultPromiseMinutes={state.defaultPromiseMinutes} onAdd={add} live={!!live} />
       {live && <ConfirmDialog request={confirmation} onClose={() => setConfirmation(null)} />}
       {automatic&&<AutomaticDialog state={state} scenario={scenario} now={now} onAccept={acceptAutomatic}
-        onClose={accepted=>{setAutomatic(false);if(accepted)routesTarget.current?.focus();
+        onClose={accepted=>{setAutomatic(false);if(accepted)focusRelease();
           // Phones show the copy above the tabs; desktops the one in the Montagem heading.
           else (automaticTriggerCompact.current?.offsetParent?automaticTriggerCompact:automaticTrigger).current?.focus();}}/>}
       {suggesting && <OptimizationDialog state={state} selected={selected} editingId={editingId} scenario={scenario}
@@ -426,8 +417,11 @@ function OperationsWorkspace({
         onCommand={courierCommand}
         onCompletedClose={followRoute}
       />}
-      <RouteTracker dialogRef={trackerDialog} state={state} now={now} onIssues={openIssues}
-        open={trackerOpen} onClose={() => setTrackerOpen(false)} />
+      <RouteTracker dialogRef={trackerDialog} state={state} now={now} open={trackerOpen}
+        onClose={() => {setTrackerOpen(false);setHighlightedRoute(undefined);}} highlightedRoute={highlightedRoute} showMap={!!live}
+        onIssues={openIssues} onCommand={issueCommand} onDeadline={live ? undefined : setDeadlineTarget}
+        onRelease={release} onRevokeRelease={revokeRelease} onCancelRoute={live ? askCancelRoute : undefined} onEdit={edit}
+        onCourierView={live ? undefined : (id) => { setCourierRouteId(id); courierDialog.current?.showModal(); }} />
       <IssueCenter dialogRef={issueDialog} state={state} now={now} onCommand={issueCommand} onFollow={followRoute} live={!!live}/>
     </main>
   );

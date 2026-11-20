@@ -919,7 +919,7 @@
   }
   .ops-mobile-tabs {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     padding: 4px;
     gap: 3px;
     background: #e9ede5;
@@ -1447,7 +1447,7 @@
   .ops-workspace {
     flex: 1;
     min-height: 0;
-    grid-template-columns: minmax(290px, 1.25fr) minmax(250px, 1fr) minmax(250px, 1fr) minmax(250px, 0.9fr);
+    grid-template-columns: minmax(320px, 1.3fr) minmax(290px, 1fr) minmax(270px, 0.85fr);
     grid-template-rows: minmax(0, 1fr);
     gap: 14px;
   }
@@ -1506,7 +1506,7 @@
   .ops-header { gap: 20px; }
 }
 
-/* "Acompanhar rotas": routes on the street, one card each, stops in order. */
+/* "Acompanhar rotas": the one place for routes. One card each, stops in order. */
 .ops-tracker { width: min(1180px, calc(100% - 24px)); }
 .ops-tracker-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .ops-tracker-head h2 { margin: 0; font-size: 20px; font-weight: 700; }
@@ -1515,7 +1515,19 @@
 .ops-tracker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
 .ops-tracker-route { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; }
 .ops-tracker-route-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
-.ops-tracker-route h3 { margin: 8px 0 2px; font-size: 16px; overflow-wrap: anywhere; }
+.ops-tracker-route h4 { margin: 8px 0 2px; font-size: 16px; overflow-wrap: anywhere; }
+.ops-tracker-route { display: flex; flex-direction: column; scroll-margin-top: 92px; }
+/* The title and "×" stay in view while the routes scroll (opening on a route scrolls to it). */
+.ops-tracker-head { position: sticky; top: -24px; z-index: 2; margin: -24px -24px 14px; padding: 18px 24px 12px;
+  background: #f8f8f4; border-bottom: 1px solid var(--line); }
+.ops-tracker-route.is-highlighted { outline: 2px solid #b96900; outline-offset: 3px; }
+.ops-tracker-route.is-waiting-release { border-color: #e0a040; box-shadow: 0 0 0 1px #e0a040; background: #fffaf0; }
+.ops-tracker-route .ops-route-hint { margin: 10px 0 8px; padding-top: 0; }
+.ops-tracker-route .ops-route-buttons { margin-top: auto; }
+.ops-tracker-section + .ops-tracker-section, .ops-tracker-section + .ops-routes-done { margin-top: 18px; }
+.ops-tracker-section > h3 { margin: 0 0 10px; font-size: 13px; font-weight: 700; color: #536258; text-transform: uppercase; letter-spacing: 0.04em; }
+.ops-tracker .ops-deadline-button { justify-self: start; }
+.ops-tracker .ops-route-cancel { margin-top: 2px; }
 .ops-tracker-meta { margin: 0 0 8px; color: #536258; font-size: 12px; }
 .ops-tracker-progress { height: 6px; border-radius: 999px; background: #e9ede5; overflow: hidden; }
 .ops-tracker-progress > span { display: block; height: 100%; background: #2f8a57; }
@@ -1552,3 +1564,70 @@
 .ops-map-key-stop { background: #bd401b; border-radius: 5px; }
 .ops-tracker-link { justify-self: start; }
 .ops-link-manual { width: 100%; font-size: 12px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; }
+
+/* A route waiting for its release: a banner nobody misses, above everything, one click from releasing. */
+.ops-release-alert {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 10px;
+  padding: 10px 12px 10px 14px;
+  border: 2px solid #d98a1c;
+  border-radius: 10px;
+  background: #fff1d6;
+  color: #5c3a00;
+  animation: ops-release-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.ops-release-alert-icon {
+  flex: 0 0 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #d98a1c;
+  color: #fff;
+  font-weight: 800;
+  font-size: 16px;
+}
+.ops-release-alert p { flex: 1; min-width: 0; margin: 0; display: grid; gap: 1px; }
+.ops-release-alert strong { font-size: 15px; }
+.ops-release-alert p span { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.operations .ops-release-alert-open {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 6px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  background: #275940;
+  border-color: #275940;
+  color: #fff;
+}
+.operations .ops-release-alert-open:hover { background: #1d4531; }
+@keyframes ops-release-in { from { opacity: 0; transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .ops-release-alert { animation: none; } }
+/* Phones and tablets: the banner's height comes out of the column, so "Atribuir rota" stays on screen. */
+@media (max-width: 1099px) {
+  .ops-body:has(.ops-release-alert) .ops-panel { height: clamp(400px, calc(100dvh - 397px), 720px); }
+}
+/* Phones: one compact line, so the columns below keep their room. */
+@media (max-width: 600px) {
+  .ops-release-alert { gap: 8px; padding: 5px 6px 5px 8px; margin-bottom: 6px; }
+  .ops-release-alert-icon { flex-basis: 22px; height: 22px; font-size: 13px; }
+  .ops-release-alert strong { font-size: 13px; }
+  .ops-release-alert p span { font-size: 12px; }
+  .operations .ops-release-alert-open { padding: 4px 10px; font-size: 13px; }
+}
+.ops-follow-routes[data-release="true"] { border-color: #d98a1c; }
+.ops-follow-routes .ops-tab-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #d98a1c;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}

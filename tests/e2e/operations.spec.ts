@@ -1,9 +1,17 @@
 import { expect, test, type Page } from "@playwright/test";
 
 async function area(page: Page, name: string) {
+  // "Acompanhar rotas" is a modal: close it before using the columns.
+  if (await page.locator(".ops-tracker").isVisible()) await page.keyboard.press("Escape");
   await expect(page.getByRole("heading", { name: "Central de operações", exact: true })).toBeVisible();
   const tab = page.getByRole("tab", { name, exact: true });
   if (await tab.isVisible()) await tab.click();
+}
+/** Routes have no column: they live in "Acompanhar rotas". */
+async function routes(page: Page) {
+  const tracker = page.getByRole("dialog", { name: "Acompanhar rotas" });
+  if (!(await tracker.isVisible())) await page.locator(".ops-follow-routes").click();
+  await expect(tracker).toBeVisible();
 }
 const route = (page: Page, reference: string) =>
   page.getByRole("article", { name: `Rota ${reference}`, exact: true });
@@ -65,7 +73,9 @@ test("conferência de pico amplia sequência e atribui somente PREPARING", async
   await dialog.getByLabel("Motoboy disponível").selectOption("livia");
   await dialog.getByRole("button", { name: "Atribuir rota (demo)" }).click();
   await expect(dialog).not.toBeVisible();
-  await expect(page.getByRole("tab", { name: "Rotas", exact: true })).toBeFocused();
+  // The new route waits for its release: the banner's button takes the focus.
+  await expect(page.getByRole("button", { name: "Abrir e liberar" })).toBeFocused();
+  await routes(page);
   await expect(route(page, "R-43")).toContainText("Em preparação");
   await expect(route(page, "R-43")).toContainText("Lívia Oliveira");
   await expect(route(page, "R-43").getByRole("button", { name: /Iniciar rota/ })).toHaveCount(0);
@@ -88,12 +98,14 @@ test("pico preserva área útil no desktop e atribuição acessível no mobile",
         return rect.top >= Math.max(0, list.top) && rect.bottom <= Math.min(innerHeight, list.bottom);
       }).length;
     });
-    // Four columns side by side: on a touch screen (bigger rows) the orders column fits 5 at 1280.
+    // Three columns side by side: on a touch screen (bigger rows) the orders column fits 5 at 1280.
+    // On a phone the "Rota esperando liberação" banner (R-42 waits here) takes one row's height.
     const touch = test.info().project.name.startsWith("mobile");
-    expect(await completeRows(".ops-order")).toBeGreaterThanOrEqual(width === 390 ? 4 : touch ? 5 : 6);
+    expect(await completeRows(".ops-order")).toBeGreaterThanOrEqual(width === 390 ? 3 : touch ? 5 : 6);
     const builderTab = page.getByRole("tab", { name: /^Montagem/ });
     if (await builderTab.isVisible()) await builderTab.click();
-    expect(await completeRows(".ops-sequence li")).toBeGreaterThanOrEqual(3);
+    // Same banner on a phone: the column gives up its height so "Atribuir rota" stays on screen (checked below).
+    expect(await completeRows(".ops-sequence li")).toBeGreaterThanOrEqual(width === 390 ? 2 : 3);
     if (width === 390) {
       const bounds = await page.getByRole("button", { name: "Atribuir rota (demo)" }).boundingBox();
       expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(height);
@@ -172,11 +184,11 @@ test("cadastro e despacho locais: reserva, início pelo motoboy, bloqueio e reto
     .click();
   await expect(page.getByLabel("Motoboy disponível")).toHaveValue("joao");
   await page.getByRole("button", { name: "Atribuir rota (demo)" }).click();
-  if (await page.getByRole("tab", { name: "Rotas", exact: true }).isVisible())
-    await expect(
-      page.getByRole("tab", { name: "Rotas", exact: true }),
-    ).toBeFocused();
+  await expect(page.getByRole("region", { name: "Retiradas para liberar" })).toContainText("R-43 · João Martins");
+  await expect(page.getByRole("button", { name: "Abrir e liberar" })).toBeFocused();
+  await page.getByRole("button", { name: "Abrir e liberar" }).click();
   const created = route(page, "R-43");
+  await expect(created).toBeFocused();
   await expect(created).toContainText("Em preparação");
   await expect(created.getByRole("listitem").first()).toContainText("1048");
   await expect(
@@ -188,7 +200,7 @@ test("cadastro e despacho locais: reserva, início pelo motoboy, bloqueio e reto
   await expect(page.locator(".ops-courier.is-next")).toContainText(
     "Lívia Oliveira",
   );
-  await area(page, "Rotas");
+  await routes(page);
   await created.getByRole("button", { name: "Editar montagem" }).click();
   if (await page.getByRole("tab", { name: /^Montagem/ }).isVisible())
     await expect(page.getByRole("tab", { name: /^Montagem/ })).toBeFocused();
@@ -196,8 +208,11 @@ test("cadastro e despacho locais: reserva, início pelo motoboy, bloqueio e reto
     .getByRole("button", { name: "Remover pedido 1047 da montagem" })
     .click();
   await page.getByRole("button", { name: "Salvar montagem (demo)" }).click();
+  await routes(page);
   await expect(created.getByRole("listitem")).toHaveCount(2);
   await created.getByRole("button", { name: "Liberar retirada", exact: true }).click();
+  // Released: the banner no longer lists it (R-42 still waits).
+  await expect(page.getByRole("region", { name: "Retiradas para liberar" })).not.toContainText("R-43");
   await created
     .getByRole("button", { name: "Visão do motoboy (demo)" })
     .click();
@@ -252,7 +267,7 @@ test("PREPARING pode ajustar composição; ocorrência em ON_ROUTE exige decisã
   page,
 }) => {
   await page.goto("/preview/operacao");
-  await area(page, "Rotas");
+  await routes(page);
   await route(page, "R-42")
     .getByRole("button", { name: "Editar montagem" })
     .click();
@@ -270,6 +285,7 @@ test("PREPARING pode ajustar composição; ocorrência em ON_ROUTE exige decisã
     .click();
   await expect(page.getByLabel("Motoboy reservado")).toBeDisabled();
   await page.getByRole("button", { name: "Salvar montagem (demo)" }).click();
+  await routes(page);
   await expect(route(page, "R-42").locator(".ops-route-destination")).toHaveText([
     "#1048 · Vila Mariana",
     "#1041 · Bela Vista",
@@ -280,6 +296,7 @@ test("PREPARING pode ajustar composição; ocorrência em ON_ROUTE exige decisã
   await page.getByRole("button",{name:"Abrir Central de ocorrências"}).click();
   await expect(page.getByRole("dialog",{name:"Central de ocorrências"})).toContainText("Cliente não localizado");
   await page.keyboard.press("Escape");
+  await routes(page);
   await route(page, "R-41")
     .getByRole("button", { name: "Visão do motoboy (demo)" })
     .click();
@@ -346,7 +363,7 @@ test("reflow em 320/375/390, 1280/1440 e tela ampla suporta textos extremos", as
       ),
     ).toBe(true);
     if (width >= 1100) {
-      await expect(page.getByRole("tabpanel")).toHaveCount(4);
+      await expect(page.getByRole("tabpanel")).toHaveCount(3);
       await expect(
         page.getByRole("heading", { name: "Montagem de rota" }),
       ).toBeVisible();
