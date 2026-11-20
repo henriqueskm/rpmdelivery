@@ -213,11 +213,17 @@ function OperationsWorkspace({
   }
   function openIssues(){issueDialog.current?.showModal();}
   const payMenu = useRef<CourierPayHandle>(null);
+  const automaticTriggerCompact = useRef<HTMLButtonElement>(null);
   return (
     <main className="operations">
       <header className="ops-header">
         <Brand />
         <span className="ops-header-section">Central de despacho</span>
+        {/* Desktop: the page's actions sit on the top line, reachable from every column. */}
+        <div className="ops-header-actions">
+          <button className="ops-primary ops-new-order" onClick={openNewOrder}>
+            <Icon name="plus" /> Novo pedido
+          </button></div>
         <AlertsToolbar count={pending.length} onOpen={openIssues} onFollow={()=>followRoute(pending[0]?.routeId)}
           enabled={alerts.enabled} activating={alerts.activating} onSound={alerts.toggleSound} message={alerts.message}/>
         <div className="ops-account">
@@ -238,22 +244,11 @@ function OperationsWorkspace({
         </div>
       </header>
       <div className="ops-body">
-        <div className="ops-page-heading">
-          <div>
-            <span className="ops-kicker">BALCÃO → ENTREGA</span>
-            <h1>Central de operações</h1>
-            <p>Organize o despacho. Acompanhe cada saída.</p>
-          </div>
-          <div className="ops-page-actions">{!live && <button ref={automaticTrigger} disabled={!!editingId}
-            title={editingId?"Conclua ou cancele a edição da rota atual antes de usar a montagem automática.":undefined}
-            onClick={()=>setAutomatic(true)}>Montagem automática</button>}
-          <button
-            className="ops-primary"
-            onClick={openNewOrder}
-          >
-            <Icon name="plus" /> Novo pedido
-          </button></div>
-        </div>
+        {/* The top line already says "Central de despacho": the page title stays for screen readers only. */}
+        <h1 className="ops-visually-hidden">Central de operações</h1>
+        <div className="ops-page-actions-compact">{!live && <button ref={automaticTriggerCompact} disabled={!!editingId}
+          onClick={()=>setAutomatic(true)}>Montagem automática</button>}
+          <button className="ops-primary" onClick={openNewOrder}><Icon name="plus" /> Novo pedido</button></div>
         {live ? offline && (
           <div className="ops-demo-banner ops-offline-banner" role="status">
             <span><strong>Sem conexão.</strong> Mostrando os últimos dados; o painel tenta atualizar sozinho.</span>
@@ -358,12 +353,40 @@ function OperationsWorkspace({
               editingId={editingId}
               courierId={courierId}
               onSuggest={live ? undefined : () => setSuggesting(true)}
+              headingAction={!live && <button ref={automaticTrigger} className="ops-automatic-trigger" disabled={!!editingId}
+                title={editingId?"Conclua ou cancele a edição da rota atual antes de usar a montagem automática.":undefined}
+                onClick={()=>setAutomatic(true)}>Montagem automática</button>}
               live={!!live}
               pending={saving}
               onCourier={setCourierId}
               onSelect={setSelected}
               onAssign={assign}
               onCancel={cancel}
+            />
+          </section>
+          <section
+            ref={routesTarget}
+            tabIndex={-1}
+            id="ops-panel-routes"
+            role="tabpanel"
+            className={`ops-panel ops-routes ${activeTab === "routes" ? "is-active" : ""}`}
+            aria-labelledby="ops-tab-routes"
+          >
+            <RoutesPanel
+              state={state}
+              now={now}
+              highlightedRoute={highlightedRoute}
+              onIssues={openIssues}
+              onCommand={issueCommand}
+              onDeadline={live ? undefined : setDeadlineTarget}
+              onRelease={release}
+              onRevokeRelease={revokeRelease}
+              onCancelRoute={live ? askCancelRoute : undefined}
+              onEdit={edit}
+              onCourierView={live ? undefined : (id) => {
+                setCourierRouteId(id);
+                courierDialog.current?.showModal();
+              }}
             />
           </section>
           <section
@@ -377,31 +400,6 @@ function OperationsWorkspace({
               pay={live ? <CourierPay restaurantId={live.restaurantId} /> : undefined} />
           </section>
         </div>
-        <section
-          ref={routesTarget}
-          tabIndex={-1}
-          id="ops-panel-routes"
-          role="tabpanel"
-          className={`ops-routes ${activeTab === "routes" ? "is-active" : ""}`}
-          aria-labelledby="ops-tab-routes"
-        >
-          <RoutesPanel
-            state={state}
-            now={now}
-            highlightedRoute={highlightedRoute}
-            onIssues={openIssues}
-            onCommand={issueCommand}
-            onDeadline={live ? undefined : setDeadlineTarget}
-            onRelease={release}
-            onRevokeRelease={revokeRelease}
-            onCancelRoute={live ? askCancelRoute : undefined}
-            onEdit={edit}
-            onCourierView={live ? undefined : (id) => {
-              setCourierRouteId(id);
-              courierDialog.current?.showModal();
-            }}
-          />
-        </section>
         <footer className="ops-footer">
           <span>RpmDelivery · Operação em movimento.</span>
           <span>{live ? "Atualiza sozinho a cada 5 segundos" : "Protótipo de despacho • sem conexão operacional ao banco"}</span>
@@ -410,7 +408,9 @@ function OperationsWorkspace({
       <NewOrderDialog dialogRef={newDialog} now={now} defaultPromiseMinutes={state.defaultPromiseMinutes} onAdd={add} live={!!live} />
       {live && <ConfirmDialog request={confirmation} onClose={() => setConfirmation(null)} />}
       {automatic&&<AutomaticDialog state={state} scenario={scenario} now={now} onAccept={acceptAutomatic}
-        onClose={accepted=>{setAutomatic(false);if(accepted)routesTarget.current?.focus();else automaticTrigger.current?.focus();}}/>}
+        onClose={accepted=>{setAutomatic(false);if(accepted)routesTarget.current?.focus();
+          // Phones show the copy above the tabs; desktops the one in the Montagem heading.
+          else (automaticTriggerCompact.current?.offsetParent?automaticTriggerCompact:automaticTrigger).current?.focus();}}/>}
       {suggesting && <OptimizationDialog state={state} selected={selected} editingId={editingId} scenario={scenario}
         now={now} onApply={setSelected} onClose={()=>setSuggesting(false)} />}
       {!live && <DeadlineDialog dialogRef={deadlineDialog} state={state} target={deadlineTarget} onSave={saveDeadline} onClose={() => setDeadlineTarget(undefined)} />}

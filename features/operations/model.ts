@@ -60,7 +60,13 @@ export type DemoState = {
   nextOrder: number;
   nextRoute: number;
   nextQueue: number;
+  /**
+   * Real data: how a stop ended on a given route ("routeId:orderId"), when that differs from
+   * the order's live status — e.g. returned on R-1 and delivered later on R-2.
+   */
+  routeOutcomes?: Record<string, RouteOutcome>;
 };
+export type RouteOutcome = "DELIVERED" | "RETURNED" | "CANCELLED";
 export type NewOrder = Pick<
   DemoOrder,
   | "reference"

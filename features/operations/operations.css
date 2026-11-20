@@ -652,20 +652,27 @@
   font-size: 12px;
   color: #647068;
 }
-.ops-routes {
-  margin-top: 24px;
+/* Routes are a column like the others: heading, then their own scroll. */
+.ops-routes-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding: 12px;
 }
-.ops-routes-heading {
+.ops-routes-quiet { margin: 0 0 10px; color: #647068; font-size: 12px; }
+.ops-routes-done { margin-top: 12px; }
+.ops-routes-done > summary {
+  min-height: 44px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-.ops-routes-heading > span {
-  color: #647068;
+  cursor: pointer;
   font-size: 12px;
+  font-weight: 650;
+  color: #536258;
 }
+.ops-routes-done > .ops-route-grid { margin-top: 6px; }
 .ops-issue {
   margin-bottom: 14px;
   border: 1px solid #e7bbaa;
@@ -707,8 +714,8 @@
 }
 .ops-route-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
 }
 .ops-route-card {
   display: flex;
@@ -953,13 +960,6 @@
   .ops-panel-scroll {
     max-height: none;
   }
-  .ops-routes {
-    display: none;
-    margin-top: 0;
-  }
-  .ops-routes.is-active {
-    display: block;
-  }
   .ops-route-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1042,11 +1042,6 @@
   }
   .ops-panel h2 {
     font-size: 14px;
-  }
-  .ops-routes-heading {
-    align-items: start;
-    flex-direction: column;
-    gap: 5px;
   }
   .ops-route-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -1431,3 +1426,80 @@
 .ops-account { justify-content: flex-end; }
 .ops-signout-dialog h2 { margin: 0 0 8px; font-size: 18px; font-weight: 700; }
 .ops-signout-dialog p { margin: 0 0 18px; color: var(--muted); line-height: 1.5; }
+
+/* Route card: one line per stop, status on the right; the release button first and big. */
+.ops-route-stop { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.ops-route-stop .ops-route-destination { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ops-route-stop .ops-badge { flex-shrink: 0; }
+.ops-route-card ol { max-height: none; }
+.ops-route-card.is-waiting-release { border-color: #e7b778; box-shadow: 0 0 0 1px #e7b778; }
+.operations .ops-release-main { margin-top: 10px; width: 100%; min-height: 44px; font-size: 13px; }
+.ops-panel-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.operations .ops-panel-actions button { min-height: 36px; padding: 4px 12px; font-size: 12px; }
+.operations .ops-new-order { white-space: nowrap; }
+/* "Conferir ↗" fits inside the heading instead of touching its borders (desktop columns). */
+@media (min-width: 1100px) { .operations .ops-builder-heading { padding: 4px 12px; min-height: 54px; } }
+
+/* Desktop: the whole operation on one screen. Each column scrolls inside; the page never does. */
+@media (min-width: 1100px) {
+  .operations { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+  .ops-body { flex: 1; min-height: 0; width: 100%; display: flex; flex-direction: column; padding-top: 12px; padding-bottom: 12px; }
+  .ops-workspace {
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: minmax(290px, 1.25fr) minmax(250px, 1fr) minmax(250px, 1fr) minmax(250px, 0.9fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .ops-panel { height: auto; min-height: 0; }
+  .ops-footer { display: none; }
+}
+.operations .ops-release-undo { margin-top: 10px; width: 100%; min-height: 44px; font-size: 12px; }
+/* Phones and tablets: "Novo pedido" stays above the tabs, reachable from any of them. */
+.ops-page-actions-compact { display: none; }
+@media (max-width: 1099px) {
+  .ops-page-actions-compact { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 8px; }
+  .ops-panel-actions { display: none; }
+}
+.ops-route-card .ops-route-hint { margin: 6px 0 10px; }
+/* Courier status at a glance: a colored pill and a stripe of the same color on the row. */
+.ops-courier { border-left: 4px solid transparent; }
+.ops-courier[data-status="available"] { border-left-color: #2f8a57; }
+.ops-courier[data-status="reserved"] { border-left-color: #d29a2f; }
+.ops-courier[data-status="on-route"] { border-left-color: #3a6fb5; }
+.ops-courier[data-status="returning"] { border-left-color: #7a5bb0; }
+.ops-courier[data-status="pending"] { border-left-color: #d0582f; }
+.ops-courier-status { color: #536258; }
+.ops-courier-pill {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+.status-available .ops-courier-pill { background: #e3f2e8; color: #1d6640; }
+.status-reserved .ops-courier-pill { background: #fff1d6; color: #7a4d0f; }
+.status-on-route .ops-courier-pill { background: #e4edf9; color: #234f8c; }
+.status-returning .ops-courier-pill { background: #efe8f8; color: #573d88; }
+.status-pending .ops-courier-pill { background: #fde9e1; color: #94351a; }
+.ops-courier-wait { font-size: 12px; color: #536258; }
+.ops-header-actions { display: flex; align-items: center; gap: 8px; }
+.operations .ops-header-actions button { min-height: 40px; padding: 4px 14px; font-size: 12px; }
+@media (max-width: 1099px) { .ops-header-actions { display: none; } }
+.operations .ops-automatic-trigger { min-height: 36px; padding: 4px 10px; font-size: 11px; margin-left: auto; }
+@media (max-width: 1099px) {
+  .ops-page-actions-compact { margin-bottom: 6px; }
+  .operations .ops-page-actions-compact button { min-height: 44px; padding: 6px 14px; font-size: 13px; }
+}
+@media (max-width: 1099px) { .operations .ops-automatic-trigger { display: none; } }
+@media (min-width: 1100px) {
+  /* One line on top: when space runs out the section label shortens, nothing wraps. */
+  .ops-header { flex-wrap: nowrap; }
+  .ops-header-section { min-width: 0; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+@media (min-width: 1100px) {
+  .ops-alert-toolbar { flex-shrink: 0; flex-wrap: nowrap; }
+  .ops-header { gap: 20px; }
+}

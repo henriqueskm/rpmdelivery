@@ -53,12 +53,14 @@ test("loja revoga retirada sem mudar rota; motoboy bloqueado até nova liberaç�
     await area(page, "Motoboys");
     await expect(page.locator(".ops-courier").filter({ hasText: "Marcos Pereira" })).toContainText("Reservado");
     await area(page, "Rotas");
-    await card.getByRole("button", { name: "Visão do motoboy (demo)" }).click();
+    // The routes column scrolls by itself and this page's clock is paused: keyboard, not a pointer
+    // click that waits for the scroll to settle.
+    await card.getByRole("button", { name: "Visão do motoboy (demo)" }).press("Enter");
     await expect(driver).toContainText("Aguardando liberação");
     await expect(startButton).toBeDisabled();
     await page.keyboard.press("Escape");
-    await releaseButton.click();
-    await card.getByRole("button", { name: "Visão do motoboy (demo)" }).click();
+    await releaseButton.press("Enter");
+    await card.getByRole("button", { name: "Visão do motoboy (demo)" }).press("Enter");
     await expect(driver).toContainText("Pronto para retirada");
     await expect(startButton).toBeEnabled();
     await startButton.click();

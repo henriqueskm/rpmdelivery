@@ -54,6 +54,8 @@ test("falha obrigatória, aviso dispensável, nova tentativa, entregas individua
   expect(original).toMatch(/1040[\s\S]*1039/);
   await expect(driver(page).locator(".ops-courier-deliveries>li>strong")).toHaveText(["1. #1040 · Juliana Alves","2. #1039 · Felipe Barros"]);
   await driver(page).getByRole("button",{name:"Confirmar retorno — simulação"}).click();await page.keyboard.press("Escape");
+  // Finished routes fold under "Concluídas hoje".
+  await page.locator(".ops-routes-done > summary").click();
   await expect(route(page)).toContainText("Concluída");
   const tab=page.getByRole("tab",{name:"Motoboys",exact:true});if(await tab.isVisible())await tab.click();
   await expect(page.locator(".ops-courier").filter({hasText:"Rafa Santos"})).toContainText("Disponível");
