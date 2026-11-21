@@ -56,6 +56,11 @@ class AuthController(private val repository: CourierAuthRepository, private val 
         mutable.value = AuthState(AuthScreen.Welcome, message = if (revoked) null else
             "Sessão removida deste aparelho. Sem conexão, não foi possível confirmar a revogação no servidor.")
     }
+    /** The server erased the account: drop the session here (the login no longer exists) and say it is done. */
+    fun accountDeleted() = action {
+        repository.logout()
+        mutable.value = AuthState(AuthScreen.Welcome, message = AuthCopy.ACCOUNT_DELETED)
+    }
     private fun signedIn(profile: CourierRegistration) {
         mutable.value = AuthState(if (profile.complete) AuthScreen.Home else AuthScreen.Profile,
             registration = profile, authenticated = true)

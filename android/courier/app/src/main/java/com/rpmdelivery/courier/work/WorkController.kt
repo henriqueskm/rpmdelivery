@@ -62,6 +62,8 @@ class WorkController(
     private val scope: CoroutineScope,
     private val onExpired: () -> Unit,
     private val refreshMillis: Long = 15_000,
+    /** The account was erased on the server: sign out of this phone and say so. */
+    private val onAccountDeleted: () -> Unit = {},
 ) {
     private val mutable = MutableStateFlow(WorkState())
     val state = mutable.asStateFlow()
@@ -245,6 +247,30 @@ class WorkController(
             catch (_: Exception) { /* The store can resend; the route goes on. */ }
         }
     }
+    /**
+     * "Excluir minha conta", after the courier confirmed. A refusal (shift open, store login) stays on screen;
+     * success ends everything here: no more reads, the session goes, and the sign-in screen says why.
+     */
+    fun deleteAccount() {
+        if (mutable.value.busy) return
+        mutable.update { it.copy(busy = true, message = null, notice = null) }
+        scope.launch {
+            try {
+                repository.deleteAccount()
+                polling?.cancel(); polling = null
+                requestIds.clear(); inviteCode = null
+                mutable.value = WorkState()
+                onAccountDeleted()
+            } catch (error: CancellationException) { throw error }
+            catch (error: WorkProblem) {
+                mutable.update { it.copy(busy = false) }
+                if (error.expired) expire() else mutable.update { it.copy(message = error.safeMessage) }
+            } catch (_: Exception) {
+                mutable.update { it.copy(busy = false, message = WorkCopy.GENERIC) }
+            }
+        }
+    }
+
     /** Far from the store the server refuses; the courier reads how far in [WorkState.message]. */
     fun arriveAtStore(route: CourierRoute, position: GpsPoint? = null) = act("Chegada registrada. Você voltou para a fila.") {
         repository.arriveAtStore(route.routeId, position)

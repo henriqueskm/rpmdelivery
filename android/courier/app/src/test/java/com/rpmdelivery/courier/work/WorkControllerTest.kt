@@ -174,6 +174,29 @@ class WorkControllerTest {
         assertEquals("sáb., 14/11", historyDate("2026-11-14"))
     }
 
+    @Test fun deletingTheAccountWaitsForTheShiftToEndThenSignsOut() = runTest {
+        var deleted = 0
+        val work = WorkController(fake, this, onExpired = { expired++ }, onAccountDeleted = { deleted++ })
+        fake.requestShift("r-1"); fake.approve()
+        work.refresh(); advanceUntilIdle()
+        work.deleteAccount(); advanceUntilIdle()
+        assertEquals("Encerre o turno antes de excluir a conta.", work.state.value.message)
+        assertEquals(0, deleted)
+        assertFalse(work.state.value.busy)
+
+        fake.endShift("shift-1")
+        work.deleteAccount(); advanceUntilIdle()
+        assertEquals(1, deleted)
+        assertNull("nothing of the account stays on screen", work.state.value.home)
+        assertEquals(2, fake.calls.count { it == "delete_account" })
+
+        // The server could not finish: say so and let the courier try again.
+        fake.failOnce("delete_account", WorkProblem.refused("DELETE_UNAVAILABLE"))
+        work.deleteAccount(); advanceUntilIdle()
+        assertEquals("Não foi possível excluir a conta agora. Tente de novo mais tarde.", work.state.value.message)
+        assertEquals(1, deleted)
+    }
+
     @Test fun historyLoadsAndAnExpiredSessionSignsOut() = runTest {
         val work = WorkController(fake, this, onExpired = { expired++ })
         work.loadHistory(); advanceUntilIdle()
