@@ -69,7 +69,9 @@ select core_test.check('approved store is listed with the id request_shift takes
 select set_config('core.h',core_test.home(6)::text,false);
 select core_test.check('waiting link is listed and nothing else',
  current_setting('core.h')::jsonb->'stores'=jsonb_build_array(jsonb_build_object(
-   'restaurantId',core_test.id(101),'name','Synthetic A','linkStatus','PENDING'))
+   'restaurantId',core_test.id(101),'name','Synthetic A','linkStatus','PENDING',
+   -- A pending link carries no contact (store-contact-contracts.sql covers an approved one).
+   'phone',null,'address',null,'latitude',null,'longitude',null))
  and current_setting('core.h')::jsonb->'shift'='null'::jsonb
  and current_setting('core.h')::jsonb->'route'='null'::jsonb);
 

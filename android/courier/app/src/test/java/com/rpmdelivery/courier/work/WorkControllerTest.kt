@@ -140,6 +140,23 @@ class WorkControllerTest {
         assertEquals("12:30", clockTime(route.stops[0].deadlineAt, ZoneId.of("America/Sao_Paulo")))
     }
 
+    @Test fun approvedStoresCarryTheirContactAndRefusedLinksComeApart() {
+        val home = parseHome(Json.parseToJsonElement("""{"shift":null,"route":null,
+            "stores":[{"restaurantId":"r-1","name":"Cozinha da Vila","linkStatus":"ACTIVE","phone":"+5511987650099",
+                       "address":"Rua Loja 9, Itatiba","latitude":-23.0059,"longitude":-46.839},
+                      {"restaurantId":"r-2","name":"Outra","linkStatus":"PENDING","phone":null,"address":null,"latitude":null,"longitude":null}],
+            "refusedStores":[{"restaurantId":"r-3","name":"Pizzaria","linkStatus":"REJECTED","since":"2026-11-20T15:00:00+00:00"},
+                             {"restaurantId":"r-4","name":"Lanches","linkStatus":"SUSPENDED","since":null}]}"""))
+        assertEquals(Store("r-1", "Cozinha da Vila", "ACTIVE", "+5511987650099", "Rua Loja 9, Itatiba", -23.0059, -46.839), home.stores[0])
+        assertEquals(Store("r-2", "Outra", "PENDING"), home.stores[1])
+        assertEquals(listOf("r-3", "r-4"), home.refusedStores.map { it.restaurantId })
+        assertFalse(home.refusedStores[0].suspended)
+        assertTrue(home.refusedStores[1].suspended)
+        assertEquals("2026-11-20T15:00:00+00:00", home.refusedStores[0].since)
+        // An older server without the new fields still reads.
+        assertEquals(emptyList<RefusedStore>(), parseHome(Json.parseToJsonElement("""{"stores":[],"shift":null,"route":null}""")).refusedStores)
+    }
+
     @Test fun todayAndHistoryAreParsedAndFormattedInReais() {
         val home = parseHome(Json.parseToJsonElement("""{"stores":[],"shift":null,"route":null,
             "today":{"deliveries":3,"shiftFeeCents":3000,"deliveryFeesCents":2100,"totalCents":5100}}"""))
