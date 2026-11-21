@@ -34,6 +34,19 @@ fun alertsBetween(before: CourierHome?, after: CourierHome): List<ShiftAlert> {
     return alerts
 }
 
+/**
+ * The release of a pickup is about to come: the courier is first in line, or the store is putting
+ * their route together. Only then the phone stays awake and asks often, so "rota pronta" rings within
+ * seconds even in deep sleep. The rest of the shift it sleeps as usual (asking every 30 s, which Android
+ * may stretch with the screen off).
+ */
+fun awaitingPickup(home: CourierHome): Boolean {
+    val route = home.route
+    if (route != null) return route.status == "PREPARING" && !route.pickupReleased
+    val shift = home.shift ?: return false
+    return shift.status == "AVAILABLE" && shift.queuePosition == 1
+}
+
 /** One GPS reading, in the shape record_courier_locations() accepts. */
 data class GpsPoint(val latitude: Double, val longitude: Double, val accuracy: Double?, val recordedAt: String)
 
