@@ -3,14 +3,16 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import type { Map as MapboxMap, Marker } from "mapbox-gl";
 import { useEffect, useRef, useState } from "react";
 import { REFRAME_AFTER_MS, glideMs, pointAlong, pointsBounds, publicMapToken } from "@/lib/tracking/motion";
-import { clockTime, refreshSeconds, type Tracking, type TrackingPoint } from "@/lib/tracking/view";
+import { clockTime, distanceText, refreshSeconds, type CourierArea, type Tracking, type TrackingPoint } from "@/lib/tracking/view";
 import { courierMarkerElement } from "@/lib/maps/courier-marker";
 
-type Points = Pick<Tracking, "courier" | "destination">;
+type Points = Pick<Tracking, "courier" | "courierArea" | "destination">;
 
 type Live = {
   map: MapboxMap;
   courier: Marker;
+  /** Before the turn: the rider in the middle of the area, without the exact-position dot. */
+  areaRider: Marker;
   destination: Marker;
   /** Where the courier marker is drawn right now (mid-glide included). */
   shown: TrackingPoint | null;
@@ -41,11 +43,52 @@ function lngLat(point: TrackingPoint): [number, number] {
   return [point.longitude, point.latitude];
 }
 
-function markerElement(kind: "courier" | "destination") {
+const AREA_SOURCE = "courier-area";
+
+/** The area as a 48-sided polygon: drawn in meters on the ground, so it scales with the zoom. */
+function areaShape(area: CourierArea | null) {
+  if (!area) return { type: "FeatureCollection" as const, features: [] };
+  const dLat = area.radiusMeters / 111_320;
+  const dLng = dLat / Math.cos((area.latitude * Math.PI) / 180);
+  const ring = Array.from({ length: 49 }, (_, i) => {
+    const angle = (i / 48) * 2 * Math.PI;
+    return [area.longitude + dLng * Math.cos(angle), area.latitude + dLat * Math.sin(angle)];
+  });
+  return { type: "Feature" as const, properties: {}, geometry: { type: "Polygon" as const, coordinates: [ring] } };
+}
+
+/** Two corners of the box around the area, to frame it with the customer's address. */
+function areaCorners(area: CourierArea | null): TrackingPoint[] {
+  if (!area) return [];
+  const dLat = area.radiusMeters / 111_320;
+  const dLng = dLat / Math.cos((area.latitude * Math.PI) / 180);
+  return [
+    { latitude: area.latitude - dLat, longitude: area.longitude - dLng },
+    { latitude: area.latitude + dLat, longitude: area.longitude + dLng },
+  ];
+}
+
+function drawArea({ map }: Live, area: CourierArea | null) {
+  const source = map.getSource(AREA_SOURCE) as { setData(data: unknown): void } | undefined;
+  if (source) { source.setData(areaShape(area)); return; }
+  if (!map.isStyleLoaded()) return; // The load handler draws it.
+  map.addSource(AREA_SOURCE, { type: "geojson", data: areaShape(area) });
+  map.addLayer({ id: "courier-area-fill", type: "fill", source: AREA_SOURCE,
+    paint: { "fill-color": "#234f8c", "fill-opacity": 0.14 } });
+  map.addLayer({ id: "courier-area-line", type: "line", source: AREA_SOURCE,
+    paint: { "line-color": "#234f8c", "line-width": 2, "line-dasharray": [2, 2] } });
+}
+
+function markerElement(kind: "courier" | "area" | "destination") {
   if (kind === "courier") {
-    // The rider on a motorcycle, same drawing as the store's map, without the route tag.
-    const rider = courierMarkerElement();
+    // The rider standing on a dot at the exact position: the customer's turn.
+    const rider = courierMarkerElement(undefined, { point: true });
     rider.classList.add("tracking-marker-courier");
+    return rider;
+  }
+  if (kind === "area") {
+    const rider = courierMarkerElement();
+    rider.classList.add("tracking-marker-area");
     return rider;
   }
   const element = document.createElement("div");
@@ -61,10 +104,13 @@ function prefersReducedMotion() {
 }
 
 /** Moves the markers to the latest reading, gliding the courier, and keeps both in view. */
-function sync(live: Live, { courier, destination }: Points) {
+function sync(live: Live, { courier, courierArea, destination }: Points) {
   const { map } = live;
   if (destination) live.destination.setLngLat(lngLat(destination)).addTo(map);
   else live.destination.remove();
+  drawArea(live, courierArea);
+  if (courierArea) live.areaRider.setLngLat(lngLat(courierArea)).addTo(map);
+  else live.areaRider.remove();
 
   cancelAnimationFrame(live.frame);
   if (!courier) {
@@ -88,26 +134,31 @@ function sync(live: Live, { courier, destination }: Points) {
     }
   }
 
-  if (!live.userMoved) reframe(live, { courier, destination }, true);
+  if (!live.userMoved) reframe(live, { courier, courierArea, destination }, true);
 }
 
-/** Fits the courier and the customer's address; `onlyIfHidden` skips it while both are on screen. */
-function reframe({ map }: Live, { courier, destination }: Points, onlyIfHidden: boolean) {
-  const points = [courier, destination].filter((point): point is NonNullable<typeof point> => Boolean(point));
+function framedPoints({ courier, courierArea, destination }: Points): TrackingPoint[] {
+  return [courier, destination, ...areaCorners(courierArea)].filter((point): point is NonNullable<typeof point> => Boolean(point));
+}
+
+/** Fits the courier (or its area) and the customer's address; `onlyIfHidden` skips it while all are on screen. */
+function reframe({ map }: Live, points: Points, onlyIfHidden: boolean) {
+  const framed = framedPoints(points);
   const visible = map.getBounds();
-  if (onlyIfHidden && visible && points.every(point => visible.contains(lngLat(point)))) return;
-  const bounds = pointsBounds(points);
+  if (onlyIfHidden && visible && framed.every(point => visible.contains(lngLat(point)))) return;
+  const bounds = pointsBounds(framed);
   if (bounds) map.fitBounds(bounds, { ...FIT, duration: prefersReducedMotion() ? 0 : 800 });
 }
 
-export function TrackingMap({ courier, destination }: Points) {
+export function TrackingMap({ courier, courierArea, destination, distanceMeters }: Points & { distanceMeters: number | null }) {
   const token = publicMapToken(process.env.NEXT_PUBLIC_MAPBOX_MAP_TOKEN);
   const container = useRef<HTMLDivElement>(null);
   const live = useRef<Live | null>(null);
-  const latest = useRef<Points>({ courier, destination });
+  const latest = useRef<Points>({ courier, courierArea, destination });
   const [failed, setFailed] = useState(!token);
   const alt = courier && destination ? "Mapa com o entregador e o seu endereço"
-    : courier ? "Mapa com a posição do entregador" : "Mapa com o seu endereço";
+    : courier ? "Mapa com a posição do entregador"
+    : courierArea ? "Mapa com a região aproximada do entregador" : "Mapa com o seu endereço";
 
   // One map per page view: Mapbox bills each new map, not each marker move.
   useEffect(() => {
@@ -116,8 +167,7 @@ export function TrackingMap({ courier, destination }: Points) {
     let created: Live | null = null;
     import("mapbox-gl").then(({ default: mapboxgl }) => {
       if (cancelled || !container.current) return;
-      const points = [latest.current.courier, latest.current.destination].filter(Boolean) as TrackingPoint[];
-      const bounds = pointsBounds(points);
+      const bounds = pointsBounds(framedPoints(latest.current));
       let map: MapboxMap;
       try {
         map = new mapboxgl.Map({
@@ -139,7 +189,11 @@ export function TrackingMap({ courier, destination }: Points) {
       map.touchZoomRotate.disableRotation();
       map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
       let loaded = false;
-      map.on("load", () => { loaded = true; });
+      map.on("load", () => {
+        loaded = true;
+        // The area is a map layer: it needs the style, unlike the markers.
+        if (created) drawArea(created, latest.current.courierArea);
+      });
       // After the first load a missing tile is transient; before it, the map never shows.
       map.on("error", () => { if (!loaded) setFailed(true); });
       // Only gestures carry an originalEvent; our own fitBounds does not.
@@ -160,7 +214,9 @@ export function TrackingMap({ courier, destination }: Points) {
       });
       created = {
         map,
-        courier: new mapboxgl.Marker({ element: markerElement("courier") }),
+        // Anchored at the center of the dot under the wheels (its bottom edge, 7 px up).
+        courier: new mapboxgl.Marker({ element: markerElement("courier"), anchor: "bottom", offset: [0, 7] }),
+        areaRider: new mapboxgl.Marker({ element: markerElement("area") }),
         destination: new mapboxgl.Marker({ element: markerElement("destination") }),
         shown: null,
         frame: 0,
@@ -182,11 +238,12 @@ export function TrackingMap({ courier, destination }: Points) {
   }, [token]);
 
   useEffect(() => {
-    latest.current = { courier, destination };
+    latest.current = { courier, courierArea, destination };
     if (live.current) sync(live.current, latest.current);
-  }, [courier, destination]);
+  }, [courier, courierArea, destination]);
 
-  const time = clockTime(courier?.recordedAt ?? null);
+  const time = clockTime(courier?.recordedAt ?? courierArea?.recordedAt ?? null);
+  const distance = distanceText(distanceMeters, !courier);
   return (
     <figure className="tracking-map">
       {failed
@@ -194,8 +251,11 @@ export function TrackingMap({ courier, destination }: Points) {
         : <div ref={container} className="tracking-map-canvas" role="region" aria-label={alt} />}
       <figcaption>
         {courier && time
-          ? <><span className="tracking-live" aria-hidden="true" />Posição do entregador às {time}</>
-          : "Aguardando a posição do entregador."}
+          ? <><span className="tracking-live" aria-hidden="true" />Posição do entregador às {time}{distance && ` · ${distance}`}</>
+          : courierArea && time
+            ? <><span className="tracking-area-key" aria-hidden="true" />
+                Região aproximada do entregador às {time}{distance && ` · ${distance}`}. A posição exata aparece quando for a sua vez.</>
+            : "Aguardando a posição do entregador."}
       </figcaption>
     </figure>
   );

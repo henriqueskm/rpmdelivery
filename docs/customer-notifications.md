@@ -49,6 +49,46 @@ app chama dispatch-notifications ──┤ claim_route_notifications (service_ro
 
 6. Publicar a função (`npx supabase functions deploy dispatch-notifications --workdir .`) mexe no projeto hospedado e só acontece com autorização.
 
+## Avisos no navegador (notificações) e o mapa antes da vez
+
+Migrations `20261123120000` e `20261123120100`. Grátis: não passa pela Meta.
+
+**Na página `/acompanhar/<token>`** o mascote (o motoboy da imagem em `public/courier/`) fala com o cliente e oferece **"Avisar sobre minha entrega"**. A permissão do navegador só é pedida depois desse toque, que é a regra dos navegadores. Ligado, o cliente recebe notificações **com a página fechada**:
+
+| Quando | Aviso |
+|---|---|
+| A rota começa e há outras entregas antes | "Seu pedido saiu para entrega" |
+| A parada dele vira a próxima (inclusive a primeira da rota) | "Você é o próximo!" |
+| O motoboy chega a 500 m do endereço do pedido | "O entregador está chegando" |
+| Entregue | "Pedido entregue" |
+
+- **Android (Chrome, Samsung Internet):** funciona direto.
+- **iPhone:** só funciona se o cliente adicionar a página à Tela de Início (iOS 16.4 ou mais novo). O mascote explica como fazer, e o ícone abre o mesmo pedido.
+- **Um site não fica por cima de outros apps.** Isso exige um app instalado; a notificação é o jeito de um site avisar com a página fechada.
+
+**Mapa antes da vez:** enquanto há entregas antes da dele, o cliente vê só a **região aproximada** do motoboy: um círculo de 800 m sobre a quadrícula de ~1 km onde ele está, e "a menos de 2 km de você", com a distância arredondada para cima de 500 em 500 m. O ponto exato apareceria parado na porta de outro cliente, por isso só aparece **quando é a vez dele**. Aí aparece o motoboy pequeno sobre um ponto azul, com "a 650 m de você", em passos de 50 m.
+
+**Como funciona:**
+
+```
+página → subscribe_tracking_push(token, endpoint, chaves)   (anon; só serviços de push conhecidos; até 5 navegadores por pedido)
+entrega muda de status ─trigger▶ delivery_notifications (canal PUSH, só se alguém ligou os avisos)
+GPS do motoboy a ≤ 500 m do próximo ─trigger▶ COURIER_NEARBY (uma vez por pedido)
+app do motoboy chama dispatch-notifications (como hoje; e a cada 30 s em rota)
+  └─ claim_route_push (service_role) → Web Push cifrado (RFC 8291) e assinado (VAPID) → complete_notification
+```
+
+- Um aviso novo substitui um antigo que ainda não saiu ("chegando" torna "você é o próximo" inútil). Um aviso com mais de 15 minutos é descartado.
+- O navegador que o serviço de push diz que não existe mais (404/410) é desligado.
+- O endereço do navegador só pode ser de um serviço de push conhecido (Google, Apple, Mozilla, Microsoft): a função nunca posta em outro lugar. Ninguém lê `push_subscriptions` pela API.
+
+**Configurar (feito por você):**
+
+1. Gere as chaves: `node scripts/generate-web-push-keys.mjs`. Elas aparecem só no seu terminal.
+2. Supabase: `npx supabase secrets set --workdir . WEB_PUSH_PUBLIC_KEY=... WEB_PUSH_PRIVATE_KEY=...`. `PUBLIC_SITE_URL` já existe; opcional `WEB_PUSH_SUBJECT` (`mailto:` ou `https://`).
+3. Vercel: `NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY` = a chave pública, depois um novo deploy. Sem ela, o mascote aparece mas não oferece os avisos.
+4. Publicar a função de novo (`npx supabase functions deploy dispatch-notifications --workdir .`) mexe no projeto hospedado e só acontece com autorização. Sem as chaves do WhatsApp, a função agora envia só as notificações; sem nenhuma das duas, responde 503.
+
 ## O que ainda falta para a simulação
 
 - **Quem chama a função:** o app do motoboy chama depois de iniciar a rota, de "Entregue" e de "Não consegui entregar" (é quando a próxima parada muda). A chamada nunca trava a rota: sem a função publicada, ela falha em silêncio.

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  clockTime, parseTracking, refreshSeconds, stopsBeforeText, trackingView,
+  clockTime, distanceText, parseTracking, refreshSeconds, stopsBeforeText, trackingView,
 } from "../../lib/tracking/view.ts";
 import {
   MAX_GLIDE_METERS, distanceMeters, glideMs, pointAlong, pointsBounds, publicMapToken,
@@ -9,8 +9,21 @@ import {
 
 const base = {
   status: "ON_ROUTE", restaurantName: "Pizzaria Boa", issueReason: null, stopsBefore: 2,
-  courier: null, destination: null, startedAt: "2026-11-13T22:40:00Z", deliveredAt: null,
+  courier: null, courierArea: null, distanceMeters: null, destination: null,
+  startedAt: "2026-11-13T22:40:00Z", deliveredAt: null,
 };
+const area = { latitude: -23.015, longitude: -46.835, radiusMeters: 800, recordedAt: "2026-11-13T22:50:00Z" };
+
+test("área aproximada e distância só passam quando bem formadas", () => {
+  assert.deepEqual(parseTracking({ ...base, courierArea: area, distanceMeters: 2000 })?.courierArea, area);
+  assert.equal(parseTracking({ ...base, courierArea: area, distanceMeters: 2000 })?.distanceMeters, 2000);
+  for (const bad of [{ ...area, radiusMeters: 0 }, { ...area, radiusMeters: 50_000 }, { ...area, recordedAt: "" },
+    { latitude: -23, longitude: -46 }, "x"])
+    assert.equal(parseTracking({ ...base, courierArea: bad })?.courierArea, null);
+  for (const bad of [-1, "500", Number.NaN, null]) assert.equal(parseTracking({ ...base, distanceMeters: bad })?.distanceMeters, null);
+  assert.deepEqual([distanceText(null, true), distanceText(2000, true), distanceText(1500, true), distanceText(650, false)],
+    [null, "a menos de 2 km de você", "a menos de 1,5 km de você", "a 650 m de você"]);
+});
 
 test("resposta do get_tracking é validada antes de virar tela", () => {
   assert.deepEqual(parseTracking(base), { ...base, stopsBefore: 2 });
@@ -27,7 +40,7 @@ test("resposta do get_tracking é validada antes de virar tela", () => {
   assert.equal(parseTracking({ ...base, courier: { latitude: 1, longitude: 2 } })?.courier, null);
 });
 
-test("cada status tem título, etapa e mapa só quando é o próximo", () => {
+test("cada status tem título, etapa e mapa quando é o próximo ou já há área do entregador", () => {
   const parsed = parseTracking(base)!;
   const view = (status: string, extra = {}) => trackingView({ ...parsed, ...extra, status } as typeof parsed);
   assert.deepEqual([view("PREPARING").step, view("ON_ROUTE").step, view("NEXT").step, view("DELIVERED").step],
@@ -36,6 +49,7 @@ test("cada status tem título, etapa e mapa só quando é o próximo", () => {
   assert.deepEqual(["PREPARING", "ON_ROUTE", "ATTEMPT_FAILED", "RETURNING_TO_STORE", "DELIVERED", "CANCELLED"]
     .map(status => view(status).showMap), [false, false, false, false, false, false]);
   assert.equal(view("NEXT").showMap, true);
+  assert.equal(view("ON_ROUTE", { courierArea: area }).showMap, true);
   assert.match(view("ON_ROUTE").detail, /outra entrega/);
   assert.match(view("ON_ROUTE", { stopsBefore: 0 }).detail, /já está na rua/);
   assert.match(view("ATTEMPT_FAILED", { issueReason: "ADDRESS_PROBLEM" }).detail, /endereço\. Pizzaria Boa vai decidir/);

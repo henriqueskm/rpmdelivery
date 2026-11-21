@@ -7,12 +7,19 @@ export type TrackingStatus =
 
 export type TrackingPoint = { latitude: number; longitude: number };
 
+/** Before the customer's turn: the ~1 km cell the courier is in, never the point itself. */
+export type CourierArea = TrackingPoint & { radiusMeters: number; recordedAt: string };
+
 export type Tracking = {
   status: TrackingStatus;
   restaurantName: string;
   issueReason: string | null;
   stopsBefore: number | null;
+  /** Exact position, only when this order is next. */
   courier: (TrackingPoint & { recordedAt: string }) | null;
+  courierArea: CourierArea | null;
+  /** Courier to this customer's pin: rounded up to 500 m before the turn, to 50 m on it. */
+  distanceMeters: number | null;
   destination: TrackingPoint | null;
   startedAt: string | null;
   deliveredAt: string | null;
@@ -47,13 +54,20 @@ export function parseTracking(value: unknown): Tracking | null {
   if (!restaurantName) return null;
   const courier = point(item.courier);
   const recordedAt = text(record(item.courier)?.recordedAt);
+  const area = point(item.courierArea);
+  const areaAt = text(record(item.courierArea)?.recordedAt);
+  const radius = record(item.courierArea)?.radiusMeters;
   const stops = item.stopsBefore;
+  const distance = item.distanceMeters;
   return {
     status: item.status as TrackingStatus,
     restaurantName,
     issueReason: text(item.issueReason),
     stopsBefore: typeof stops === "number" && Number.isInteger(stops) && stops >= 0 ? stops : null,
     courier: courier && recordedAt ? { ...courier, recordedAt } : null,
+    courierArea: area && areaAt && typeof radius === "number" && radius > 0 && radius <= 5_000
+      ? { ...area, radiusMeters: radius, recordedAt: areaAt } : null,
+    distanceMeters: typeof distance === "number" && Number.isFinite(distance) && distance >= 0 ? Math.round(distance) : null,
     destination: point(item.destination),
     startedAt: text(item.startedAt),
     deliveredAt: text(item.deliveredAt),
@@ -78,6 +92,15 @@ const ISSUE_DETAIL: Record<string, string> = {
   OTHER: "O entregador teve um imprevisto nesta entrega.",
 };
 
+/** "a menos de 2 km de você" before the turn (the server already rounded up), "a 650 m de você" on it. */
+export function distanceText(meters: number | null, approximate: boolean) {
+  if (meters === null) return null;
+  const amount = meters >= 1000
+    ? `${(meters / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} km`
+    : `${meters} m`;
+  return approximate ? `a menos de ${amount} de você` : `a ${amount} de você`;
+}
+
 export function stopsBeforeText(stops: number | null) {
   if (stops === null || stops === 0) return null;
   return stops === 1 ? "1 entrega antes da sua" : `${stops} entregas antes da sua`;
@@ -90,7 +113,8 @@ export function trackingView(tracking: Tracking): TrackingView {
       return { tone: "waiting", step: null, showMap: false, title: "Pedido em preparo",
         detail: `O pedido ainda não saiu de ${store}.` };
     case "ON_ROUTE":
-      return { tone: "moving", step: 1, showMap: false, title: "Seu pedido está a caminho",
+      // The map only once there is an area to show: the customer's own pin alone says nothing.
+      return { tone: "moving", step: 1, showMap: tracking.courierArea !== null, title: "Seu pedido está a caminho",
         detail: tracking.stopsBefore
           ? "O entregador está fazendo outra entrega antes da sua."
           : "O entregador já está na rua com o seu pedido." };

@@ -31,6 +31,8 @@ export default defineConfig({
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_e2e_placeholder_not_a_real_key",
       MAPBOX_ACCESS_TOKEN: "",
       NEXT_PUBLIC_MAPBOX_MAP_TOKEN: "pk.e2e_placeholder_not_a_real_key",
+      // Shape of a VAPID public key only: the tests stub the browser's push service.
+      NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY: `BE2E${"x".repeat(83)}`,
     },
     command: `npm run build && npm run start -- --hostname 127.0.0.1 --port ${port}`,
     url: baseURL,

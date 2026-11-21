@@ -13,6 +13,10 @@ const states = {
     destination: { latitude: -23.556, longitude: -46.64 }, startedAt: started, deliveredAt: null },
   delivered: { status: "DELIVERED", restaurantName: "Cozinha da Vila", issueReason: null, stopsBefore: null,
     courier: null, destination: null, startedAt: started, deliveredAt: "2026-11-13T22:58:00Z" },
+  // Before the turn: the courier's ~1 km cell and a rounded-up distance, never the point.
+  area: { status: "ON_ROUTE", restaurantName: "Cozinha da Vila", issueReason: null, stopsBefore: 1, courier: null,
+    courierArea: { latitude: -23.545, longitude: -46.625, radiusMeters: 800, recordedAt: "2026-11-13T22:50:00Z" },
+    distanceMeters: 2000, destination: { latitude: -23.556, longitude: -46.64 }, startedAt: started, deliveredAt: null },
 };
 const notFound = { code: "P0002", message: "RPM_TRACKING_NOT_FOUND", details: null, hint: null };
 
@@ -83,7 +87,11 @@ test("cliente acompanha a caminho → próximo com mapa → entregue, e a págin
   const position = () => courier.evaluate(element => getComputedStyle(element).transform);
   const before = await position();
   mock.set({ body: states.closer });
+  // The glide starts when the answer arrives, which takes real time: wait for it before moving the clock on.
+  const answered = page.waitForResponse("**/rest/v1/rpc/get_tracking");
   await page.clock.runFor(15_000);
+  await answered;
+  await expect(courier).toBeVisible();
   await page.clock.runFor(7_000);
   const midway = await position();
   expect(midway).not.toBe(before);
@@ -101,6 +109,103 @@ test("cliente acompanha a caminho → próximo com mapa → entregue, e a págin
   await page.clock.runFor(120_000);
   expect(mock.calls.length).toBe(finished);
   expect(errors).toEqual([]);
+});
+
+test("antes da vez o mapa mostra só a região do entregador; na vez, o ponto exato", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.clock.install();
+  const mock = await mockTracking(page, { body: states.area });
+  await page.goto(`/acompanhar/${token}`);
+  const map = page.getByRole("region", { name: "Mapa com a região aproximada do entregador" });
+  await expect(map).toBeVisible();
+  await expect(map.locator(".tracking-marker-area")).toBeVisible();
+  await expect(map.locator(".courier-marker-point")).toHaveCount(0);
+  await expect(map.locator(".tracking-marker-destination")).toBeVisible();
+  await expect(page.getByText(/Região aproximada do entregador às \d{2}:\d{2} · a menos de 2 km de você\. A posição exata aparece quando for a sua vez\./)).toBeVisible();
+
+  mock.set({ body: { ...states.next, distanceMeters: 650 } });
+  await page.clock.runFor(15_000);
+  const exact = page.getByRole("region", { name: "Mapa com o entregador e o seu endereço" });
+  await expect(exact.locator(".tracking-marker-courier .courier-marker-point")).toBeVisible();
+  await expect(exact.locator(".tracking-marker-area")).toHaveCount(0);
+  await expect(page.getByText(/Posição do entregador às \d{2}:\d{2} · a 650 m de você/)).toBeVisible();
+  // Same map all along: the area turned into the point without a new map load.
+  expect(mock.styleLoads()).toBe(1);
+  // The rider is small: the street under it stays readable.
+  const rider = (await exact.locator(".tracking-marker-courier .courier-marker-rider").boundingBox())!;
+  expect(rider.width).toBeLessThanOrEqual(44);
+  expect(errors).toEqual([]);
+});
+
+// The browser's push service is stubbed: headless Chromium has none to talk to.
+async function stubPush(page: Page) {
+  await page.addInitScript(() => {
+    // Kept across reloads, like the browser keeps the permission and the subscription.
+    const kept = (key: string) => sessionStorage.getItem(`e2e-${key}`) === "1";
+    const keep = (key: string) => sessionStorage.setItem(`e2e-${key}`, "1");
+    const endpoint = "https://fcm.googleapis.com/fcm/send/e2e-browser";
+    const subscription = { endpoint, toJSON: () => ({ endpoint, keys: { p256dh: "B".repeat(87), auth: "a".repeat(22) } }) };
+    Object.defineProperty(Notification, "permission", { get: () => (kept("granted") ? "granted" : "default") });
+    Notification.requestPermission = async () => { keep("granted"); return "granted"; };
+    const registration = { pushManager: {
+      getSubscription: async () => (kept("subscribed") ? subscription : null),
+      subscribe: async () => { keep("subscribed"); return subscription; },
+    } };
+    Object.defineProperty(navigator, "serviceWorker", { configurable: true, value: {
+      register: async () => registration, ready: Promise.resolve(registration), getRegistration: async () => registration,
+    } });
+  });
+}
+
+test("mascote oferece os avisos, liga e desliga para este pedido", async ({ page }) => {
+  const errors = watchErrors(page);
+  await stubPush(page);
+  await mockTracking(page, { body: states.onRoute });
+  const calls: { fn: string; body: Record<string, unknown> }[] = [];
+  await page.route(/\/rest\/v1\/rpc\/(subscribe|unsubscribe)_tracking_push$/, async route => {
+    const fn = new URL(route.request().url()).pathname.split("/").pop()!;
+    calls.push({ fn, body: route.request().postDataJSON() });
+    await route.fulfill({ json: { subscribed: fn.startsWith("subscribe") } });
+  });
+  await page.goto(`/acompanhar/${token}`);
+  const mascot = page.getByRole("region", { name: "Recado do entregador" });
+  await expect(mascot.getByText("Já estou na rua! Faço 2 entregas antes da sua e depois vou até você.")).toBeVisible();
+  await mascot.getByRole("button", { name: "Avisar sobre minha entrega" }).click();
+  await expect(mascot.getByText("Avisos ligados neste aparelho.")).toBeVisible();
+  expect(calls).toEqual([{ fn: "subscribe_tracking_push", body: { p_token: token,
+    p_endpoint: "https://fcm.googleapis.com/fcm/send/e2e-browser", p_p256dh: "B".repeat(87), p_auth: "a".repeat(22) } }]);
+
+  // Coming back to the page later: still on, without asking again.
+  await page.reload();
+  await expect(mascot.getByText("Avisos ligados neste aparelho.")).toBeVisible();
+  await mascot.getByRole("button", { name: "Desligar" }).click();
+  await expect(mascot.getByRole("button", { name: "Avisar sobre minha entrega" })).toBeVisible();
+  expect(calls.at(-1)).toEqual({ fn: "unsubscribe_tracking_push",
+    body: { p_token: token, p_endpoint: "https://fcm.googleapis.com/fcm/send/e2e-browser" } });
+  expect(errors).toEqual([]);
+});
+
+test("pedido entregue: o mascote se despede e não oferece avisos", async ({ page }) => {
+  await stubPush(page);
+  await mockTracking(page, { body: states.delivered });
+  await page.goto(`/acompanhar/${token}`);
+  const mascot = page.getByRole("region", { name: "Recado do entregador" });
+  await expect(mascot.getByText("Entregue! Bom apetite.")).toBeVisible();
+  await expect(mascot.getByRole("button")).toHaveCount(0);
+});
+
+test("service worker e atalho da Tela de Início do pedido", async ({ page }) => {
+  const worker = await page.request.get("/tracking-sw.js");
+  expect(worker.ok()).toBe(true);
+  expect(worker.headers()["content-type"]).toContain("javascript");
+  expect(worker.headers()["cache-control"]).toContain("no-cache");
+  const manifest = await page.request.get(`/acompanhar/${token.toUpperCase()}/manifest.webmanifest`);
+  expect(manifest.headers()["content-type"]).toContain("application/manifest+json");
+  expect(await manifest.json()).toMatchObject({ start_url: `/acompanhar/${token}`, scope: `/acompanhar/${token}`, display: "standalone" });
+  expect((await page.request.get("/acompanhar/nao-e-token/manifest.webmanifest")).status()).toBe(404);
+  await mockTracking(page, { body: states.onRoute });
+  await page.goto(`/acompanhar/${token}`);
+  await expect(page.locator('link[rel="manifest"]')).toHaveAttribute("href", `/acompanhar/${token}/manifest.webmanifest`);
 });
 
 test("link desconhecido ou malformado mostra não encontrado", async ({ page }) => {

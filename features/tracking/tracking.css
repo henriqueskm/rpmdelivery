@@ -24,7 +24,34 @@
 .tracking-map-canvas { width: 100%; height: clamp(220px, 50vw, 300px); }
 .tracking-map .map-unavailable { margin: 0; }
 .tracking-marker { display: grid; place-items: center; color: white; }
-/* The courier is the rider drawing (lib/maps/courier-marker.ts); styles in globals.css. */
+/* The courier is the rider picture (lib/maps/courier-marker.ts); styles in globals.css. Before the
+   customer's turn it marks an area, not a point: lighter, no dot. */
+.tracking-marker-area { opacity: 0.85; }
+.tracking-area-key { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; background: rgb(35 79 140 / 0.14);
+  border: 2px dashed #234f8c; }
+
+/* The rider talking to the customer, with the offer of notifications. */
+.tracking-mascot { display: flex; align-items: flex-start; gap: 12px; padding: 16px; background: white; border: 1px solid var(--line); border-radius: 11px; }
+.mascot-rider { width: 72px; height: auto; flex-shrink: 0; margin-top: 2px; }
+.mascot-talk { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.mascot-bubble { position: relative; margin: 0; padding: 10px 12px; border-radius: 12px; background: #fff0e9; color: #5b2414;
+  font-size: 15px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.mascot-bubble::before { content: ""; position: absolute; left: -6px; top: 16px; width: 12px; height: 12px; background: inherit; transform: rotate(45deg); border-radius: 2px; }
+.mascot-offer { margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted); }
+.mascot-action { align-self: flex-start; min-height: 44px; }
+.mascot-on { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 13px; font-weight: 600; color: #2f5634; }
+.mascot-link { min-height: 44px; padding: 0 4px; border: 0; background: none; color: inherit; font: inherit; font-weight: 600;
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.mascot-offer .mascot-link { color: var(--ink, #1d2c24); }
+
+/* On the street the rider bobs a little, like the bike over the road. */
+@media (prefers-reduced-motion: no-preference) {
+  .mascot-rider.is-moving { animation: mascot-ride 1.6s ease-in-out infinite; }
+}
+@keyframes mascot-ride {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-3px) rotate(-1.5deg); }
+}
 .tracking-marker-destination { width: 32px; height: 32px; border-radius: 50%; background: #bd401b; border: 3px solid white; box-shadow: 0 2px 6px rgb(29 44 36 / 0.3); }
 .tracking-map figcaption { display: flex; align-items: center; gap: 8px; padding: 12px 14px; font-size: 12px; color: var(--muted); background: white; border-top: 1px solid var(--line); }
 .tracking-live { width: 8px; height: 8px; border-radius: 50%; background: #397544; box-shadow: 0 0 0 3px #3975442e; flex-shrink: 0; }

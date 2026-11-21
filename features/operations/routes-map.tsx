@@ -23,8 +23,8 @@ const MAP_LOCALE = {
 
 function element(kind: "store" | "courier" | "stop", label?: string) {
   if (kind === "courier") {
-    // The rider on a motorcycle with the route ("R-1") on a tag above.
-    const rider = courierMarkerElement(label);
+    // The rider on a motorcycle with the route ("R-1") on a tag above, standing on a dot at the exact position.
+    const rider = courierMarkerElement(label, { point: true });
     rider.classList.add("ops-map-marker-courier");
     return rider;
   }
@@ -83,7 +83,10 @@ export function RoutesMap({ store, couriers, stops }: { store?: Point; couriers:
       map.on("error", () => { if (!loaded) setFailed(true); });
       live.current = {
         map, markers: [],
-        make: (kind, p, label) => new mapboxgl.Marker({ element: element(kind, label) }).setLngLat([p.longitude, p.latitude]).addTo(map),
+        // The courier is anchored at the center of its dot (bottom edge, 7 px up); the rest at their center.
+        make: (kind, p, label) => new mapboxgl.Marker(kind === "courier"
+          ? { element: element(kind, label), anchor: "bottom", offset: [0, 7] }
+          : { element: element(kind, label) }).setLngLat([p.longitude, p.latitude]).addTo(map),
       };
       drawMarkers(live.current, latest.current);
     }).catch(() => { if (!cancelled) setFailed(true); });
