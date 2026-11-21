@@ -71,6 +71,7 @@ test("copiar link de acompanhamento do pedido, no painel e na tela de rotas", as
   await openPanel(page);
   const tab = page.getByRole("tab", { name: /^Pedidos/ });
   if (await tab.isVisible()) await tab.click();
+  await page.getByLabel("Ações do pedido 2003").click();
   const copy = page.getByRole("button", { name: "Copiar link de acompanhamento do pedido 2003" });
   await copy.click();
   await expect(copy).toHaveText("Link copiado ✓");

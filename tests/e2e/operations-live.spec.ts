@@ -186,12 +186,14 @@ test("cancelar pedido e rota em preparação pedem confirmação; pedido devolvi
   await openPanel(page);
   await showArea(page, /^Pedidos/);
 
-  // Cancel a waiting order: "Voltar" keeps it.
+  // Cancel a waiting order (from its "⋯" menu): "Voltar" keeps it.
+  await page.getByLabel("Ações do pedido 1049").click();
   await page.getByRole("button", { name: "Cancelar pedido 1049" }).click();
   const confirm = page.getByRole("dialog", { name: "Cancelar o pedido #1049?" });
   await expect(confirm).toContainText("Igor Nunes sai da fila de despacho.");
   await confirm.getByRole("button", { name: "Voltar" }).click();
   expect(backend.commandCalls().some(call => call.fn === "cancel_order")).toBe(false);
+  await page.getByLabel("Ações do pedido 1049").click();
   await page.getByRole("button", { name: "Cancelar pedido 1049" }).click();
   await confirm.getByRole("button", { name: "Cancelar pedido" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Pedido #1049 cancelado." })).toBeVisible();
@@ -369,4 +371,30 @@ test("novo pedido: trocar o endereço troca o bairro preenchido sozinho", async 
   await bairro.fill("Centro");
   await pick();
   await expect(bairro).toHaveValue("Centro");
+});
+
+test("editar pedido aguardando despacho: formulário preenchido, salva e mantém o ponto do mapa", async ({ page }) => {
+  const errors = watchErrors(page);
+  const backend = storeBackend();
+  await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  await openPanel(page);
+  await showArea(page, /^Pedidos/);
+  await page.getByLabel("Ações do pedido 1049").click();
+  await page.getByRole("button", { name: "Editar pedido 1049" }).click();
+  const form = page.getByRole("dialog", { name: "Editar pedido #1049" });
+  await expect(form.getByLabel("Nome do cliente")).toHaveValue("Igor Nunes");
+  await expect(form.getByLabel("Endereço")).toHaveValue("Rua Sintética, 1049");
+  await form.getByLabel("Nome do cliente").fill("Igor Nunes Filho");
+  await form.getByLabel("Observações").fill("Interfone 12");
+  await form.getByRole("button", { name: "Salvar alterações" }).click();
+  await expect(form).toBeHidden();
+  await expect(page.getByRole("status").filter({ hasText: "Pedido #1049 atualizado." })).toBeVisible();
+  await expect(page.locator(".ops-order").filter({ hasText: "#1049" })).toContainText("Igor Nunes Filho");
+  const call = backend.commandCalls().find(item => item.fn === "update_order")!.body;
+  expect(call).toMatchObject({ p_restaurant_id: testRestaurant.id, p_order_id: "o-1049", p_customer_name: "Igor Nunes Filho",
+    p_notes: "Interfone 12", p_delivery_address: "Rua Sintética, 1049", p_keep_location: true });
+  expect(call).not.toHaveProperty("p_latitude");
+  // Orders already in a route have no edit or cancel, only the customer's link.
+  await expect(page.getByRole("button", { name: /^Editar pedido 1047/ })).toHaveCount(0);
+  expect(errors).toEqual([]);
 });

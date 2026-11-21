@@ -126,6 +126,15 @@ export function storeBackend() {
       target.deliveryStatus = "CANCELLED"; target.orderStatus = "CANCELLED";
       return ok("CANCELLED");
     },
+    update_order(body) {
+      const target = find(board.orders, "orderId", body.p_order_id);
+      if (!target) return { status: 400, json: { code: "P0002", message: "RPM_ORDER_NOT_FOUND" } };
+      if (target.deliveryStatus !== "WAITING") return { status: 400, json: { code: "55000", message: "RPM_ORDER_NOT_EDITABLE" } };
+      Object.assign(target, { customer: body.p_customer_name, phone: body.p_customer_phone, address: body.p_delivery_address,
+        neighborhood: body.p_neighborhood ?? null, complement: body.p_complement ?? null, notes: body.p_notes ?? null,
+        reference: body.p_reference ?? target.reference, promisedMinutes: body.p_promised_minutes });
+      return ok({ orderId: target.orderId, updated: true });
+    },
     requeue_delivery(body) {
       const target = find(board.orders, "deliveryId", body.p_delivery_id)!;
       const moving = board.routes.some(route => route.deliveryIds.includes(target.deliveryId) && ["ON_ROUTE", "RETURNING"].includes(route.status));

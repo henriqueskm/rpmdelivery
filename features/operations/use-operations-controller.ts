@@ -234,6 +234,13 @@ export function useOperationsController(scenario: Scenario, seedTime: number, li
     setSelected(selected.filter(id => id !== orderId));
     setNotice(`Pedido #${order.reference} cancelado.`);
   }
+  /** Real data: fixes an order still waiting for dispatch. */
+  async function editOrder(orderId: string, order: NewOrder, keepLocation: boolean) {
+    const current = state.orders.find(o => o.id === orderId);
+    if (!current || !(await run({ type: "edit-order", orderId, order, keepLocation }))) return false;
+    setNotice(`Pedido #${order.reference || current.reference} atualizado.`);
+    return true;
+  }
   async function requeue(orderId: string) {
     const order = state.orders.find(o => o.id === orderId);
     if (!order || !(await run({ type: "requeue", orderId }))) return;
@@ -256,5 +263,5 @@ export function useOperationsController(scenario: Scenario, seedTime: number, li
     notice, courierRouteId, setCourierRouteId, deadlineTarget, setDeadlineTarget,
     newDialog, courierDialog, deadlineDialog, issueDialog, tabRefs, pending,
     assign, acceptAutomatic, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, issueCommand,
-    reviewShift, cancelRoute, cancelOrder, requeue, viewedAlerts, dismissAlerts, tabKey };
+    reviewShift, cancelRoute, cancelOrder, editOrder, requeue, viewedAlerts, dismissAlerts, tabKey };
 }

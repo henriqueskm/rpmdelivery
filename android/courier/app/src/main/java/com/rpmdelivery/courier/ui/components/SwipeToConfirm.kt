@@ -88,20 +88,25 @@ fun SwipeToConfirm(
     val travel = (trackWidth - thumbPx).coerceAtLeast(0f)
     val flingPx = with(density) { 900.dp.toPx() } // per second
     val shape = RoundedCornerShape(16.dp)
+    // After a refusal ("longe da loja"), the thumb slides back to the start.
+    var returning by remember { mutableStateOf(false) }
     // Past the point that confirms: say so, and tick once, so the courier knows to let go.
     val armed = travel > 0f && offset >= travel * CONFIRM_AT
     LaunchedEffect(armed) { if (armed && !confirmed) haptics.performHapticFeedback(HapticFeedbackType.SegmentTick) }
-    val shown = when { busy || confirmed -> busyLabel; armed -> "Solte para confirmar"; else -> label }
+    val shown = when { returning -> label; busy || confirmed -> busyLabel; armed -> "Solte para confirmar"; else -> label }
     suspend fun settle(target: Float) {
         animate(offset, target, animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { value, _ -> offset = value }
     }
     // The command ran (or was refused) and this control is still on screen: back to the start.
     // The short wait lets "busy" arrive first; an answer that moves the screen on never shows the return.
+    // Slide back first, then clear "confirmed": clearing it restarts this effect, which cancelled the
+    // slide and left the thumb stuck at the end after every refusal (it then confirmed again on a touch).
     LaunchedEffect(confirmed, busy) {
         if (confirmed && !busy) {
             delay(400)
+            returning = true
+            try { settle(0f) } finally { returning = false }
             confirmed = false
-            settle(0f)
         }
     }
     Box(

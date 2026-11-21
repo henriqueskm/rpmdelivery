@@ -6,7 +6,9 @@ import androidx.compose.ui.test.*
 import androidx.test.core.app.ApplicationProvider
 import com.rpmdelivery.courier.shift.ShiftService
 import org.robolectric.Shadows.shadowOf
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.unit.dp
 import com.rpmdelivery.courier.auth.AuthController
@@ -125,6 +127,16 @@ class WorkScreensTest {
         node("Volte para a loja").assertIsDisplayed()
         node("1 entregue · 1 para devolver na loja").assertIsDisplayed()
         captureEvidence(compose, "work-06-returning-390")
+        // Refused far from the store: the reason shows under the swipe, once, not only at the top of the screen.
+        val far = WorkCopy.far(WorkProblem.FAR_FROM_STORE, 2900)
+        fake.failOnce("arrive_at_store", WorkProblem.fromServer("RPM_FAR_FROM_STORE 2900"))
+        swipe("Deslize quando chegar na loja")
+        compose.onAllNodesWithText(far).assertCountEquals(1)
+        node(far).assertIsDisplayed()
+        node("Volte para a loja").assertIsDisplayed()
+        // The thumb slides back a moment after the answer, ready for another try (it used to stay at the end).
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.waitForIdle()
         // TalkBack cannot swipe: its double tap runs the control's click action.
         node("Deslize quando chegar na loja").assert(hasClickAction()).performSemanticsAction(SemanticsActions.OnClick)
         node("Você está na fila").assertIsDisplayed()

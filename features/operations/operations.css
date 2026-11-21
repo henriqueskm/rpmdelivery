@@ -1631,3 +1631,51 @@
   font-size: 11px;
   font-weight: 700;
 }
+
+/* Order row actions (real data): one "⋯" button, a small menu with edit, copy link, cancel. */
+.ops-order-menu { position: relative; grid-column: 3; grid-row: 1; align-self: start; justify-self: end; }
+.ops-order-menu > summary {
+  list-style: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-block: -6px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #536258;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+.ops-order-menu > summary::-webkit-details-marker { display: none; }
+.ops-order-menu > summary:hover, .ops-order-menu[open] > summary { background: #eef1ed; color: #202c25; }
+.ops-order-menu > summary:focus-visible { outline: 2px solid #c2410c; outline-offset: 1px; }
+.ops-order-menu-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 5;
+  min-width: 180px;
+  display: grid;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgb(29 44 36 / 0.16);
+}
+.operations .ops-order-menu-list button, .operations .ops-order-menu-item {
+  justify-content: flex-start;
+  text-align: left;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+.operations .ops-order-menu-list button:hover:not(:disabled) { background: #f3f5f1; }
+.operations .ops-order-menu-list .is-danger { color: #a33826; }
+.ops-order-menu-list .ops-link-manual { margin: 4px; width: auto; }
+@media (max-width: 1099px) { .ops-order-menu > summary { width: 44px; height: 44px; } }

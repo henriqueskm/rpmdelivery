@@ -6,15 +6,16 @@ import type { AddressSuggestion, ResolvedAddress } from "@/services/geocoding/ty
 
 type Status = "idle" | "searching" | "results" | "empty" | "error" | "resolving" | "confirmed" | "street";
 
-export function useAddressAutocomplete(onChange: (address: ResolvedAddress | null) => void) {
-  const [query, setQuery] = useState("");
+/** [initialQuery]: an address already saved (editing): shown as typed, searched only once it is changed. */
+export function useAddressAutocomplete(onChange: (address: ResolvedAddress | null) => void, initialQuery = "") {
+  const [query, setQuery] = useState(initialQuery);
   const [status, setStatus] = useState<Status>("idle");
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [resolved, setResolved] = useState<ResolvedAddress | null>(null);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   // Text set by picking a street ("Rua X, "): wait for the number instead of searching again.
-  const [street, setStreet] = useState<string | null>(null);
+  const [street, setStreet] = useState<string | null>(initialQuery || null);
   const controller = useRef<AbortController | null>(null);
 
   useEffect(() => {

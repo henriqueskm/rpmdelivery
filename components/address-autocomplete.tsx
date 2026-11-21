@@ -22,8 +22,11 @@ export type AddressHints = Partial<typeof messages>;
  * Address search with Mapbox confirmation. The store's own address must be confirmed; a customer's
  * address in a new order may be saved as typed text, so callers can reword the hints and the map.
  */
-export function AddressAutocomplete({ onChange, hints, placeholder = "Rua, número e cidade", mapAlt, className = "field address-field" }: {
+export function AddressAutocomplete({ onChange, hints, placeholder = "Rua, número e cidade", mapAlt, className = "field address-field",
+  initialQuery }: {
   onChange: (value: ResolvedAddress | null) => void;
+  /** An address already saved, e.g. when editing an order. */
+  initialQuery?: string;
   hints?: AddressHints;
   placeholder?: string;
   mapAlt?: string;
@@ -31,7 +34,7 @@ export function AddressAutocomplete({ onChange, hints, placeholder = "Rua, núme
 }) {
   const id = useId();
   const listId = `${id}-list`;
-  const state = useAddressAutocomplete(onChange);
+  const state = useAddressAutocomplete(onChange, initialQuery);
   const text = { ...messages, ...hints };
   const expanded = state.open && state.suggestions.length > 0;
   function keyDown(event: KeyboardEvent<HTMLInputElement>) {

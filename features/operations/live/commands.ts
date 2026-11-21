@@ -1,7 +1,7 @@
 // Which RPC carries each panel command, and how its errors read to the store.
 // Pure: the controller makes the call.
 
-import type { Command } from "../model.ts";
+import type { Command, NewOrder } from "../model.ts";
 import type { LiveBoard } from "./board.ts";
 import { parseBrazilianMobilePhone } from "../../../lib/brazilian-mobile-phone.ts";
 
@@ -10,6 +10,8 @@ export type StoreCommand =
   | { type: "review-shift"; shiftId: string; approve: boolean }
   | { type: "cancel-route"; routeId: string }
   | { type: "cancel-order"; orderId: string }
+  /** [orderId]: the delivery id, as everywhere in the panel. [keepLocation]: same address, keep its pin. */
+  | { type: "edit-order"; orderId: string; order: NewOrder; keepLocation: boolean }
   | { type: "requeue"; orderId: string };
 
 export type RpcCall = { fn: string; args: Record<string, unknown> };
@@ -61,6 +63,18 @@ export function rpcFor(command: Command | StoreCommand, restaurantId: string, bo
       const orderId = board.orderIds[command.orderId];
       return orderId ? { fn: "cancel_order", args: { ...restaurant, p_order_id: orderId } } : null;
     }
+    case "edit-order": {
+      const orderId = board.orderIds[command.orderId];
+      const { order } = command;
+      return orderId ? { fn: "update_order", args: { ...restaurant, p_order_id: orderId,
+        p_customer_name: order.customer.trim(), p_customer_phone: parseBrazilianMobilePhone(order.phone),
+        p_delivery_address: order.address.trim(), p_neighborhood: blank(order.neighborhood),
+        p_complement: blank(order.complement), p_reference: blank(order.reference), p_notes: blank(order.notes),
+        p_ordered_at: new Date(order.orderedAt).toISOString(), p_promised_minutes: order.promisedMinutes,
+        p_keep_location: command.keepLocation,
+        ...(order.geocode ? { p_latitude: order.geocode.latitude, p_longitude: order.geocode.longitude,
+          p_address_provider: "mapbox", p_address_provider_id: order.geocode.providerId } : {}) } } : null;
+    }
     case "requeue":
       return { fn: "requeue_delivery", args: { ...restaurant, p_delivery_id: command.orderId } };
     default:
@@ -71,12 +85,14 @@ export function rpcFor(command: Command | StoreCommand, restaurantId: string, bo
 /** Commands of the prototype that real data does not support yet. */
 export function supportedLive(command: Command | StoreCommand) {
   return ["add", "assign", "release", "revoke-release", "cancel-route", "issue-decide", "delivery-cancel",
-    "review-shift", "cancel-order", "requeue", "alert-view", "alert-dismiss"].includes(command.type);
+    "review-shift", "cancel-order", "edit-order", "requeue", "alert-view", "alert-dismiss"].includes(command.type);
 }
 
 const MESSAGES: Record<string, string> = {
   RPM_MANAGER_REQUIRED: "Só o dono ou o gerente da loja altera o pagamento dos motoboys.",
   RPM_ORDER_NOT_CANCELLABLE: "Esse pedido já saiu da fila de despacho. O painel foi atualizado.",
+  RPM_ORDER_NOT_EDITABLE: "Esse pedido já entrou em uma rota e não pode mais ser editado. O painel foi atualizado.",
+  RPM_ORDER_NOT_FOUND: "Esse pedido não foi encontrado. O painel foi atualizado.",
   RPM_DELIVERY_IN_TRANSIT: "O pedido volta para a fila quando o motoboy chegar na loja.",
   RPM_PAY_FIELDS: "Informe valores de R$ 0 a R$ 1.000.",
   RPM_ROUTE_STALE: "A rota mudou em outro aparelho. O painel foi atualizado; confira e tente de novo.",

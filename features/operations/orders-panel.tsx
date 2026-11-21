@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { CopyTrackingLink } from "./copy-tracking-link";
+import { OrderActions } from "./order-actions";
 import { editableOrders, normalized, plural, type DemoState } from "./model";
 import { Badge, Empty, Icon } from "./ui";
 import { DeadlineText } from "./deadline-view";
@@ -11,6 +11,7 @@ export function OrdersPanel({
   onSelect,
   onDeadline,
   onCancelOrder,
+  onEditOrder,
   onRequeue,
   pending = false,
   now,
@@ -23,6 +24,8 @@ export function OrdersPanel({
   onDeadline?: (id: string) => void;
   /** Real data: drop a waiting order (asks first). */
   onCancelOrder?: (id: string) => void;
+  /** Real data: fix a waiting order (opens the edit form). */
+  onEditOrder?: (id: string) => void;
   /** Real data: a stop the courier brought back goes to the queue again. */
   onRequeue?: (id: string) => void;
   pending?: boolean;
@@ -156,10 +159,9 @@ export function OrdersPanel({
                 </span>
               </label>
               {onDeadline && <button className="ops-order-edit-promise" aria-label={`Editar prazo do pedido ${o.reference}`} title="Editar horário original e prazo prometido" onClick={() => onDeadline(o.id)}>Prazo</button>}
-              {onCancelOrder && o.delivery === "WAITING" && <button className="ops-order-edit-promise" disabled={pending}
-                aria-label={`Cancelar pedido ${o.reference}`} onClick={() => onCancelOrder(o.id)}>Cancelar</button>}
-              {/* Real data: the customer's tracking link, to send by hand while WhatsApp is not automatic. */}
-              <CopyTrackingLink token={o.trackingToken} reference={o.reference} />
+              {/* Real data: edit, the customer's tracking link (sent by hand while WhatsApp is not automatic), cancel. */}
+              {(onCancelOrder || onEditOrder || o.trackingToken) &&
+                <OrderActions order={o} pending={pending} onEdit={onEditOrder} onCancel={onCancelOrder} />}
               {o.notes && (
                   <label htmlFor={`${checkboxPrefix}-${o.id}`} className="ops-order-note">
                     <span aria-hidden="true">!</span>
