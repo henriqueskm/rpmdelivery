@@ -168,7 +168,10 @@ class WorkScreensTest {
     }
 
     @Test fun sideMenuOpensEachPartAndSignsOutAfterConfirming() {
-        fake.home = fake.home.copy(stores = listOf(fake.store, Store("r-2", "Pizzaria Sintética", "PENDING")),
+        fake.home = fake.home.copy(
+            stores = listOf(fake.store.copy(phone = "+5511987650099", address = "Rua Loja 9, Itatiba", latitude = -23.0059, longitude = -46.839),
+                Store("r-2", "Pizzaria Sintética", "PENDING")),
+            refusedStores = listOf(RefusedStore("r-3", "Lanches Sintéticos", "REJECTED", "2026-11-20T15:00:00+00:00")),
             shift = Shift("shift-1", "r-1", "Cozinha da Vila", "AVAILABLE", 2, "2026-11-14T13:42:00+00:00"))
         show()
         fun menu() { compose.onNodeWithContentDescription("Abrir menu").performClick(); compose.waitForIdle() }
@@ -184,8 +187,16 @@ class WorkScreensTest {
         pick("Estabelecimentos")
         node("Aprovado").assertIsDisplayed()
         node("Aguardando a loja").assertIsDisplayed()
+        // The approved store: its address, a call and the way there.
+        node("Rua Loja 9, Itatiba · (11) 98765-0099").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Ligar para Cozinha da Vila").assertHeightIsAtLeast(48.dp)
+        compose.onNodeWithContentDescription("Como chegar em Cozinha da Vila").assertHeightIsAtLeast(48.dp)
         node("Ler convite de outra loja").assertIsDisplayed()
         captureEvidence(compose, "work-14-stores-390")
+        // A refused link, apart, with what to do.
+        compose.onNodeWithText("Vínculos recusados").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Recusado").assertExists()
+        compose.onNodeWithText("Se foi engano, fale com a loja e peça um novo convite.").assertExists()
         // Back returns to Início, where the line is.
         compose.runOnIdle { work.show(Section.Home) }
         node("Você está na fila").assertIsDisplayed()

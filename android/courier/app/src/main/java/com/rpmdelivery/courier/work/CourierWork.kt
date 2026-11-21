@@ -9,9 +9,25 @@ import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-/** A store the courier is linked to. Only ACTIVE links can ask for a shift. */
-data class Store(val restaurantId: String, val name: String, val linkStatus: String) {
+/**
+ * A store the courier is linked to. Only ACTIVE links can ask for a shift, and only they carry the
+ * store's phone, address and pin (to call it or find the way there).
+ */
+data class Store(
+    val restaurantId: String,
+    val name: String,
+    val linkStatus: String,
+    val phone: String? = null,
+    val address: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+) {
     val active: Boolean get() = linkStatus == "ACTIVE"
+}
+
+/** A link the store refused (REJECTED) or suspended (SUSPENDED), and when. Never asks for shifts. */
+data class RefusedStore(val restaurantId: String, val name: String, val linkStatus: String, val since: String?) {
+    val suspended: Boolean get() = linkStatus == "SUSPENDED"
 }
 
 /** The courier's open shift. [queuePosition] exists only while waiting in line. */
@@ -80,7 +96,13 @@ data class HistoryDay(
     val totalCents: Int,
 )
 
-data class CourierHome(val stores: List<Store>, val shift: Shift?, val route: CourierRoute?, val today: Today? = null)
+data class CourierHome(
+    val stores: List<Store>,
+    val shift: Shift?,
+    val route: CourierRoute?,
+    val today: Today? = null,
+    val refusedStores: List<RefusedStore> = emptyList(),
+)
 
 /** 3700 → "R$ 37,00". */
 fun reais(cents: Int): String = "R$ " + java.text.NumberFormat.getNumberInstance(java.util.Locale.forLanguageTag("pt-BR")).apply {
@@ -137,7 +159,14 @@ private fun JsonObject.list(key: String): List<JsonObject> = (this[key] as? Json
 fun parseHome(element: JsonElement): CourierHome {
     val root = element as? JsonObject ?: throw WorkProblem(WorkCopy.UNEXPECTED)
     return CourierHome(
-        stores = root.list("stores").map { Store(it.required("restaurantId"), it.required("name"), it.required("linkStatus")) },
+        stores = root.list("stores").map {
+            Store(it.required("restaurantId"), it.required("name"), it.required("linkStatus"),
+                it.text("phone"), it.text("address"), it.text("latitude")?.toDoubleOrNull(), it.text("longitude")?.toDoubleOrNull())
+        },
+        // Older servers do not send it: no refused links to show.
+        refusedStores = root.list("refusedStores").map {
+            RefusedStore(it.required("restaurantId"), it.required("name"), it.required("linkStatus"), it.text("since"))
+        },
         shift = root.child("shift")?.let {
             Shift(it.required("shiftId"), it.required("restaurantId"), it.text("restaurantName").orEmpty(),
                 it.required("status"), it.text("queuePosition")?.toIntOrNull(), it.text("availableSince"))

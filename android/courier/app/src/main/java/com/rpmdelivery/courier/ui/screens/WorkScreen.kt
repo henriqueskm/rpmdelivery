@@ -1013,12 +1013,52 @@ private fun StoresDirectory(state: WorkState, actions: WorkActions, onBack: () -
                         Text(store.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
                         StatusChip(if (store.active) "Aprovado" else "Aguardando a loja", store.active)
                     }
+                    if (store.active) StoreContactLine(store, actions)
                 }
             }
             Primary(if (stores.isEmpty()) "Ler QR Code do convite" else "Ler convite de outra loja", state.busy, actions.invite.scan)
             InviteCodeEntry(state.busy, actions.invite.enter)
         }
+        val refused = state.home?.refusedStores.orEmpty()
+        if (refused.isNotEmpty()) Card {
+            Heading("Vínculos recusados", "A loja não aprovou ou suspendeu o seu vínculo")
+            refused.forEach { store ->
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Row(Modifier.fillMaxWidth().semantics(mergeDescendants = true) { }, verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text(store.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        store.since?.let { Text("Desde ${historyDate(it.take(10))}", style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    }
+                    StatusChip(if (store.suspended) "Suspenso" else "Recusado", false)
+                }
+            }
+            Text("Se foi engano, fale com a loja e peça um novo convite.", style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         Secondary("Voltar ao início", false, onBack)
+    }
+}
+
+/** An approved store's address, with a call and the way there. Nothing shows for what the store never filled in. */
+@Composable
+private fun StoreContactLine(store: Store, actions: WorkActions) {
+    val address = store.address?.takeIf { it.isNotBlank() }
+    val canNavigate = address != null || (store.latitude != null && store.longitude != null)
+    if (address == null && store.phone == null) return
+    val phone = store.phone?.let { BrazilianPhone.format(it.removePrefix("+55")) }
+    Text(listOfNotNull(address, phone).joinToString(" · "), style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        store.phone?.let { number ->
+            OutlinedButton(onClick = { actions.dial(number) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                .semantics { contentDescription = "Ligar para ${store.name}" }) { Text("Ligar", maxLines = 1) }
+        }
+        if (canNavigate) OutlinedButton(onClick = { actions.navigate(mapQuery(store.latitude, store.longitude, address.orEmpty())) },
+            modifier = Modifier.weight(1f).heightIn(min = 48.dp).semantics { contentDescription = "Como chegar em ${store.name}" }) {
+            Text("Como chegar", maxLines = 1)
+        }
     }
 }
 
