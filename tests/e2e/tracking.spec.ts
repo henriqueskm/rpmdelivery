@@ -98,7 +98,10 @@ test("cliente acompanha a caminho → próximo com mapa → entregue, e a págin
   await page.clock.runFor(9_000);
   await expect.poll(position).not.toBe(midway);
   expect(mock.styleLoads()).toBe(1);
-  for (const request of mock.mapRequests) expect(request.referer ?? "").not.toContain(token);
+  // Mapbox URL restrictions need a Referer; it must be the site's origin only, never the path with the token.
+  const origin = `${new URL(page.url()).origin}/`;
+  expect(mock.mapRequests.length).toBeGreaterThan(0);
+  for (const request of mock.mapRequests) expect(request.referer).toBe(origin);
 
   mock.set({ body: states.delivered });
   await page.clock.runFor(15_000);

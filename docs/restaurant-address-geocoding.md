@@ -19,7 +19,15 @@ Em `.env.local`, ignorado pelo Git:
 | `MAPBOX_ACCESS_TOKEN` | Geocoding no servidor; nunca prefixar com `NEXT_PUBLIC_` |
 | `NEXT_PUBLIC_MAPBOX_MAP_TOKEN` | Token **público `pk.*` separado**, somente scopes Maps necessários, sem scopes administrativos |
 
-Restrinja o token público por URL/domínio no painel Mapbox antes da disponibilização. Geocoding permanente exige conta Mapbox com cartão válido ou contrato enterprise. Nenhum valor real é versionado. Limitação: autenticação/debounce/limites não substituem quota e rate limiting distribuído; revisar controles de custo antes de produção. Os parâmetros do RPC passam validação de formato/faixa; não há prova criptográfica de origem Mapbox contra um cliente autenticado que forje chamadas diretas.
+### Restringir o token público do mapa por URL
+
+No painel do Mapbox (Tokens → token do `NEXT_PUBLIC_MAPBOX_MAP_TOKEN` → URL restrictions), adicione `https://rpmdelivery.vercel.app`. Subdomínios e caminhos desse endereço passam juntos. Não há curinga, e `localhost` só passa se for adicionado. Para desenvolvimento, use outro token sem restrição no `.env.local`.
+
+- O Mapbox confere o cabeçalho `Referer`; sem ele, responde 403. O painel e o cadastro usam o padrão do navegador, que manda só a origem para outro site. A página `/acompanhar/<token>` usa `strict-origin`: manda só `https://rpmdelivery.vercel.app/`, nunca o caminho com o token do pedido. O E2E `tracking.spec.ts` confere isso.
+- O `MAPBOX_ACCESS_TOKEN`, do servidor (busca de endereço e matriz de rotas), tem de ser **outro token, sem restrição de URL**: chamadas do servidor não mandam `Referer` e seriam recusadas.
+- As previews da Vercel (`*-<time>.vercel.app`) ficam sem mapa, a não ser que cada endereço seja adicionado. A mudança pode demorar a valer por causa de cache; teste numa janela anônima.
+
+Geocoding permanente exige conta Mapbox com cartão válido ou contrato enterprise. Nenhum valor real é versionado. Limitação: autenticação/debounce/limites não substituem quota e rate limiting distribuído; revisar controles de custo antes de produção. Os parâmetros do RPC passam validação de formato/faixa; não há prova criptográfica de origem Mapbox contra um cliente autenticado que forje chamadas diretas.
 
 ## Migration e RPC
 
