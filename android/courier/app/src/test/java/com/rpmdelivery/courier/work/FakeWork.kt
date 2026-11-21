@@ -118,4 +118,9 @@ internal class FakeWork : CourierWorkRepository {
         if (home.stores.none { it.restaurantId == invitingStore.restaurantId }) home = home.copy(stores = home.stores + invitingStore)
         return InviteRequest(true, status = home.stores.first { it.restaurantId == invitingStore.restaurantId }.linkStatus)
     }
+
+    override suspend fun deleteAccount() {
+        record("delete_account")
+        if (home.shift != null) throw WorkProblem.refused("RPM_ACCOUNT_SHIFT_OPEN")
+    }
 }

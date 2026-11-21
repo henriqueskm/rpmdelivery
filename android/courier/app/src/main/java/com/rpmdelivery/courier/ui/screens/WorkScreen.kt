@@ -217,7 +217,7 @@ fun WorkScreen(work: WorkController, registration: CourierRegistration = Courier
     when (state.section) {
         Section.Earnings -> Scrolling { HistoryContent(state, onBack = home, onRetry = work::loadHistory) }
         Section.Stores -> Scrolling { StoresDirectory(state, actions, onBack = home) }
-        Section.Profile -> Scrolling { ProfileContent(registration, onBack = home) }
+        Section.Profile -> Scrolling { ProfileContent(registration, state, onDelete = work::deleteAccount, onBack = home) }
         Section.Alerts -> Scrolling { AlertsContent(onBack = home) }
         Section.Help -> Scrolling { HelpContent(onBack = home) }
         Section.Home -> HomeContent(state, route, actions)
@@ -1073,8 +1073,10 @@ private fun StatusChip(text: String, ok: Boolean) {
 
 /** What the stores see when they approve a link. Read only: the server keeps saved data as it is. */
 @Composable
-private fun ProfileContent(registration: CourierRegistration, onBack: () -> Unit) {
+private fun ProfileContent(registration: CourierRegistration, state: WorkState, onDelete: () -> Unit, onBack: () -> Unit) {
+    var confirmDelete by remember { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Feedback(state)
         Card {
             Heading("Meu cadastro", "O que a loja vê ao aprovar seu vínculo")
             DayLine("Nome", registration.name.ifBlank { "—" })
@@ -1086,7 +1088,26 @@ private fun ProfileContent(registration: CourierRegistration, onBack: () -> Unit
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Secondary("Voltar ao início", false, onBack)
+        // Quiet, at the bottom, and always behind a confirmation: it cannot be undone.
+        TextButton(onClick = { confirmDelete = true }, enabled = !state.busy,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            Text(if (state.busy) "Excluindo a conta…" else "Excluir minha conta", color = MaterialTheme.colorScheme.error)
+        }
     }
+    if (confirmDelete) AlertDialog(onDismissRequest = { confirmDelete = false },
+        title = { Text("Excluir sua conta?") },
+        text = {
+            Text("Apagamos seu nome, celular, dados da moto, seu histórico de localização e seu acesso ao aplicativo. " +
+                "As lojas guardam só o registro das entregas e dos valores, sem o seu nome. Não dá para desfazer.")
+        },
+        confirmButton = {
+            TextButton(onClick = { confirmDelete = false; onDelete() }, modifier = Modifier.heightIn(min = 48.dp)) {
+                Text("Excluir conta", color = MaterialTheme.colorScheme.error)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { confirmDelete = false }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Cancelar") }
+        })
 }
 
 @Composable

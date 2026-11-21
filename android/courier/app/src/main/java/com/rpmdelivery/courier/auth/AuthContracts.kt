@@ -36,6 +36,7 @@ class AuthProblem(val safeMessage: String) : Exception()
 object AuthCopy {
     const val NETWORK = "Não foi possível conectar. Confira sua internet e tente novamente."
     const val EXPIRED = "Sua sessão expirou. Entre novamente para continuar."
+    const val ACCOUNT_DELETED = "Sua conta foi excluída. Seus dados pessoais foram apagados deste serviço."
     const val CONFIRM = "Confira seu e-mail para confirmar sua conta"
     const val LINK = "Este link não pode ser usado aqui. Confirme no e-mail e entre com sua senha."
     const val STORAGE = "Não foi possível acessar a sessão protegida neste aparelho. Tente novamente ou saia para limpar a sessão local."

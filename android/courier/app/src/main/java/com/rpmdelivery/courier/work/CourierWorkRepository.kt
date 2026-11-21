@@ -53,6 +53,11 @@ interface CourierWorkRepository {
     suspend fun inspectInvite(code: String): InviteCheck
     /** Asks the invite's store for a link; the store approves it in the panel. Repeating it is harmless. */
     suspend fun requestMembership(code: String): InviteRequest
+    /**
+     * "Excluir minha conta": erases the courier's data and closes the login (Edge Function delete-account).
+     * Refused with RPM_ACCOUNT_SHIFT_OPEN or RPM_ACCOUNT_STORE_MEMBER. Repeating it after a failure is safe.
+     */
+    suspend fun deleteAccount()
 }
 
 /** [meters]: with RPM_FAR_FROM_ADDRESS / RPM_FAR_FROM_STORE, how far the phone was. */
@@ -98,6 +103,9 @@ object WorkCopy {
         "RPM_SHIFT_BUSY" -> "Não dá para encerrar o turno com uma rota em andamento."
         "RPM_SHIFT_NOT_AVAILABLE" -> "Seu turno não está disponível para iniciar a rota. Fale com a loja."
         "RPM_SHIFT_NOT_FOUND", "RPM_SHIFT_STATE" -> "Seu turno mudou. Confira a tela atualizada."
+        "RPM_ACCOUNT_SHIFT_OPEN" -> "Encerre o turno antes de excluir a conta."
+        "RPM_ACCOUNT_STORE_MEMBER" -> "Este login também é de uma loja. Para excluir, use o painel da loja ou fale com o suporte."
+        "DELETE_UNAVAILABLE" -> "Não foi possível excluir a conta agora. Tente de novo mais tarde."
         else -> GENERIC
     }
     fun far(code: String, meters: Int): String = if (code == WorkProblem.FAR_FROM_STORE)
@@ -211,6 +219,37 @@ class SupabaseCourierWork(
         }
     }
 
+    override suspend fun deleteAccount() {
+        client.auth.awaitInitialization()
+        val token = client.auth.currentSessionOrNull()?.accessToken ?: throw WorkProblem.expired()
+        val (status, body) = try {
+            withContext(Dispatchers.IO) {
+                val connection = URL("$projectUrl/functions/v1/delete-account").openConnection() as HttpURLConnection
+                try {
+                    connection.requestMethod = "POST"
+                    connection.instanceFollowRedirects = false
+                    connection.connectTimeout = 15_000
+                    connection.readTimeout = 30_000
+                    connection.doOutput = true
+                    connection.setRequestProperty("Authorization", "Bearer $token")
+                    connection.setRequestProperty("apikey", publishableKey)
+                    connection.setRequestProperty("Content-Type", "application/json")
+                    connection.outputStream.use { it.write("{}".toByteArray()) }
+                    val code = connection.responseCode
+                    val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+                    code to (stream?.bufferedReader()?.use { it.readText() }.orEmpty())
+                } finally { connection.disconnect() }
+            }
+        } catch (error: CancellationException) { throw error }
+        catch (_: IOException) { throw WorkProblem.network() }
+        when (status) {
+            in 200..299 -> return
+            401 -> { client.auth.clearSession(); throw WorkProblem.expired() }
+            409 -> throw WorkProblem.refused(RPM_CODE.find(body)?.value)
+            else -> throw WorkProblem.refused("DELETE_UNAVAILABLE")
+        }
+    }
+
     private suspend fun rpc(name: String, args: JsonObject = buildJsonObject { }): JsonElement = gate.withLock {
         try {
             call(name, args)
@@ -273,4 +312,5 @@ class UnconfiguredWork : CourierWorkRepository {
     override suspend fun settleRoute(routeId: String) = Unit
     override suspend fun inspectInvite(code: String): InviteCheck = refuse()
     override suspend fun requestMembership(code: String): InviteRequest = refuse()
+    override suspend fun deleteAccount() = refuse()
 }
