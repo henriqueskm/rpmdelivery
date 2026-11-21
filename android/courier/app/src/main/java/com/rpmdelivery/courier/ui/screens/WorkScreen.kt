@@ -237,14 +237,30 @@ private fun Scrolling(content: @Composable () -> Unit) {
     Column(Modifier.widthIn(max = 480.dp).fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) { content() }
 }
 
-/** What every courier screen says first: no connection, what just worked, what was refused. */
+/**
+ * What every courier screen says first: no connection, what just worked, what was refused.
+ * [refusalBelow]: on a route the refusal shows under the swipe instead (see [Refusal]).
+ */
 @Composable
-private fun Feedback(state: WorkState) {
+private fun Feedback(state: WorkState, refusalBelow: Boolean = false) {
     if (state.offline) Banner("Sem conexão. Mostrando os últimos dados; o aplicativo tenta de novo sozinho.", SoftCoral)
     state.notice?.let { Banner(it, SoftGreen, Green) }
-    state.message?.let {
+    if (!refusalBelow) state.message?.let {
         Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
     }
+}
+
+/**
+ * Why a swipe did not go through ("você está a 2,3 km da loja"), right under the swipe. At the top of
+ * the screen it went unseen and the thumb sliding back looked like a swipe that failed.
+ */
+@Composable
+private fun Refusal(message: String?) {
+    message ?: return
+    Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyLarge,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.fillMaxWidth().background(SoftCoral, RoundedCornerShape(12.dp)).padding(12.dp)
+            .semantics { liveRegion = LiveRegionMode.Polite })
 }
 
 /**
@@ -301,8 +317,8 @@ private fun RouteSheetScreen(state: WorkState, route: CourierRoute, actions: Wor
         ) { inner ->
             Column(Modifier.fillMaxSize().padding(inner).verticalScroll(rememberScrollState()).padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Feedback(state)
-                RouteContent(route, state.home?.shift, state.busy, actions, withStops = false)
+                Feedback(state, refusalBelow = true)
+                RouteContent(route, state.home?.shift, state.busy, actions, withStops = false, refusal = state.message)
                 StationaryNotice()
             }
         }
@@ -416,13 +432,13 @@ fun stopSearch(address: String, neighborhood: String?): String {
 fun WorkContent(state: WorkState, actions: WorkActions) {
     val home = state.home
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Feedback(state)
+        Feedback(state, refusalBelow = home?.route != null)
         state.invite?.let { InviteContent(it, state.busy, actions.invite) }
         when {
             home == null && state.loading -> Text("Carregando suas lojas e seu turno…")
             home == null -> OutlinedButton(onClick = actions.retry, enabled = !state.busy,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), shape = RoundedCornerShape(14.dp)) { Text("Tentar novamente") }
-            home.route != null -> RouteContent(home.route, home.shift, state.busy, actions)
+            home.route != null -> RouteContent(home.route, home.shift, state.busy, actions, refusal = state.message)
             home.shift != null -> {
                 ShiftContent(home.shift, state.busy, actions)
                 // Waiting in line: make sure the alerts will reach the pocket, and show the day so far.
@@ -770,7 +786,9 @@ private fun EndShift(shift: Shift, busy: Boolean, actions: WorkActions) {
 // ---------------------------------------------------------------- route
 
 @Composable
-private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, actions: WorkActions, withStops: Boolean = true) {
+private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, actions: WorkActions, withStops: Boolean = true,
+    /** The last refusal, shown under the swipe that caused it. */
+    refusal: String? = null) {
     var failing by remember(route.nextDeliveryId) { mutableStateOf(false) }
     val total = route.stops.size
     val storeName = route.store.name.ifBlank { shift?.restaurantName.orEmpty() }
@@ -781,8 +799,10 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
                 if (route.pickupReleased) {
                     Banner("Retirada liberada. Pegue os pedidos e inicie a rota.", SoftGreen, Green)
                     SwipeToConfirm("Deslize para iniciar a rota", busy, SoftCoral, Coral, Coral, busyLabel = "Iniciando a rota…") { actions.startRoute(route) }
+                    Refusal(refusal)
                 } else {
                     Text("A loja está separando os pedidos. Aguarde a liberação da retirada.", style = MaterialTheme.typography.bodyLarge)
+                    Refusal(refusal)
                 }
             }
             "RETURNING" -> {
@@ -797,6 +817,7 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
                     }
                 }
                 SwipeToConfirm("Deslize quando chegar na loja", busy, SoftCoral, Coral, Coral, busyLabel = "Registrando chegada…") { actions.arrive(route) }
+                Refusal(refusal)
             }
             else -> {
                 Heading("Minha rota", "Entrega ${minOf(route.settled + 1, total)} de $total", "Em rota")
@@ -815,10 +836,12 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
                         if (next == null) {
                             Text("A loja está decidindo o que fazer com a entrega que não deu certo. Se ela não decidir em 10 minutos, você volta com o pedido para a loja. A tela se atualiza sozinha.",
                                 style = MaterialTheme.typography.bodyLarge)
+                            Refusal(refusal)
                         } else if (failing) {
                             NextStop(next)
                             FailureForm(busy, onBack = { failing = false },
                                 onSend = { reason, notes -> failing = false; actions.fail(route, next, reason, notes) })
+                            Refusal(refusal)
                         } else {
                             NextStop(next)
                             NavigationButton("Abrir navegação", "Google Maps, Waze ou o aplicativo de mapas instalado") {
@@ -827,6 +850,7 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
                             // The swipe is the confirmation: no extra dialog between the courier and the next stop.
                             SwipeToConfirm("Deslize para confirmar a entrega", busy, SoftGreen, Green, Green,
                                 busyLabel = "Confirmando entrega…") { actions.complete(route, next) }
+                            Refusal(refusal)
                             // A quiet link, set apart from the swipe: the exception never competes with "delivered".
                             // A stray tap only opens the reason form, which still needs "Enviar para a loja".
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)

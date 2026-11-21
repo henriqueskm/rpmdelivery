@@ -13,7 +13,7 @@ import { pendingIssues } from "./issue-presentation";
 import { BuilderPanel } from "./builder-panel";
 import { CouriersPanel } from "./couriers-panel";
 import { OrdersPanel } from "./orders-panel";
-import { NewOrderDialog } from "./dialogs";
+import { EditOrderDialog, NewOrderDialog } from "./dialogs";
 import { CourierDialog } from "./courier-dialog";
 import { DeadlineDialog } from "./deadline-dialog";
 import { tabs, useOperationsController, type LiveSource } from "./use-operations-controller";
@@ -180,9 +180,13 @@ function OperationsWorkspace({
     notice, courierRouteId, setCourierRouteId, deadlineTarget, setDeadlineTarget,
     newDialog, courierDialog, deadlineDialog, issueDialog, tabRefs, pending: saving,
     assign, acceptAutomatic, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, issueCommand,
-    reviewShift, cancelRoute, cancelOrder, requeue, viewedAlerts, dismissAlerts, tabKey,
+    reviewShift, cancelRoute, cancelOrder, editOrder, requeue, viewedAlerts, dismissAlerts, tabKey,
   } = useOperationsController(scenario, now, live);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  /** Real data: the waiting order being edited. */
+  const editDialog = useRef<HTMLDialogElement>(null);
+  const [editingOrder, setEditingOrder] = useState<string>();
+  const openEditOrder = (id: string) => { setEditingOrder(id); editDialog.current?.showModal(); };
   const askCancelOrder = (id: string) => {
     const order = state.orders.find(o => o.id === id);
     if (order) setConfirmation({ title: `Cancelar o pedido #${order.reference}?`,
@@ -354,6 +358,7 @@ function OperationsWorkspace({
               now={now}
               onDeadline={live ? undefined : setDeadlineTarget}
               onCancelOrder={live ? askCancelOrder : undefined}
+              onEditOrder={live ? openEditOrder : undefined}
               onRequeue={live ? (id) => void requeue(id) : undefined}
               pending={saving}
               selected={selected}
@@ -402,6 +407,8 @@ function OperationsWorkspace({
       </div>
       <NewOrderDialog dialogRef={newDialog} now={now} defaultPromiseMinutes={state.defaultPromiseMinutes} onAdd={add} live={!!live} />
       {live && <ConfirmDialog request={confirmation} onClose={() => setConfirmation(null)} />}
+      {live && <EditOrderDialog dialogRef={editDialog} order={state.orders.find(o => o.id === editingOrder)} now={now}
+        defaultPromiseMinutes={state.defaultPromiseMinutes} onSave={editOrder} onClose={() => setEditingOrder(undefined)} />}
       {automatic&&<AutomaticDialog state={state} scenario={scenario} now={now} onAccept={acceptAutomatic}
         onClose={accepted=>{setAutomatic(false);if(accepted)focusRelease();
           // Phones show the copy above the tabs; desktops the one in the Montagem heading.
