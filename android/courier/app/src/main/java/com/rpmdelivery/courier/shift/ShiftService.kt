@@ -44,6 +44,8 @@ class ShiftService : Service() {
     private var loop: Job? = null
     private var last: CourierHome? = null
     private var trackingRoute: String? = null
+    private var dispatch: Job? = null
+    private var lastDispatch = 0L
 
     // Every method spelled out: before Android 11 the provider callbacks have no default body.
     private val listener = object : LocationListener {
@@ -105,7 +107,24 @@ class ShiftService : Service() {
         if (route != null && trackingRoute != route.routeId) startTracking(route.routeId)
         if (route == null && trackingRoute != null) { send(); stopTracking() }
         send()
+        if (route?.status == "ON_ROUTE") notifyCustomers(route.routeId)
         refreshOngoing(home)
+    }
+
+    /**
+     * The GPS just sent may have put the courier near the next customer, which queues "está chegando" on
+     * the server; the dispatch sends it (and anything else waiting). At most every 30 s, off the loop:
+     * a slow or missing function never delays the next GPS batch.
+     */
+    private fun notifyCustomers(routeId: String) {
+        val now = System.currentTimeMillis()
+        if (dispatch?.isActive == true || now - lastDispatch < DISPATCH_MS) return
+        lastDispatch = now
+        dispatch = scope.launch {
+            try { repository.notifyCustomers(routeId) }
+            catch (error: CancellationException) { throw error }
+            catch (_: Exception) { /* Nothing to do: the next one picks up what is left. */ }
+        }
     }
 
     /** Sends what the buffer holds, at most 100 points per call, while the route is in progress. */
@@ -196,6 +215,7 @@ class ShiftService : Service() {
         private const val TRACKING_MS = 15_000L
         private const val POINT_MS = 5_000L
         private const val POINT_METERS = 10f
+        private const val DISPATCH_MS = 30_000L
 
         /** Called by the app while it is visible, which Android requires to start a foreground service. */
         fun start(context: Context) {

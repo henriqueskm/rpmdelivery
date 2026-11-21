@@ -4,6 +4,7 @@ import {
   TRACKING_STEPS, clockTime, refreshSeconds, stopsBeforeText, trackingView, type Tracking,
 } from "@/lib/tracking/view";
 import { TrackingMap } from "./tracking-map";
+import { TrackingMascot } from "./tracking-mascot";
 import { useTracking } from "./use-tracking";
 import "./tracking.css";
 
@@ -28,12 +29,12 @@ export function TrackingPage({ token }: { token: string }) {
           <button type="button" className="button primary tracking-retry" onClick={retry}>Tentar novamente</button>
         </section>
       )}
-      {state.phase === "ready" && <TrackingDetails tracking={state.tracking} offline={state.offline} />}
+      {state.phase === "ready" && <TrackingDetails token={token} tracking={state.tracking} offline={state.offline} />}
     </main>
   );
 }
 
-function TrackingDetails({ tracking, offline }: { tracking: Tracking; offline: boolean }) {
+function TrackingDetails({ token, tracking, offline }: { token: string; tracking: Tracking; offline: boolean }) {
   const view = trackingView(tracking);
   const stops = tracking.status === "ON_ROUTE" ? stopsBeforeText(tracking.stopsBefore) : null;
   const live = refreshSeconds(tracking.status) !== null;
@@ -45,7 +46,9 @@ function TrackingDetails({ tracking, offline }: { tracking: Tracking; offline: b
         <p>{view.detail}</p>
         {stops && <p className="tracking-chip">{stops}</p>}
       </section>
-      {view.showMap && <TrackingMap courier={tracking.courier} destination={tracking.destination} />}
+      <TrackingMascot token={token} tracking={tracking} live={live} />
+      {view.showMap && <TrackingMap courier={tracking.courier} courierArea={tracking.courierArea}
+        destination={tracking.destination} distanceMeters={tracking.distanceMeters} />}
       {view.step !== null && <TrackingSteps tracking={tracking} current={view.step} />}
       {offline && <p className="notice error tracking-offline" role="status">Sem conexão. Tentando atualizar…</p>}
       <footer className="tracking-footer">

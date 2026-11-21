@@ -37,6 +37,8 @@ type Database = {
       revoke_courier_invite: { Args: { p_restaurant_id: string; p_invite_id: string }; Returns: undefined };
       inspect_courier_invite: { Args: { p_code: string }; Returns: InviteResult };
       get_tracking: { Args: { p_token: string }; Returns: unknown };
+      subscribe_tracking_push: { Args: { p_token: string; p_endpoint: string; p_p256dh: string; p_auth: string }; Returns: unknown };
+      unsubscribe_tracking_push: { Args: { p_token: string; p_endpoint: string }; Returns: unknown };
       request_courier_membership: { Args: { p_code: string }; Returns: InviteResult };
       review_courier_membership: { Args: { p_restaurant_id: string; p_relationship_id: string; p_approve: boolean }; Returns: string };
       get_operations_board: { Args: { p_restaurant_id: string }; Returns: unknown };

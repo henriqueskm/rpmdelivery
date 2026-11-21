@@ -67,9 +67,11 @@ reset role;
 select core_test.check('NEXT customer sees the courier',
  (core_test.public_view('t1')->'courier'->>'latitude')::numeric=-23.56
  and core_test.public_view('t1')->'courier'->>'recordedAt' is not null);
-select core_test.check('a later stop never sees the courier (it would reveal another address)',
+-- Its own pin and the courier's area only (push-contracts.sql checks the area itself).
+select core_test.check('a later stop never sees the courier''s point (it would reveal another address)',
  core_test.public_view('t2')->'courier'='null'::jsonb and core_test.public_view('t3')->'courier'='null'::jsonb
- and core_test.public_view('t2')->'destination'='null'::jsonb);
+ and core_test.public_view('t2')->'courierArea'<>'null'::jsonb
+ and (core_test.public_view('t2')->'destination'->>'latitude')::numeric=-23.55);
 
 select core_test.act(9);
 set role authenticated;
@@ -111,7 +113,7 @@ select core_test.check('retried stop goes after the remaining first attempts',
 -- ---------------------------------------------------------
 select core_test.check('answer carries only the public fields',
  (select array_agg(k order by k) from jsonb_object_keys(core_test.public_view('t3')) k)
-  =array['courier','deliveredAt','destination','issueReason','restaurantName','startedAt','status','stopsBefore']);
+  =array['courier','courierArea','deliveredAt','destination','distanceMeters','issueReason','restaurantName','startedAt','status','stopsBefore']);
 select core_test.check('no customer data of any stop leaks',
  not exists (select 1 from (values ('t1'),('t2'),('t3'),('t4')) t(k)
   where position('Sigiloso' in core_test.public_view(t.k)::text)>0
