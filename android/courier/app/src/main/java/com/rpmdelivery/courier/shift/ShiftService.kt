@@ -19,6 +19,7 @@ import com.rpmdelivery.courier.CourierGraph
 import com.rpmdelivery.courier.work.CourierHome
 import com.rpmdelivery.courier.work.CourierWorkRepository
 import com.rpmdelivery.courier.work.LocationBuffer
+import com.rpmdelivery.courier.work.ShiftAlert
 import com.rpmdelivery.courier.work.WorkProblem
 import com.rpmdelivery.courier.work.alertsBetween
 import kotlinx.coroutines.CancellationException
@@ -97,7 +98,10 @@ class ShiftService : Service() {
             return // No connection: try again on the next tick, keeping the GPS buffer.
         } catch (_: Exception) { return }
 
-        alertsBetween(last, home).forEach { ShiftNotifications.alert(this, it, home) }
+        alertsBetween(last, home).forEach {
+            ShiftNotifications.alert(this, it, home)
+            if (it == ShiftAlert.PICKUP_RELEASED) PickupWake.openNow(this)
+        }
         last = home
         if (home.shift == null) { send(); finish(); return }
 

@@ -11,7 +11,11 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <!-- The shift's alerts must ring with the screen off: the app asks once, in Android's own dialog. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    <!-- Optional: a small bubble over the maps app during the route, to come back in one tap. -->
+    <!-- "Rota pronta para retirada" turns the screen on and opens the route over the lock screen.
+         Android 14+ asks the courier to allow it ("Notificações em tela cheia"). -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- Optional: a small bubble over the maps app during the route, to come back in one tap; with it the
+         app also opens by itself when the pickup is released and the courier is in another app. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- Only to read a store's invite QR Code, asked when the courier opens the reader. -->
     <uses-permission android:name="android.permission.CAMERA" />
