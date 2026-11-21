@@ -84,9 +84,10 @@ app do motoboy chama dispatch-notifications (como hoje; e a cada 30 s em rota)
 
 **Configurar (feito por você):**
 
-1. Gere as chaves: `node scripts/generate-web-push-keys.mjs`. Elas aparecem só no seu terminal.
-2. Supabase: `npx supabase secrets set --workdir . WEB_PUSH_PUBLIC_KEY=... WEB_PUSH_PRIVATE_KEY=...`. `PUBLIC_SITE_URL` já existe; opcional `WEB_PUSH_SUBJECT` (`mailto:` ou `https://`).
-3. Vercel: `NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY` = a chave pública, depois um novo deploy. Sem ela, o mascote aparece mas não oferece os avisos.
+1. Gere e salve as chaves: `node scripts/generate-web-push-keys.mjs`, na pasta do projeto ligada ao Supabase. O script grava as duas chaves nos secrets de uma vez; a privada nunca aparece na tela. Rodar de novo troca o par.
+2. Supabase: `PUBLIC_SITE_URL` com o endereço `https://` do site; opcional `WEB_PUSH_SUBJECT` (`mailto:` ou `https://`).
+3. Vercel: `NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY` = a chave pública que o script mostra (a mesma do Supabase), depois um novo deploy. Sem ela, o mascote aparece mas não oferece os avisos.
+4. Conferir: chamar a função sem usuário, só com a chave pública do site, responde 401 `RPM_AUTH_REQUIRED` quando está configurada e 503 `NOTIFICATIONS_NOT_CONFIGURED` quando falta ou está errada alguma chave.
 4. Publicar a função de novo (`npx supabase functions deploy dispatch-notifications --workdir .`) mexe no projeto hospedado e só acontece com autorização. Sem as chaves do WhatsApp, a função agora envia só as notificações; sem nenhuma das duas, responde 503.
 
 ## O que ainda falta para a simulação
