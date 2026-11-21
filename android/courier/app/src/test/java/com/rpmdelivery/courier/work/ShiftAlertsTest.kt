@@ -10,6 +10,16 @@ class ShiftAlertsTest {
     private fun route(released: Boolean, status: String = "PREPARING", id: String = "route-1") = CourierRoute(
         id, status, 1, null, released, StoreContact("Cozinha da Vila", null, null, null, null), emptyList())
 
+    @Test fun staysAwakeOnlyWhileAPickupIsAboutToBeReleased() {
+        assertTrue("first in line", awaitingPickup(home("AVAILABLE", 1)))
+        assertTrue("route being assembled", awaitingPickup(home("AVAILABLE", route = route(false))))
+        assertFalse("further back in line", awaitingPickup(home("AVAILABLE", 3)))
+        assertFalse("waiting for approval", awaitingPickup(home("PENDING")))
+        assertFalse("already released", awaitingPickup(home("AVAILABLE", route = route(true))))
+        assertFalse("on the street", awaitingPickup(home("ON_ROUTE", route = route(true, "ON_ROUTE"))))
+        assertFalse("no shift", awaitingPickup(CourierHome(listOf(store), null, null)))
+    }
+
     @Test fun firstReadNeverRings() {
         assertEquals(emptyList<ShiftAlert>(), alertsBetween(null, home("AVAILABLE", 1)))
         assertEquals(emptyList<ShiftAlert>(), alertsBetween(null, home("AVAILABLE", route = route(true))))

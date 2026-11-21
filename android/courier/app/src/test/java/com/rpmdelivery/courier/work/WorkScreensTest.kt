@@ -269,7 +269,9 @@ class WorkScreensTest {
         node("Notificações · ligado").assertIsDisplayed()
         node("Localização · ligado").assertIsDisplayed()
         node("Uso de bateria · restrito").assertIsDisplayed()
-        node("Ativar").assertHeightIsAtLeast(48.dp)
+        // "Rota pronta para retirada" wakes the phone: on or off depends on the Android version.
+        compose.onNodeWithText("Abrir na liberação", substring = true).assertExists()
+        compose.onAllNodesWithText("Ativar")[0].assertHeightIsAtLeast(48.dp)
         node("Seu dia").assertIsDisplayed()
         node("Na fila desde").assertIsDisplayed()
         node("Entregas hoje").assertIsDisplayed()

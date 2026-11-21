@@ -64,7 +64,7 @@ object ShiftNotifications {
     fun alert(context: Context, alert: ShiftAlert, home: CourierHome) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
-        val notification = NotificationCompat.Builder(context, ALERT_CHANNEL)
+        val builder = NotificationCompat.Builder(context, ALERT_CHANNEL)
             .setSmallIcon(R.drawable.navigation_arrow)
             .setContentTitle(alert.title)
             .setContentText(alertText(alert, home))
@@ -73,9 +73,16 @@ object ShiftNotifications {
             .setCategory(NotificationCompat.CATEGORY_STATUS)
             .setAutoCancel(true)
             .setContentIntent(openApp(context))
-            .build()
-        NotificationManagerCompat.from(context).notify(alert.id, notification)
+        if (alert == ShiftAlert.PICKUP_RELEASED) {
+            // Screen off or locked: turns the screen on and opens the route over the lock screen (PickupWake).
+            val wake = PendingIntent.getActivity(context, 1, PickupWake.intent(context),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+            builder.setCategory(NotificationCompat.CATEGORY_ALARM).setFullScreenIntent(wake, true).setContentIntent(wake)
+        }
+        NotificationManagerCompat.from(context).notify(alert.id, builder.build())
     }
+
+    fun cancel(context: Context, alert: ShiftAlert) = NotificationManagerCompat.from(context).cancel(alert.id)
 
     fun sessionEnded(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&

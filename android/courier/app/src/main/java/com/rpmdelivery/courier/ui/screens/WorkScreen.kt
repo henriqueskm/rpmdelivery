@@ -53,6 +53,7 @@ import com.rpmdelivery.courier.work.reais
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.rpmdelivery.courier.shift.ShiftService
+import com.rpmdelivery.courier.shift.PickupWake
 import com.rpmdelivery.courier.shift.RouteBubble
 import com.rpmdelivery.courier.shift.CurrentPosition
 import com.rpmdelivery.courier.work.WorkCopy
@@ -703,13 +704,18 @@ private fun ReadyChecks(withBubble: Boolean = false) {
         }
         CheckRow("Uso de bateria", "Sem restrição, o aviso chega com a tela apagada.", batteryFree,
             on = "sem restrição", off = "restrito") { askBatteryExemption(context) }
-        if (notificationsOn && locationOn && batteryFree)
+        val wakeOn = remember(checks) { PickupWake.allowed(context) }
+        CheckRow("Abrir na liberação", "Quando a loja liberar a retirada, a tela acende e o app abre na rota.", wakeOn) {
+            PickupWake.settings(context)?.let(::open)
+        }
+        if (notificationsOn && locationOn && batteryFree && wakeOn)
             Text("Tudo certo: você recebe os avisos com a tela apagada.", style = MaterialTheme.typography.bodyMedium, color = Green)
         // Optional, so only in Avisos e permissões: the queue shows what the alerts need, nothing more.
         if (withBubble) {
             val bubbleOn = remember(checks) { RouteBubble.allowed(context) }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            CheckRow("Botão sobre o mapa", "Opcional. Na rota, um botão redondo fica sobre o Maps e volta para o app com um toque.", bubbleOn) {
+            CheckRow("Sobrepor outros apps", "Opcional. Na rota, um botão redondo fica sobre o Maps e volta para o app com um toque. " +
+                "E se você estiver em outro app quando a retirada for liberada, o RpmDelivery abre sozinho.", bubbleOn) {
                 open(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:${context.packageName}".toUri()))
             }
         }

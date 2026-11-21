@@ -12,6 +12,7 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.IBinder
 import android.os.Looper
+import android.os.PowerManager
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
@@ -19,8 +20,10 @@ import com.rpmdelivery.courier.CourierGraph
 import com.rpmdelivery.courier.work.CourierHome
 import com.rpmdelivery.courier.work.CourierWorkRepository
 import com.rpmdelivery.courier.work.LocationBuffer
+import com.rpmdelivery.courier.work.ShiftAlert
 import com.rpmdelivery.courier.work.WorkProblem
 import com.rpmdelivery.courier.work.alertsBetween
+import com.rpmdelivery.courier.work.awaitingPickup
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +49,27 @@ class ShiftService : Service() {
     private var trackingRoute: String? = null
     private var dispatch: Job? = null
     private var lastDispatch = 0L
+    /** First in line or route being assembled: ask every 10 s and keep the processor awake. */
+    private var urgent = false
+    private var wakeLock: PowerManager.WakeLock? = null
+
+    /**
+     * Android stops the processor when the screen is off (deep sleep), stretching "every 10 s" into
+     * minutes. Only while a pickup is about to be released, a partial wake lock keeps it running (the
+     * screen stays off). It renews on every read and lapses by itself if reads stop.
+     */
+    private fun stayAwake(on: Boolean) {
+        if (on) {
+            val lock = wakeLock ?: (getSystemService(Context.POWER_SERVICE) as PowerManager)
+                .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "RpmDelivery:pickup").also {
+                    it.setReferenceCounted(false); wakeLock = it
+                }
+            lock.acquire(WAKE_LOCK_MS)
+        } else {
+            wakeLock?.takeIf { it.isHeld }?.release()
+            wakeLock = null
+        }
+    }
 
     // Every method spelled out: before Android 11 the provider callbacks have no default body.
     private val listener = object : LocationListener {
@@ -74,7 +98,11 @@ class ShiftService : Service() {
         if (loop?.isActive != true) loop = scope.launch {
             while (isActive) {
                 tick()
-                delay(if (trackingRoute != null) TRACKING_MS else WAITING_MS)
+                delay(when {
+                    trackingRoute != null -> TRACKING_MS
+                    urgent -> URGENT_MS
+                    else -> WAITING_MS
+                })
             }
         }
         // After the process dies, the app starts it again when opened with an open shift.
@@ -97,8 +125,13 @@ class ShiftService : Service() {
             return // No connection: try again on the next tick, keeping the GPS buffer.
         } catch (_: Exception) { return }
 
-        alertsBetween(last, home).forEach { ShiftNotifications.alert(this, it, home) }
+        alertsBetween(last, home).forEach {
+            ShiftNotifications.alert(this, it, home)
+            if (it == ShiftAlert.PICKUP_RELEASED) PickupWake.openNow(this)
+        }
         last = home
+        urgent = awaitingPickup(home)
+        stayAwake(urgent)
         if (home.shift == null) { send(); finish(); return }
 
         val route = home.route?.takeIf { it.status == "ON_ROUTE" || it.status == "RETURNING" }
@@ -194,6 +227,7 @@ class ShiftService : Service() {
 
     private fun finish() {
         loop?.cancel(); loop = null
+        stayAwake(false)
         if (trackingRoute != null) {
             (getSystemService(Context.LOCATION_SERVICE) as LocationManager).removeUpdates(listener)
             trackingRoute = null
@@ -204,6 +238,7 @@ class ShiftService : Service() {
     }
 
     override fun onDestroy() {
+        stayAwake(false)
         RouteBubble.setRoute(this, false)
         if (trackingRoute != null) (getSystemService(Context.LOCATION_SERVICE) as LocationManager).removeUpdates(listener)
         scope.cancel()
@@ -216,6 +251,9 @@ class ShiftService : Service() {
         private const val POINT_MS = 5_000L
         private const val POINT_METERS = 10f
         private const val DISPATCH_MS = 30_000L
+        private const val URGENT_MS = 10_000L
+        /** Renewed on every read; if reads stop (no network, crash), the processor sleeps again after this. */
+        private const val WAKE_LOCK_MS = 2 * 60_000L
 
         /** Called by the app while it is visible, which Android requires to start a foreground service. */
         fun start(context: Context) {
