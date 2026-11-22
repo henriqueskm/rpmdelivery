@@ -3,11 +3,13 @@ import { TrackingPage } from "@/features/tracking/tracking-page";
 import { isTrackingToken } from "@/lib/tracking/links";
 
 // The token is the only credential: keep it out of referrers and search engines.
+// strict-origin sends only "https://<site>/" (never the path with the token), which is what lets a Mapbox
+// map token restricted to the site's URL work here; with no-referrer Mapbox answers 403.
 export async function generateMetadata(props: PageProps<"/acompanhar/[token]">): Promise<Metadata> {
   const token = (await props.params).token.toLowerCase();
   return {
     title: "Acompanhar pedido | RpmDelivery",
-    referrer: "no-referrer",
+    referrer: "strict-origin",
     robots: { index: false, follow: false },
     // Added to the home screen, the icon opens this order (and, on the iPhone, can receive notifications).
     ...(isTrackingToken(token) && {
