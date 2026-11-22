@@ -123,4 +123,10 @@ internal class FakeWork : CourierWorkRepository {
         record("delete_account")
         if (home.shift != null) throw WorkProblem.refused("RPM_ACCOUNT_SHIFT_OPEN")
     }
+
+    /** The photo in the bucket. */
+    var photo: ByteArray? = null
+    override suspend fun photo(): ByteArray? { record("photo"); return photo }
+    override suspend fun savePhoto(jpeg: ByteArray) { record("save_photo"); photo = jpeg }
+    override suspend fun removePhoto() { record("remove_photo"); photo = null }
 }

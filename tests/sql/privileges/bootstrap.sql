@@ -37,3 +37,17 @@ create view privilege_test.default_acls as
 select jsonb_agg(jsonb_build_object('owner',defaclrole,'schema',defaclnamespace,
   'kind',defaclobjtype,'acl',defaclacl) order by defaclrole,defaclnamespace,defaclobjtype) as value
 from pg_catalog.pg_default_acl;
+
+-- Minimal stand-in for Supabase Storage (only what migrations and contracts touch).
+create schema storage;
+create table storage.buckets (
+  id text primary key, name text not null, public boolean default false,
+  file_size_limit bigint, allowed_mime_types text[]
+);
+create table storage.objects (
+  id uuid primary key default gen_random_uuid(), bucket_id text references storage.buckets(id),
+  name text not null, owner uuid, created_at timestamptz default now(), unique (bucket_id, name)
+);
+alter table storage.objects enable row level security;
+grant usage on schema storage to authenticated, anon, service_role;
+grant select, insert, update, delete on storage.objects to authenticated;

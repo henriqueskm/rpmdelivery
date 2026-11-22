@@ -1,6 +1,15 @@
 package com.rpmdelivery.courier.ui.screens
 
 import android.Manifest
+import android.graphics.BitmapFactory
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import com.rpmdelivery.courier.ui.components.ProfilePhoto
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterTransition
@@ -217,7 +226,10 @@ fun WorkScreen(work: WorkController, registration: CourierRegistration = Courier
     when (state.section) {
         Section.Earnings -> Scrolling { HistoryContent(state, onBack = home, onRetry = work::loadHistory) }
         Section.Stores -> Scrolling { StoresDirectory(state, actions, onBack = home) }
-        Section.Profile -> Scrolling { ProfileContent(registration, state, onDelete = work::deleteAccount, onBack = home) }
+        Section.Profile -> Scrolling {
+            ProfileContent(registration, state, onDelete = work::deleteAccount, onBack = home,
+                onPhoto = work::savePhoto, onRemovePhoto = work::removePhoto)
+        }
         Section.Alerts -> Scrolling { AlertsContent(onBack = home) }
         Section.Help -> Scrolling { HelpContent(onBack = home) }
         Section.Home -> HomeContent(state, route, actions)
@@ -1073,12 +1085,34 @@ private fun StatusChip(text: String, ok: Boolean) {
 
 /** What the stores see when they approve a link. Read only: the server keeps saved data as it is. */
 @Composable
-private fun ProfileContent(registration: CourierRegistration, state: WorkState, onDelete: () -> Unit, onBack: () -> Unit) {
+private fun ProfileContent(
+    registration: CourierRegistration, state: WorkState, onDelete: () -> Unit, onBack: () -> Unit,
+    onPhoto: (suspend () -> ByteArray?) -> Unit = {}, onRemovePhoto: () -> Unit = {},
+) {
     var confirmDelete by remember { mutableStateOf(false) }
+    var confirmRemove by remember { mutableStateOf(false) }
+    val resolver = LocalContext.current.contentResolver
+    // The system photo picker: no storage permission, the courier only shares the one image chosen.
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) onPhoto { withContext(Dispatchers.Default) { ProfilePhoto.squareJpeg(resolver, uri) } }
+    }
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Feedback(state)
         Card {
             Heading("Meu cadastro", "O que a loja vê ao aprovar seu vínculo")
+            ProfilePicture(registration.name, state.photo)
+            Secondary(when {
+                state.photoSaving -> "Enviando foto…"
+                state.photo != null -> "Trocar foto"
+                else -> "Adicionar foto"
+            }, state.photoSaving || state.photoLoading) {
+                picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            }
+            if (state.photo != null) TextButton(onClick = { confirmRemove = true }, enabled = !state.photoSaving,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Remover foto") }
+            Text("Use uma foto do seu rosto, de frente. Ela aparece para as lojas em que você trabalha.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             DayLine("Nome", registration.name.ifBlank { "—" })
             DayLine("Celular", if (registration.hasStoredPhone) BrazilianPhone.format(registration.phone.removePrefix("+55")) else "Não informado")
             DayLine("Moto", registration.model.ifBlank { "—" })
@@ -1094,6 +1128,15 @@ private fun ProfileContent(registration: CourierRegistration, state: WorkState, 
             Text(if (state.busy) "Excluindo a conta…" else "Excluir minha conta", color = MaterialTheme.colorScheme.error)
         }
     }
+    if (confirmRemove) AlertDialog(onDismissRequest = { confirmRemove = false },
+        title = { Text("Remover sua foto?") },
+        text = { Text("As lojas voltam a ver só as suas iniciais.") },
+        confirmButton = {
+            TextButton(onClick = { confirmRemove = false; onRemovePhoto() }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Remover") }
+        },
+        dismissButton = {
+            TextButton(onClick = { confirmRemove = false }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Cancelar") }
+        })
     if (confirmDelete) AlertDialog(onDismissRequest = { confirmDelete = false },
         title = { Text("Excluir sua conta?") },
         text = {
@@ -1108,6 +1151,32 @@ private fun ProfileContent(registration: CourierRegistration, state: WorkState, 
         dismissButton = {
             TextButton(onClick = { confirmDelete = false }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Cancelar") }
         })
+}
+
+/** The courier's photo in a circle, or the initials while there is none. */
+@Composable
+private fun ProfilePicture(name: String, photo: ByteArray?) {
+    val image = remember(photo) {
+        photo?.let { runCatching { BitmapFactory.decodeByteArray(it, 0, it.size)?.asImageBitmap() }.getOrNull() }
+    }
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        if (image != null) Image(image, contentDescription = "Sua foto", contentScale = ContentScale.Crop,
+            modifier = Modifier.size(112.dp).clip(CircleShape).testTag("profile-photo"))
+        else Box(Modifier.size(112.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant)
+            .semantics { contentDescription = "Sem foto" }, contentAlignment = Alignment.Center) {
+            Text(initials(name), fontSize = 34.sp, fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+/** "Ana Paula Souza" → "AS"; "?" without a name. */
+internal fun initials(name: String): String {
+    val words = name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+    if (words.isEmpty()) return "?"
+    val first = words.first().take(1)
+    val last = if (words.size > 1) words.last().take(1) else ""
+    return (first + last).uppercase(java.util.Locale.forLanguageTag("pt-BR"))
 }
 
 @Composable

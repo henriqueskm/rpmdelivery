@@ -58,6 +58,12 @@ interface CourierWorkRepository {
      * Refused with RPM_ACCOUNT_SHIFT_OPEN or RPM_ACCOUNT_STORE_MEMBER. Repeating it after a failure is safe.
      */
     suspend fun deleteAccount()
+    /** The courier's own profile photo (JPEG), or null without one. */
+    suspend fun photo(): ByteArray?
+    /** Uploads or replaces the photo (a square JPEG), then marks it so the stores see it. */
+    suspend fun savePhoto(jpeg: ByteArray)
+    /** Deletes the photo and the mark. */
+    suspend fun removePhoto()
 }
 
 /** [meters]: with RPM_FAR_FROM_ADDRESS / RPM_FAR_FROM_STORE, how far the phone was. */
@@ -106,6 +112,8 @@ object WorkCopy {
         "RPM_ACCOUNT_SHIFT_OPEN" -> "Encerre o turno antes de excluir a conta."
         "RPM_ACCOUNT_STORE_MEMBER" -> "Este login também é de uma loja. Para excluir, use o painel da loja ou fale com o suporte."
         "DELETE_UNAVAILABLE" -> "Não foi possível excluir a conta agora. Tente de novo mais tarde."
+        "PHOTO_UNAVAILABLE" -> "Não foi possível salvar a foto agora. Confira a internet e tente de novo."
+        "PHOTO_UNREADABLE" -> "Não foi possível abrir esta imagem. Escolha outra foto."
         else -> GENERIC
     }
     fun far(code: String, meters: Int): String = if (code == WorkProblem.FAR_FROM_STORE)
@@ -117,6 +125,8 @@ object WorkCopy {
 }
 
 private val RPM_CODE = Regex("RPM_[A-Z_]+")
+/** Storage's answer to an expired access token ("jwt expired", "exp" claim check failed). */
+private val EXPIRED_JWT = Regex("jwt expired|\"exp\" claim|token is expired", RegexOption.IGNORE_CASE)
 
 /**
  * Courier commands over the same client and session as [com.rpmdelivery.courier.auth.SupabaseCourierAuth].
@@ -250,6 +260,78 @@ class SupabaseCourierWork(
         }
     }
 
+    override suspend fun photo(): ByteArray? {
+        val (status, body) = storage("GET")
+        return when (status) {
+            in 200..299 -> body
+            // No photo yet: Storage answers 400 (older versions) or 404 (newer).
+            400, 404 -> null
+            else -> throw WorkProblem.refused("PHOTO_UNAVAILABLE")
+        }
+    }
+
+    override suspend fun savePhoto(jpeg: ByteArray) {
+        val (status, _) = storage("POST", jpeg)
+        if (status !in 200..299) throw WorkProblem.refused("PHOTO_UNAVAILABLE")
+        rpc("set_courier_photo", buildJsonObject { put("p_has_photo", true) })
+    }
+
+    override suspend fun removePhoto() {
+        val (status, _) = storage("DELETE")
+        if (status !in 200..299 && status != 400 && status != 404) throw WorkProblem.refused("PHOTO_UNAVAILABLE")
+        rpc("set_courier_photo", buildJsonObject { put("p_has_photo", false) })
+    }
+
+    /**
+     * The photo file in the private bucket courier-photos, always at "<user id>/avatar.jpg".
+     * An expired access token is renewed once (under [gate], like the RPCs) and the call repeated.
+     */
+    private suspend fun storage(method: String, body: ByteArray? = null): Pair<Int, ByteArray> {
+        client.auth.awaitInitialization()
+        val session = client.auth.currentSessionOrNull() ?: throw WorkProblem.expired()
+        val userId = try { session.user?.id ?: client.auth.retrieveUserForCurrentSession().id }
+            catch (error: CancellationException) { throw error }
+            catch (_: Exception) { throw WorkProblem.network() }
+        val path = "courier-photos/$userId/avatar.jpg"
+        val url = if (method == "GET") "$projectUrl/storage/v1/object/authenticated/$path" else "$projectUrl/storage/v1/object/$path"
+        var answer = send(url, method, session.accessToken, body)
+        if (answer.first in setOf(400, 401, 403) && EXPIRED_JWT.containsMatchIn(answer.second.decodeToString())) {
+            val token = gate.withLock {
+                try { client.auth.refreshCurrentSession() }
+                catch (error: CancellationException) { throw error }
+                catch (_: Exception) { client.auth.clearSession(); throw WorkProblem.expired() }
+                client.auth.currentSessionOrNull()?.accessToken ?: throw WorkProblem.expired()
+            }
+            answer = send(url, method, token, body)
+        }
+        return answer
+    }
+
+    private suspend fun send(url: String, method: String, token: String, body: ByteArray?): Pair<Int, ByteArray> = try {
+        withContext(Dispatchers.IO) {
+            val connection = URL(url).openConnection() as HttpURLConnection
+            try {
+                connection.requestMethod = method
+                connection.instanceFollowRedirects = false
+                connection.connectTimeout = 15_000
+                connection.readTimeout = 30_000
+                connection.setRequestProperty("Authorization", "Bearer $token")
+                connection.setRequestProperty("apikey", publishableKey)
+                if (body != null) {
+                    connection.doOutput = true
+                    connection.setRequestProperty("Content-Type", "image/jpeg")
+                    connection.setRequestProperty("x-upsert", "true")
+                    connection.setRequestProperty("cache-control", "no-cache")
+                    connection.outputStream.use { it.write(body) }
+                }
+                val code = connection.responseCode
+                val stream = if (code in 200..299) connection.inputStream else connection.errorStream
+                code to (stream?.use { it.readBytes() } ?: ByteArray(0))
+            } finally { connection.disconnect() }
+        }
+    } catch (error: CancellationException) { throw error }
+    catch (_: IOException) { throw WorkProblem.network() }
+
     private suspend fun rpc(name: String, args: JsonObject = buildJsonObject { }): JsonElement = gate.withLock {
         try {
             call(name, args)
@@ -313,4 +395,7 @@ class UnconfiguredWork : CourierWorkRepository {
     override suspend fun inspectInvite(code: String): InviteCheck = refuse()
     override suspend fun requestMembership(code: String): InviteRequest = refuse()
     override suspend fun deleteAccount() = refuse()
+    override suspend fun photo(): ByteArray? = refuse()
+    override suspend fun savePhoto(jpeg: ByteArray) = refuse()
+    override suspend fun removePhoto() = refuse()
 }

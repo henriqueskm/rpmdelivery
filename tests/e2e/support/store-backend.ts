@@ -142,6 +142,21 @@ export function storeBackend() {
       target.deliveryStatus = "WAITING"; target.orderStatus = "OPEN";
       return ok({ deliveryId: target.deliveryId });
     },
+    get_courier_card(body) {
+      const shift = find(board.couriers, "shiftId", body.p_shift_id);
+      if (!shift) return { status: 404, json: { code: "P0002", message: "RPM_COURIER_NOT_FOUND" } };
+      const ana = shift.shiftId === "s-ana";
+      return ok({
+        shiftId: shift.shiftId, name: shift.name, phone: ana ? "+5511987650011" : null,
+        photoPath: ana ? "u-ana/avatar.jpg" : null,
+        motorcycle: ana ? { model: "Honda CG 160", plate: "ABC1D23", color: "Vermelha" } : { model: null, plate: null, color: null },
+        linkStatus: "ACTIVE", linkedSince: "2026-11-02T13:00:00Z", shiftStatus: shift.status,
+        requestedAt: shift.requestedAt, availableSince: shift.availableSince,
+        locationAt: ana ? minutesAgo(3) : null,
+        today: ana ? { deliveries: 3, totalCents: 5100 } : { deliveries: 0, totalCents: 0 },
+        deliveriesHere: ana ? 42 : 0,
+      });
+    },
     get_courier_pay(body) {
       return ok({ day: body.p_day ?? new Date().toISOString().slice(0, 10), ...structuredClone(pay) });
     },

@@ -19,6 +19,7 @@ import { DeadlineDialog } from "./deadline-dialog";
 import { tabs, useOperationsController, type LiveSource } from "./use-operations-controller";
 import { useOperationsBoard } from "./live/use-operations-board";
 import { CourierPay, type CourierPayHandle } from "./live/courier-pay";
+import { CourierCardDialog } from "./live/courier-card-dialog";
 import { StoreMenu } from "./store-menu";
 import { RouteTracker, routesToRelease } from "./route-tracker";
 import { ConfirmDialog, type Confirmation } from "./live/confirm-dialog";
@@ -209,6 +210,8 @@ function OperationsWorkspace({
   /** "Acompanhar rotas": every route, and every action on one, lives on this screen. */
   const trackerDialog = useRef<HTMLDialogElement>(null);
   const [trackerOpen, setTrackerOpen] = useState(false);
+  /** Real data: the courier card opened from a name in the couriers column. */
+  const [openCourier, setOpenCourier] = useState<{ id: string; name: string } | null>(null);
   const toRelease = routesToRelease(state);
   /** Opens "Acompanhar rotas", on a given route when there is one (scrolled to and focused). */
   function followRoute(id?:string) {
@@ -397,7 +400,8 @@ function OperationsWorkspace({
           >
             <CouriersPanel state={state} managementHref={courierManagementHref}
               onReviewShift={live ? reviewShift : undefined} pending={saving}
-              pay={live ? <CourierPay restaurantId={live.restaurantId} /> : undefined} />
+              pay={live ? <CourierPay restaurantId={live.restaurantId} /> : undefined}
+              onOpenCourier={live ? (id, name) => setOpenCourier({ id, name }) : undefined} />
           </section>
         </div>
         <footer className="ops-footer">
@@ -407,6 +411,8 @@ function OperationsWorkspace({
       </div>
       <NewOrderDialog dialogRef={newDialog} now={now} defaultPromiseMinutes={state.defaultPromiseMinutes} onAdd={add} live={!!live} />
       {live && <ConfirmDialog request={confirmation} onClose={() => setConfirmation(null)} />}
+      {live && <CourierCardDialog shiftId={openCourier?.id ?? null} name={openCourier?.name ?? ""}
+        onClose={() => setOpenCourier(null)} />}
       {live && <EditOrderDialog dialogRef={editDialog} order={state.orders.find(o => o.id === editingOrder)} now={now}
         defaultPromiseMinutes={state.defaultPromiseMinutes} onSave={editOrder} onClose={() => setEditingOrder(undefined)} />}
       {automatic&&<AutomaticDialog state={state} scenario={scenario} now={now} onAccept={acceptAutomatic}

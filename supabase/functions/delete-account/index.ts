@@ -1,9 +1,10 @@
 // POST with the signed-in courier's JWT: "Excluir minha conta" in the app.
 // 1. erase_courier_account (service_role): the person's data goes, the stores' records stay
 //    without the name. Refused while a shift is open or when the login is also a store's.
-// 2. GoTrue admin soft delete: the login is closed for good (identities and sessions removed,
+// 2. The profile photo file, through the Storage API.
+// 3. GoTrue admin soft delete: the login is closed for good (identities and sessions removed,
 //    email obfuscated). The user row stays so the stores' records keep pointing somewhere.
-// Both steps can run again: a retry after a failure in step 2 finishes the job.
+// Every step can run again: a retry after a failure in step 2 or 3 finishes the job.
 // The response carries only a code, never personal data.
 type DenoRuntime = {
   env: { get(name: string): string | undefined };
@@ -46,6 +47,14 @@ runtime.serve(async (request) => {
     const code = typeof payload?.message === "string" ? payload.message : "";
     return REFUSALS.has(code) ? reply(409, { error: code }) : reply(500, { error: "DELETE_FAILED" });
   }
+
+  // The profile photo is a file in Storage, which SQL cannot delete: remove it through the Storage API.
+  // No photo answers 400/404 (older and newer Storage versions); both mean there is nothing left.
+  const photo = await fetch(`${baseUrl}/storage/v1/object/courier-photos/${encodeURIComponent(user.id)}/avatar.jpg`, {
+    method: "DELETE", headers: { apikey: serviceKey, authorization: `Bearer ${serviceKey}` },
+  });
+  await photo.body?.cancel();
+  if (!photo.ok && photo.status !== 400 && photo.status !== 404) return reply(500, { error: "DELETE_FAILED" });
 
   const remove = await fetch(`${baseUrl}/auth/v1/admin/users/${encodeURIComponent(user.id)}`, {
     method: "DELETE", headers: service, body: JSON.stringify({ should_soft_delete: true }),
