@@ -4,6 +4,7 @@
 import type { DemoCourier, DemoOrder, DemoRoute, DemoState, RouteOutcome, RouteStatus, ShiftStatus } from "../model.ts";
 import type { AlertReceipt, DeliveryStatus, DemoIssue, IssueReason, IssueResolution } from "../issue-types.ts";
 import { formatBrazilianMobilePhone } from "../../../lib/brazilian-mobile-phone.ts";
+import type { OrderOrigin } from "../order-origin.ts";
 
 type BoardOrder = {
   deliveryId: string; orderId: string; reference: string; customer: string; phone: string;
@@ -40,6 +41,8 @@ export type Board = {
   routeOutcomes?: { routeId: string; deliveryId: string; outcome: RouteOutcome; at?: string | null }[];
   routePositions?: { routeId: string; latitude: number; longitude: number; recordedAt: string }[];
   trackingTokens?: { deliveryId: string; token: string }[];
+  /** Imported orders only (printer capture, delivery apps); absent before the import migration. */
+  orderSources?: ({ deliveryId: string } & OrderOrigin)[];
   storeLocation?: { latitude: number; longitude: number } | null;
 };
 
@@ -102,6 +105,8 @@ export function parseBoard(value: unknown): Board | null {
     && (value.routePositions === undefined || list(value.routePositions, p => isText(p.routeId)
       && isLatitude(p.latitude) && isLongitude(p.longitude) && isTime(p.recordedAt)))
     && (value.trackingTokens === undefined || list(value.trackingTokens, t => isText(t.deliveryId) && isText(t.token)))
+    && (value.orderSources === undefined || list(value.orderSources, s => isText(s.deliveryId)
+      && oneOf(["PRINTER", "OPEN_DELIVERY"])(s.source) && isOptionalText(s.app) && isText(s.externalId)))
     && (value.storeLocation === undefined || value.storeLocation === null
       || (isRecord(value.storeLocation) && isLatitude(value.storeLocation.latitude) && isLongitude(value.storeLocation.longitude)));
   return valid ? value as Board : null;
@@ -138,6 +143,8 @@ export function boardToState(board: Board, { now, receivedAt = now, alertReceipt
     .map(issue => issue.deliveryId));
   const far = new Map((board.farDeliveries ?? []).map(f => [f.deliveryId, f.distanceMeters]));
   const tokens = new Map((board.trackingTokens ?? []).map(t => [t.deliveryId, t.token]));
+  const origins = new Map((board.orderSources ?? []).map(({ deliveryId, source, app, externalId }) =>
+    [deliveryId, { source, app, externalId } satisfies OrderOrigin]));
 
   const orders: DemoOrder[] = board.orders.map(order => {
     const delivery = expired.has(order.deliveryId) ? "RETURN_TO_STORE" : order.deliveryStatus;
@@ -159,6 +166,7 @@ export function boardToState(board: Board, { now, receivedAt = now, alertReceipt
       attemptNumber: Math.max(1, order.failedAttempts + (onTheWay ? 1 : 0)),
       ...(far.has(order.deliveryId) ? { farMeters: far.get(order.deliveryId) } : {}),
       ...(tokens.has(order.deliveryId) ? { trackingToken: tokens.get(order.deliveryId) } : {}),
+      ...(origins.has(order.deliveryId) ? { origin: origins.get(order.deliveryId) } : {}),
       ...(isLatitude(order.latitude) && isLongitude(order.longitude)
         ? { location: { latitude: order.latitude!, longitude: order.longitude!, confirmed: true as const, source: "mapbox" as const } } : {}),
     };

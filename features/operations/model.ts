@@ -1,5 +1,6 @@
 import { validOrderTime, validPromise } from "./deadlines.ts";
 import type { ConfirmedCoordinate } from "../route-optimization/types.ts";
+import type { OrderOrigin } from "./order-origin.ts";
 import { validAutomaticAssignment, type AssignmentProposal } from "./automatic-assignment.ts";
 import type { PlannedGroup, PlanningParameters } from "../route-planning/types.ts";
 import type { AlertReceipt, DeliveryStatus, DemoEvent, DemoIssue, IssueCommand } from "./issue-types.ts";
@@ -29,6 +30,8 @@ export type DemoOrder = {
   farMeters?: number;
   /** Real data: the customer's tracking link token (the store copies the link). */
   trackingToken?: string;
+  /** Real data: the order came from another system (printer capture, delivery app). */
+  origin?: OrderOrigin;
 };
 export type DemoCourier = {
   id: string;

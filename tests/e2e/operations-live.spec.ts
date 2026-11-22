@@ -666,3 +666,28 @@ test("editar pedido aguardando despacho: formulário preenchido, salva e mantém
   await expect(page.getByRole("button", { name: /^Editar pedido 1047/ })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test("pedido importado mostra de onde veio: símbolo da impressora ou nome do app", async ({ page }) => {
+  const errors = watchErrors(page);
+  const backend = storeBackend();
+  const read = backend.handlers.get_operations_board;
+  // 1048 came from the printer capture, 1049 from a delivery app; a new order is typed in the panel.
+  const handlers = { ...backend.handlers, get_operations_board: async (body: Record<string, unknown>) => {
+    const reply = await read(body);
+    return reply === "abort" ? reply : { json: { ...(reply.json as object), orderSources: [
+      { deliveryId: "d-1048", source: "PRINTER", app: null, externalId: "5127" },
+      { deliveryId: "d-1049", source: "OPEN_DELIVERY", app: "99Food", externalId: "XY-9" },
+    ] } };
+  } };
+  await mockSupabase(page, { existing: true, rpc: handlers });
+  await openPanel(page);
+  await showArea(page, /^Pedidos/);
+  const printed = page.locator(".ops-order").filter({ hasText: "#1048" }).locator(".ops-order-origin");
+  await expect(printed.locator("svg")).toBeVisible();
+  await expect(printed).toHaveText("Veio da impressora · código 5127");
+  await expect(printed).toHaveAttribute("title", "Veio da impressora · código 5127");
+  const fromApp = page.locator(".ops-order").filter({ hasText: "#1049" }).locator(".ops-order-origin");
+  await expect(fromApp).toHaveText("Origem: 99Food");
+  await expect(fromApp).toHaveAttribute("title", "Veio do app de delivery (99Food) · código XY-9");
+  expect(errors).toEqual([]);
+});
