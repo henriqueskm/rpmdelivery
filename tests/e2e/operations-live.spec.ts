@@ -304,6 +304,72 @@ test("pagamento dos motoboys: valores da loja e acerto do dia", async ({ page })
   expect(errors).toEqual([]);
 });
 
+test("sugerir rotas: junta pela rua e pelo caminho, explica o motivo e preenche a montagem", async ({ page }) => {
+  const errors = watchErrors(page);
+  const backend = storeBackend();
+  // The store and three waiting orders with a confirmed pin; 1048 and 1049 have none.
+  Object.assign(backend.board, { storeLocation: { latitude: -23.0, longitude: -46.8 } });
+  const pinned = (reference: string, customer: string, address: string, neighborhood: string, latitude: number, longitude: number) => ({
+    ...structuredClone(backend.board.orders[0]), deliveryId: `d-${reference}`, orderId: `o-${reference}`, reference, customer,
+    address, neighborhood, latitude, longitude });
+  backend.board.orders.push(
+    // 2.5 km south: the same street twice, and 2.2 km further down the same way a third bairro.
+    pinned("2101", "Paula Rocha", "Rua das Acácias, 55", "Centro", -23.0225, -46.8),
+    pinned("2102", "Rui Campos", "R. das Acacias, 140", "Centro", -23.0233, -46.8003),
+    pinned("2103", "Sara Lopes", "Rua Sul, 1", "Jardim Sul", -23.045, -46.8),
+    // The other way round, 8 km west: never "on the way" of the others.
+    pinned("2104", "Tito Alves", "Estrada Oeste, 900", "Chácaras", -23.0, -46.88));
+  const calls = await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  await openPanel(page);
+  await showArea(page, /^Montagem/);
+  await page.getByRole("button", { name: "Sugerir rotas" }).click();
+  const dialog = page.getByRole("dialog", { name: "Sugestões de rota" });
+  await expect(dialog).toBeVisible();
+
+  const first = dialog.getByRole("listitem", { name: "Rota sugerida 1" });
+  await expect(first).toContainText("3 entregas");
+  await expect(first).toContainText("Motoboy: Bruno Alves · próximo da fila");
+  const stops = first.locator(".ops-suggestion-stops > li");
+  await expect(stops.nth(0)).toContainText("#2101 Paula Rocha");
+  await expect(stops.nth(0)).toContainText("Pedido base da rota");
+  await expect(stops.nth(1)).toContainText("#2102 Rui Campos");
+  await expect(stops.nth(1)).toContainText("Mesma rua de #2101");
+  // Further down the same way: on the way, at almost no extra riding.
+  await expect(stops.nth(2)).toContainText("#2103 Sara Lopes");
+  await expect(stops.nth(2)).toContainText(/No caminho de #210[12]/);
+  const second = dialog.getByRole("listitem", { name: "Rota sugerida 2" });
+  await expect(second).toContainText("#2104 Tito Alves");
+  await expect(second).toContainText("Sem motoboy disponível agora");
+  await expect(dialog).toContainText("2 pedidos ficaram de fora por não ter o endereço confirmado no mapa: #1048, #1049.");
+  const width = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
+  expect(width[0]).toBeLessThanOrEqual(width[1]);
+
+  // The suggestion only fills the Montagem; the store assigns as usual.
+  await first.getByRole("button", { name: "Usar esta rota na montagem" }).click();
+  await expect(dialog).toBeHidden();
+  const sequence = page.getByLabel("Sequência planejada").locator(".ops-sequence > li");
+  await expect(sequence).toHaveCount(3);
+  await expect(sequence.nth(0)).toContainText("#2101 · Paula Rocha");
+  await expect(sequence.nth(1)).toContainText("#2102 · Rui Campos");
+  await expect(sequence.nth(2)).toContainText("#2103 · Sara Lopes");
+  expect(backend.commandCalls().some(call => call.fn === "create_route")).toBe(false);
+  await page.getByRole("button", { name: "Atribuir rota", exact: false }).click();
+  await expect.poll(() => backend.commandCalls().find(call => call.fn === "create_route")?.body).toMatchObject({
+    p_restaurant_id: testRestaurant.id, p_shift_id: "s-bruno", p_delivery_ids: ["d-2101", "d-2102", "d-2103"] });
+  expect(calls.unexpected).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
+test("sugerir rotas sem o endereço da loja no mapa explica o que falta", async ({ page }) => {
+  const backend = storeBackend();
+  await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  await openPanel(page);
+  await showArea(page, /^Montagem/);
+  await page.getByRole("button", { name: "Sugerir rotas" }).click();
+  await expect(page.getByRole("dialog", { name: "Sugestões de rota" }).getByRole("status"))
+    .toContainText("a loja precisa do endereço confirmado no mapa");
+});
+
 test("ficha do motoboy: clicar no nome mostra foto, contato, moto e números do dia", async ({ page }) => {
   const errors = watchErrors(page);
   const backend = storeBackend();
