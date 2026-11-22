@@ -23,10 +23,14 @@ export type AddressHints = Partial<typeof messages>;
  * address in a new order may be saved as typed text, so callers can reword the hints and the map.
  */
 export function AddressAutocomplete({ onChange, hints, placeholder = "Rua, número e cidade", mapAlt, className = "field address-field",
-  initialQuery }: {
+  initialQuery, initialAddress, autoSearch }: {
   onChange: (value: ResolvedAddress | null) => void;
   /** An address already saved, e.g. when editing an order. */
   initialQuery?: string;
+  /** An address already confirmed on the map (a returning customer): starts confirmed, with its map. */
+  initialAddress?: ResolvedAddress;
+  /** Searches [initialQuery] right away (an address pasted into the form). */
+  autoSearch?: boolean;
   hints?: AddressHints;
   placeholder?: string;
   mapAlt?: string;
@@ -34,7 +38,7 @@ export function AddressAutocomplete({ onChange, hints, placeholder = "Rua, núme
 }) {
   const id = useId();
   const listId = `${id}-list`;
-  const state = useAddressAutocomplete(onChange, initialQuery);
+  const state = useAddressAutocomplete(onChange, initialQuery, { initialAddress, autoSearch });
   const text = { ...messages, ...hints };
   const expanded = state.open && state.suggestions.length > 0;
   function keyDown(event: KeyboardEvent<HTMLInputElement>) {

@@ -209,4 +209,5 @@ grep -qx ON_ROUTE /tmp/core-decide-a.txt || { echo 'FAIL: finishing the last sto
 "${psql[@]}" -f tests/sql/delivery-core/account-deletion-contracts.sql
 "${psql[@]}" -f tests/sql/delivery-core/courier-card-contracts.sql
 "${psql[@]}" -f tests/sql/delivery-core/route-legs-contracts.sql
+"${psql[@]}" -f tests/sql/delivery-core/find-customer-contracts.sql
 echo 'PASS: PostgreSQL 17 delivery core contracts and concurrency'
