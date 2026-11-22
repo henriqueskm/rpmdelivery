@@ -1739,3 +1739,17 @@
 .ops-suggestion-reason.is-base { color: #536258; background: #eef0ec; }
 .ops-suggestion-reason.is-late { color: #8a3a16; background: #fbece4; }
 .ops-suggestion > button { justify-self: stretch; min-height: 44px; }
+
+/* Quick order: paste an order, recognize a returning customer. */
+.operations .ops-paste-open { justify-self: start; min-height: 44px; border-style: dashed; color: #2f5d4b; font-weight: 600; }
+.ops-paste { display: grid; gap: 8px; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+.ops-paste textarea { width: 100%; font: inherit; }
+.ops-paste p { margin: 0; font-size: 12px; color: #8a3a16; }
+.ops-paste-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ops-quick-filled { margin: 0; font-size: 13px; color: #2f5d4b; background: #e5efe9; padding: 8px 10px; border-radius: 6px; }
+.ops-known-customer {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px;
+  background: #eef4f0; border: 1px solid #cfe0d6; border-radius: 8px; padding: 10px 12px; font-size: 13px;
+}
+.ops-known-customer p { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.operations .ops-known-customer button { min-height: 44px; font-weight: 600; }

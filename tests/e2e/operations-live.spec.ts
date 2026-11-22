@@ -304,6 +304,93 @@ test("pagamento dos motoboys: valores da loja e acerto do dia", async ({ page })
   expect(errors).toEqual([]);
 });
 
+test("pedido rápido: cliente que já pediu é reconhecido pelo WhatsApp e preenche o resto", async ({ page }) => {
+  const backend = storeBackend();
+  const lookups: unknown[] = [];
+  backend.handlers.find_customer = body => {
+    lookups.push(body);
+    return { json: String(body.p_phone).replace(/\D/g, "") === "11977776666" ? {
+      name: "Helena Prado", address: "Rua das Acácias, 55", neighborhood: "Bela Vista", complement: "Apto 12",
+      location: { latitude: -23.58, longitude: -46.64, providerId: "mapbox_helena" }, orders: 3, lastOrderAt: new Date().toISOString(),
+    } : null };
+  };
+  const calls = await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  await openPanel(page);
+  await page.getByRole("button", { name: "Novo pedido" }).first().click();
+  const form = page.locator("dialog[open]");
+  const phone = form.getByLabel("WhatsApp", { exact: true });
+  await expect(phone).toBeFocused();
+  await phone.fill("(11) 97777-6666");
+  const known = form.getByRole("status").filter({ hasText: "Já pediu aqui 3 vezes." });
+  await expect(known).toContainText("Helena Prado · Rua das Acácias, 55 · Bela Vista");
+  expect(lookups).toEqual([{ p_restaurant_id: testRestaurant.id, p_phone: "(11) 97777-6666" }]);
+  await form.locator('input[name="reference"]').fill("3001");
+  await known.getByRole("button", { name: "Usar estes dados" }).click();
+
+  await expect(form.getByRole("status").filter({ hasText: "Dados de Helena Prado preenchidos." })).toBeVisible();
+  await expect(form.getByLabel("Nome do cliente")).toHaveValue("Helena Prado");
+  await expect(form.getByLabel("WhatsApp", { exact: true })).toHaveValue("(11) 97777-6666");
+  await expect(form.getByRole("combobox", { name: "Endereço" })).toHaveValue("Rua das Acácias, 55");
+  await expect(form.getByText("Localização confirmada: o cliente vê a casa no mapa.", { exact: false })).toBeVisible();
+  await expect(form.getByLabel("Bairro")).toHaveValue("Bela Vista");
+  await expect(form.getByLabel("Complemento / referência")).toHaveValue("Apto 12");
+  await expect(form.locator('input[name="reference"]'), "what was typed stays").toHaveValue("3001");
+  await form.getByRole("button", { name: "Cadastrar pedido" }).click();
+  await expect(form).toHaveCount(0);
+  expect(backend.commandCalls().find(call => call.fn === "create_order")!.body).toMatchObject({
+    p_customer_name: "Helena Prado", p_customer_phone: "+5511977776666", p_delivery_address: "Rua das Acácias, 55",
+    p_neighborhood: "Bela Vista", p_complement: "Apto 12", p_reference: "3001",
+    p_latitude: -23.58, p_longitude: -46.64, p_address_provider: "mapbox", p_address_provider_id: "mapbox_helena" });
+
+  // A number nobody used: no suggestion.
+  await page.getByRole("button", { name: "Novo pedido" }).first().click();
+  await form.getByLabel("WhatsApp", { exact: true }).fill("(11) 91111-2222");
+  await expect.poll(() => lookups.length).toBe(2);
+  await expect(form.getByText("Já pediu aqui")).toHaveCount(0);
+  expect(calls.unexpected).toEqual([]);
+});
+
+test("pedido rápido: colar o texto do pedido preenche o formulário e já busca o endereço", async ({ page }) => {
+  const backend = storeBackend();
+  await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  const geocoding = await mockGeocoding(page);
+  await openPanel(page);
+  await page.getByRole("button", { name: "Novo pedido" }).first().click();
+  const form = page.locator("dialog[open]");
+  await form.locator('input[name="notes"], textarea[name="notes"]').fill("Troco para 100");
+  await form.getByRole("button", { name: "Colar pedido (WhatsApp, app ou cupom)" }).click();
+  await form.getByLabel("Cole o pedido aqui").fill("oi, quero 2 pizzas");
+  await form.getByRole("button", { name: "Preencher com o texto" }).click();
+  await expect(form.getByRole("alert")).toContainText("Não reconheci nome, WhatsApp nem endereço");
+
+  await form.getByLabel("Cole o pedido aqui").fill(`*Pedido #4567*
+Cliente: Maria da Silva
+Telefone: (11) 98765-4321
+Endereço: Rua das Flores, 120 - Apto 3
+Bairro: Jardim Paulista
+Total: R$ 52,90`);
+  await form.getByRole("button", { name: "Preencher com o texto" }).click();
+  await expect(form.getByRole("status").filter({ hasText: "Preenchido: nome, WhatsApp, endereço, bairro, complemento e nº do pedido." }))
+    .toContainText("Escolha o endereço na lista para confirmar no mapa.");
+  await expect(form.getByLabel("WhatsApp", { exact: true })).toHaveValue("(11) 98765-4321");
+  await expect(form.getByLabel("Nome do cliente")).toHaveValue("Maria da Silva");
+  await expect(form.getByLabel("Bairro")).toHaveValue("Jardim Paulista");
+  await expect(form.getByLabel("Complemento / referência")).toHaveValue("Apto 3");
+  await expect(form.locator('input[name="reference"]')).toHaveValue("4567");
+  await expect(form.locator('textarea[name="notes"]'), "what the text did not have stays").toHaveValue("Troco para 100");
+  // The pasted address is searched right away: pick it to confirm the pin.
+  await expect(form.getByRole("combobox", { name: "Endereço" })).toHaveValue("Rua das Flores, 120");
+  await expect.poll(() => geocoding.suggest).toEqual(["Rua das Flores, 120"]);
+  await form.getByRole("option", { name: /Rua das Flores, 120/ }).click();
+  await expect(form.getByText("Localização confirmada", { exact: false })).toBeVisible();
+  await form.getByRole("button", { name: "Cadastrar pedido" }).click();
+  await expect(form).toHaveCount(0);
+  expect(backend.commandCalls().find(call => call.fn === "create_order")!.body).toMatchObject({
+    p_customer_name: "Maria da Silva", p_customer_phone: "+5511987654321", p_delivery_address: resolvedAddress.address,
+    p_neighborhood: "Jardim Paulista", p_complement: "Apto 3", p_reference: "4567", p_notes: "Troco para 100",
+    p_address_provider_id: resolvedAddress.providerId });
+});
+
 test("sugerir rotas: junta pela rua e pelo caminho, explica o motivo e preenche a montagem", async ({ page }) => {
   const errors = watchErrors(page);
   const backend = storeBackend();

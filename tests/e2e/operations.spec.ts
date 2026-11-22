@@ -156,9 +156,8 @@ test("cadastro e despacho locais: reserva, início pelo motoboy, bloqueio e reto
   ).toBeVisible();
   await page.getByRole("button", { name: "Novo pedido", exact: true }).click();
   const form = page.getByRole("dialog", { name: "Novo pedido", exact: true });
-  await expect(
-    form.getByLabel("Nome do cliente", { exact: true }),
-  ).toBeFocused();
+  // Quick order: the WhatsApp comes first.
+  await expect(form.getByLabel("WhatsApp", { exact: true })).toBeFocused();
   await form
     .getByLabel("Nome do cliente", { exact: true })
     .fill("Cliente fictício de teste");
@@ -401,7 +400,7 @@ test("vazio, um pedido e modal com teclado oferecem caminhos claros", async ({
   ).toBeVisible();
   await page.getByRole("button", { name: "Novo pedido", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Novo pedido", exact: true });
-  await dialog.getByLabel("Nome do cliente", { exact: true }).focus();
+  await dialog.getByLabel("WhatsApp", { exact: true }).focus();
   await page.keyboard.press("Shift+Tab");
   await expect(
     dialog.getByRole("button", { name: "Fechar novo pedido" }),

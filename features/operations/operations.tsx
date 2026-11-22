@@ -418,7 +418,8 @@ function OperationsWorkspace({
           <span>{live ? "Atualiza sozinho a cada 5 segundos" : "Protótipo de despacho • sem conexão operacional ao banco"}</span>
         </footer>
       </div>
-      <NewOrderDialog dialogRef={newDialog} now={now} defaultPromiseMinutes={state.defaultPromiseMinutes} onAdd={add} live={!!live} />
+      <NewOrderDialog dialogRef={newDialog} now={now} defaultPromiseMinutes={state.defaultPromiseMinutes} onAdd={add} live={!!live}
+        restaurantId={live?.restaurantId} />
       {live && <ConfirmDialog request={confirmation} onClose={() => setConfirmation(null)} />}
       {live && <RouteSuggestions open={suggestionsOpen} restaurantId={live.restaurantId} state={state} now={now} onClose={() => setSuggestionsOpen(null)}
         onUse={(ids, courier) => { setSelected(ids); if (courier) setCourierId(courier); setActiveTab("builder"); }} />}

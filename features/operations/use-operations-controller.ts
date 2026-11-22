@@ -157,7 +157,7 @@ export function useOperationsController(scenario: Scenario, seedTime: number, li
       (form.elements.namedItem("promisedMinutes") as HTMLInputElement).value = String(state.defaultPromiseMinutes);
     }
     newDialog.current?.showModal();
-    newDialog.current?.querySelector<HTMLInputElement>('input[name="customer"]')?.focus();
+    newDialog.current?.querySelector<HTMLInputElement>('input[name="phone"]')?.focus();
   }
   async function release(id: string) {
     const route = state.routes.find(r => r.id === id);

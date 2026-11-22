@@ -1,5 +1,7 @@
 import { useRef, useState, type FormEvent, type RefObject } from "react";
-import { isValidBrazilianMobilePhone } from "@/lib/brazilian-mobile-phone";
+import { formatBrazilianMobilePhone, isValidBrazilianMobilePhone } from "@/lib/brazilian-mobile-phone";
+import { getSupabase } from "@/lib/supabase/client";
+import { foundText, parsePastedOrder } from "./paste-order";
 import { type DemoOrder, type NewOrder } from "./model";
 import { localDateTime, parseLocalDateTime, MAX_PROMISE_MINUTES } from "./deadlines";
 import { AddressAutocomplete, type AddressHints } from "@/components/address-autocomplete";
@@ -17,25 +19,119 @@ const ORDER_ADDRESS_HINTS: AddressHints = {
 /** What the form hands over: the order, and whether its address text changed (editing keeps the pin otherwise). */
 type Submit = (order: NewOrder, addressChanged: boolean) => boolean | Promise<boolean>;
 
+/** What a form starts with: an order being edited, a returning customer or a pasted order. */
+export type OrderPrefill = Partial<Pick<DemoOrder, "customer" | "phone" | "address" | "neighborhood" | "complement"
+  | "reference" | "notes" | "orderedAt" | "promisedMinutes">> & {
+  /** Already confirmed on the map (a returning customer's last address). */
+  confirmedAddress?: ResolvedAddress;
+  /** Search the address right away (pasted text). */
+  searchAddress?: boolean;
+};
+
+/** A customer who already ordered from this store (find_customer). */
+export type KnownCustomer = {
+  name: string; address: string; neighborhood: string | null; complement: string | null;
+  location: { latitude: number; longitude: number; providerId: string } | null;
+  orders: number;
+};
+
+function parseCustomer(value: unknown): KnownCustomer | null {
+  const c = value as KnownCustomer | null;
+  if (!c || typeof c.name !== "string" || typeof c.address !== "string" || !Number.isInteger(c.orders)) return null;
+  const location = c.location && typeof c.location.latitude === "number" && typeof c.location.longitude === "number"
+    && typeof c.location.providerId === "string" ? c.location : null;
+  return { name: c.name, address: c.address, orders: c.orders, location,
+    neighborhood: typeof c.neighborhood === "string" ? c.neighborhood : null,
+    complement: typeof c.complement === "string" ? c.complement : null };
+}
+
+/** Real data: the store's last order for this WhatsApp; null when none or unavailable. */
+async function findCustomer(restaurantId: string, phone: string): Promise<KnownCustomer | null> {
+  try {
+    const { data, error } = await getSupabase().rpc("find_customer", { p_restaurant_id: restaurantId, p_phone: phone });
+    return error ? null : parseCustomer(data);
+  } catch { return null; }
+}
+
 /**
  * The order's fields, for a new order and for editing one still waiting for dispatch. [initial] fills
  * them; mount it again (key) to start over.
  */
-function OrderForm({ live, now, defaultPromiseMinutes, initial, submitLabel, footer, onSubmit, onSaved }: {
+function OrderForm({ live, now, defaultPromiseMinutes, initial, submitLabel, footer, onSubmit, onSaved, restaurantId, onRestart, filled }: {
   live: boolean;
   now: number;
   defaultPromiseMinutes: number;
-  initial?: DemoOrder;
+  initial?: OrderPrefill;
   submitLabel: string;
   footer: string;
   onSubmit: Submit;
   onSaved: () => void;
+  /** New real order: recognizes a returning customer by the WhatsApp. */
+  restaurantId?: string;
+  /** New real order: starts the form again with these values ("Colar pedido", returning customer). */
+  onRestart?: (prefill: OrderPrefill, filled: string) => void;
+  /** What the last restart filled, said once on top of the form. */
+  filled?: string;
 }) {
+  const formRef = useRef<HTMLFormElement>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
+  const pasteRef = useRef<HTMLTextAreaElement>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [pasting, setPasting] = useState(false);
+  const [pasteError, setPasteError] = useState("");
+  const [customer, setCustomer] = useState<KnownCustomer | null>(null);
+  const lookedUp = useRef("");
   // Real data: an address picked from the search carries its coordinates.
-  const [geocode, setGeocode] = useState<ResolvedAddress | null>(null);
+  const [geocode, setGeocode] = useState<ResolvedAddress | null>(initial?.confirmedAddress ?? null);
+
+  /** What is typed now, so a restart keeps it. */
+  function current(): OrderPrefill {
+    const data = new FormData(formRef.current!);
+    const value = (name: string) => String(data.get(name) ?? "").trim();
+    const orderedAt = parseLocalDateTime(value("orderedAt"));
+    const promisedMinutes = Number(value("promisedMinutes"));
+    return {
+      customer: value("customer"), phone: value("phone"), address: value("address"), neighborhood: value("neighborhood"),
+      complement: value("complement"), reference: value("reference"), notes: value("notes"),
+      ...(Number.isFinite(orderedAt) ? { orderedAt } : {}), ...(promisedMinutes > 0 ? { promisedMinutes } : {}),
+      ...(geocode ? { confirmedAddress: geocode } : {}),
+    };
+  }
+  async function checkPhone(value: string) {
+    if (!restaurantId) return;
+    const digits = value.replace(/[^0-9]/g, "");
+    if (!isValidBrazilianMobilePhone(value)) { lookedUp.current = ""; setCustomer(null); return; }
+    if (digits === lookedUp.current) return;
+    lookedUp.current = digits;
+    const found = await findCustomer(restaurantId, value);
+    if (lookedUp.current === digits) setCustomer(found);
+  }
+  function fillCustomer(known: KnownCustomer) {
+    const location: ResolvedAddress | undefined = known.location ? {
+      address: known.address, latitude: known.location.latitude, longitude: known.location.longitude,
+      provider: "mapbox", providerId: known.location.providerId, ...(known.neighborhood ? { neighborhood: known.neighborhood } : {}),
+    } : undefined;
+    const typed = current();
+    delete typed.confirmedAddress;
+    onRestart?.({ ...typed, customer: known.name, address: known.address, neighborhood: known.neighborhood ?? "",
+      complement: known.complement ?? "", ...(location ? { confirmedAddress: location } : { searchAddress: true }) },
+      `Dados de ${known.name} preenchidos. Confira se o endereço continua o mesmo.`);
+  }
+  function fillFromPaste() {
+    const { order, found } = parsePastedOrder(pasteRef.current?.value ?? "");
+    if (!found.length) {
+      setPasteError("Não reconheci nome, WhatsApp nem endereço nesse texto. Confira o que foi colado ou preencha à mão.");
+      return;
+    }
+    const typed = current();
+    // What was typed stays where the text says nothing; a pasted address replaces the confirmed one.
+    const keep = Object.fromEntries(Object.entries(typed).filter(([key, value]) =>
+      value !== "" && !(key in order) && !(order.address && key === "confirmedAddress"))) as OrderPrefill;
+    onRestart?.({ ...keep, ...order, ...(order.phone ? { phone: formatBrazilianMobilePhone(order.phone) } : {}),
+      ...(order.address ? { searchAddress: true } : {}) },
+      `Preenchido: ${foundText(found)}.${order.address ? " Escolha o endereço na lista para confirmar no mapa." : ""}`);
+  }
   // The bairro found with the address fills the field, unless the store already typed another one.
   const neighborhoodRef = useRef<HTMLInputElement>(null);
   const autoNeighborhood = useRef("");
@@ -87,11 +183,25 @@ function OrderForm({ live, now, defaultPromiseMinutes, initial, submitLabel, foo
     onSaved();
   }
   return (
-    <form onSubmit={submit} onInput={() => setError("")} className="ops-order-form">
-      <label>
-        Nome do cliente
-        <input name="customer" required maxLength={120} autoComplete="off" defaultValue={initial?.customer} />
-      </label>
+    <form ref={formRef} onSubmit={submit} onInput={() => setError("")} className="ops-order-form">
+      {filled && <p className="ops-form-wide ops-quick-filled" role="status">{filled}</p>}
+      {onRestart && (pasting ? (
+        <div className="ops-form-wide ops-paste">
+          <label>Cole o pedido aqui
+            <textarea ref={pasteRef} rows={5} maxLength={4000} autoFocus onInput={() => setPasteError("")}
+              placeholder="Texto do WhatsApp, do app de entrega ou do cupom: nome, celular, endereço, bairro…" />
+          </label>
+          {pasteError && <p role="alert">{pasteError}</p>}
+          <div className="ops-paste-actions">
+            <button type="button" className="ops-primary" onClick={fillFromPaste}>Preencher com o texto</button>
+            <button type="button" className="ops-link-button" onClick={() => { setPasting(false); setPasteError(""); }}>Cancelar</button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" className="ops-form-wide ops-paste-open" onClick={() => setPasting(true)}>
+          Colar pedido (WhatsApp, app ou cupom)
+        </button>
+      ))}
       <label>
         WhatsApp
         <input
@@ -104,9 +214,23 @@ function OrderForm({ live, now, defaultPromiseMinutes, initial, submitLabel, foo
           maxLength={24}
           autoComplete="off"
           defaultValue={initial?.phone}
-          onInput={() => phoneRef.current?.setCustomValidity("")}
+          onInput={event => { phoneRef.current?.setCustomValidity(""); void checkPhone(event.currentTarget.value); }}
         />
       </label>
+      <label>
+        Nome do cliente
+        <input name="customer" required maxLength={120} autoComplete="off" defaultValue={initial?.customer} />
+      </label>
+      {customer && (
+        <div className="ops-form-wide ops-known-customer" role="status">
+          <p>
+            <strong>Já pediu aqui {customer.orders === 1 ? "1 vez" : `${customer.orders} vezes`}.</strong>{" "}
+            <span dir="auto">{customer.name}</span> · <span dir="auto">{customer.address}</span>
+            {customer.neighborhood && <> · <span dir="auto">{customer.neighborhood}</span></>}
+          </p>
+          <button type="button" onClick={() => fillCustomer(customer)}>Usar estes dados</button>
+        </div>
+      )}
       <label>Pedido feito em
         <input name="orderedAt" type="datetime-local" required max={localDateTime(now)}
           defaultValue={localDateTime(initial?.orderedAt ?? now)} />
@@ -119,7 +243,8 @@ function OrderForm({ live, now, defaultPromiseMinutes, initial, submitLabel, foo
       {live ? (
         <AddressAutocomplete onChange={pickAddress} className="ops-form-wide ops-order-address"
           placeholder="Nome da rua e número" mapAlt="Mapa do endereço do cliente, com marcador"
-          hints={ORDER_ADDRESS_HINTS} initialQuery={initial?.address} />
+          hints={ORDER_ADDRESS_HINTS} initialQuery={initial?.address} initialAddress={initial?.confirmedAddress}
+          autoSearch={initial?.searchAddress} />
       ) : (
         <label className="ops-form-wide">
           Endereço
@@ -162,6 +287,7 @@ export function NewOrderDialog({
   now,
   defaultPromiseMinutes,
   live = false,
+  restaurantId,
 }: {
   dialogRef: RefObject<HTMLDialogElement | null>;
   onAdd: (order: NewOrder) => boolean | Promise<boolean>;
@@ -169,9 +295,12 @@ export function NewOrderDialog({
   defaultPromiseMinutes: number;
   /** Real data: the order is saved and the customer gets the tracking link. */
   live?: boolean;
+  /** Real data: returning customers are recognized by the WhatsApp. */
+  restaurantId?: string;
 }) {
-  // A saved order starts the next one from an empty form.
+  // A saved order starts the next one from an empty form; a paste or a returning customer refills it.
   const [formKey, setFormKey] = useState(0);
+  const [prefill, setPrefill] = useState<{ values: OrderPrefill; filled: string } | null>(null);
   return (
     <dialog ref={dialogRef} className="ops-dialog" aria-labelledby="ops-new-title">
       <div className="ops-dialog-heading">
@@ -187,8 +316,11 @@ export function NewOrderDialog({
       </p>
       <OrderForm key={formKey} live={live} now={now} defaultPromiseMinutes={defaultPromiseMinutes}
         submitLabel={live ? "Cadastrar pedido" : "Cadastrar pedido (demo)"} footer="Entra em Aguardando despacho."
+        initial={prefill?.values} filled={prefill?.filled}
+        restaurantId={live ? restaurantId : undefined}
+        onRestart={live ? (values, filled) => { setPrefill({ values, filled }); setFormKey(key => key + 1); } : undefined}
         onSubmit={order => onAdd(order)}
-        onSaved={() => { dialogRef.current?.close(); setFormKey(key => key + 1); }} />
+        onSaved={() => { dialogRef.current?.close(); setPrefill(null); setFormKey(key => key + 1); }} />
     </dialog>
   );
 }
