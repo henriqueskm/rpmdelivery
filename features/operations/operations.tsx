@@ -420,7 +420,7 @@ function OperationsWorkspace({
       </div>
       <NewOrderDialog dialogRef={newDialog} now={now} defaultPromiseMinutes={state.defaultPromiseMinutes} onAdd={add} live={!!live} />
       {live && <ConfirmDialog request={confirmation} onClose={() => setConfirmation(null)} />}
-      {live && <RouteSuggestions open={suggestionsOpen} state={state} now={now} onClose={() => setSuggestionsOpen(null)}
+      {live && <RouteSuggestions open={suggestionsOpen} restaurantId={live.restaurantId} state={state} now={now} onClose={() => setSuggestionsOpen(null)}
         onUse={(ids, courier) => { setSelected(ids); if (courier) setCourierId(courier); setActiveTab("builder"); }} />}
       {live && <CourierCardDialog shiftId={openCourier?.id ?? null} name={openCourier?.name ?? ""}
         onClose={() => setOpenCourier(null)} />}

@@ -87,3 +87,42 @@ export function createMapboxMatrixAdapter({ fetchImpl = fetch, token = () => pro
   };
 }
 export const mapboxMatrix = createMapboxMatrixAdapter();
+
+/**
+ * One Matrix request for route suggestions (phase 2): [sources] × [destinations] among at most 25
+ * coordinates, durations in seconds and distances in meters; null where Mapbox has no route.
+ * Never retries, never echoes the provider's body or the URL (it carries the token).
+ */
+export async function fetchMatrixBlock(coordinates: { latitude: number; longitude: number }[],
+  sources: number[], destinations: number[], { fetchImpl = fetch, token = process.env.MAPBOX_ACCESS_TOKEN, timeoutMs = 8000 }: {
+    fetchImpl?: typeof fetch; token?: string; timeoutMs?: number;
+  } = {}): Promise<{ durations: (number | null)[][]; distances: (number | null)[][] }> {
+  if (coordinates.length < 2 || coordinates.length > 25 || !coordinates.every(isCoordinate)
+    || !sources.length || !destinations.length
+    || [...sources, ...destinations].some(i => !Number.isInteger(i) || i < 0 || i >= coordinates.length))
+    throw new MatrixError("input");
+  if (!token) throw new MatrixError("unavailable");
+  const path = coordinates.map(c => `${c.longitude},${c.latitude}`).join(";");
+  const url = new URL(`https://api.mapbox.com/directions-matrix/v1/mapbox/driving/${path}`);
+  url.search = new URLSearchParams({
+    access_token: token, annotations: "duration,distance", sources: sources.join(";"), destinations: destinations.join(";"),
+  }).toString();
+  const timeout = AbortSignal.timeout(timeoutMs);
+  try {
+    const response = await fetchImpl(url, { cache: "no-store", signal: timeout });
+    if (response.status === 429) throw new MatrixError("rate-limit");
+    if (!response.ok) throw new MatrixError("unavailable");
+    const body = await readMatrixJson(response, timeout) as Record<string, unknown> | null;
+    if (!body || typeof body !== "object") throw new MatrixError("malformed");
+    if (body.code === "NoRoute") throw new MatrixError("no-route");
+    const grid = (value: unknown, max: number) => Array.isArray(value) && value.length === sources.length
+      && value.every(row => Array.isArray(row) && row.length === destinations.length
+        && row.every(cell => cell === null || (typeof cell === "number" && Number.isFinite(cell) && cell >= 0 && cell <= max)));
+    if (body.code !== "Ok" || !grid(body.durations, 86400) || !grid(body.distances, 1_000_000)) throw new MatrixError("malformed");
+    return { durations: body.durations as (number | null)[][], distances: body.distances as (number | null)[][] };
+  } catch (error) {
+    if (timeout.aborted) throw new MatrixError("timeout");
+    if (error instanceof MatrixError) throw error;
+    throw new MatrixError(error instanceof SyntaxError ? "malformed" : "unavailable");
+  }
+}

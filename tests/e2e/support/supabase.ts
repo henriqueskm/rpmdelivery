@@ -114,7 +114,10 @@ export async function mockSupabase(page: Page, options: Options = {}) {
     } else if (path.startsWith("/rest/v1/rpc/") && path !== "/rest/v1/rpc/create_restaurant") {
       const name = path.slice("/rest/v1/rpc/".length);
       const handler = options.rpc?.[name]
-        ?? (name === "get_operations_board" ? (): RpcReply => ({ json: emptyBoard() }) : undefined);
+        ?? (name === "get_operations_board" ? (): RpcReply => ({ json: emptyBoard() }) : undefined)
+        // The store's route suggestion limits (Dados da loja, "Sugerir rotas"): the defaults.
+        ?? (name === "get_route_settings" ? (): RpcReply => ({ json: { maxStops: 8, maxDetourMinutes: 10, neighborMeters: 2000,
+          canEdit: (options.role ?? "OWNER") !== "OPERATOR" } }) : undefined);
       if (!handler) {
         calls.unexpected.push(path);
         await reply({ message: "Unexpected mock endpoint" }, 500);
