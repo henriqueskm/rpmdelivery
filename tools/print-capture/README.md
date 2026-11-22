@@ -29,6 +29,8 @@ npm run print:sample -- figura
 
 O primeiro comando manda um cupom em texto, e a impressora virtual mostra os campos reconhecidos. O segundo manda um cupom desenhado como figura, e ela avisa que não há texto para ler.
 
+**Não abra `127.0.0.1:9100` no navegador.** O navegador manda junto os cookies de login dos sites que rodam em `127.0.0.1`. A impressora virtual reconhece isso: responde com uma página de aviso e não guarda nem mostra nada.
+
 ## 2. Instalar a impressora "RPM Teste" no Windows (uma vez só)
 
 Este passo muda uma configuração do Windows, então quem faz é você.

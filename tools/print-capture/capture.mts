@@ -83,10 +83,32 @@ function passOn(bytes: Uint8Array) {
   socket.on("close", hadError => { if (!hadError) console.log(`  → Repassado para a impressora ${forward}.`); });
 }
 
+// A browser opening http://127.0.0.1:9100 sends an HTTP request, cookies and session tokens
+// included. That is never a print job: answer with a short page and keep nothing.
+const httpRequest = /^(GET|POST|HEAD|PUT|PATCH|DELETE|OPTIONS|CONNECT) \S+ HTTP\/\d/;
+
+const browserPage = [
+  "<!doctype html><meta charset=\"utf-8\"><title>Impressora de teste</title>",
+  "<body style=\"font-family:system-ui;max-width:36rem;margin:3rem auto;padding:0 1rem\">",
+  "<h1>Esta é a impressora de teste</h1>",
+  "<p>Ela não abre no navegador. Imprima pelo Windows na impressora <b>RPM Teste</b> e veja o resultado no terminal.</p>",
+].join("");
+
+function refuseBrowser(socket: Socket) {
+  const body = Buffer.from(browserPage, "utf8");
+  socket.end(Buffer.concat([
+    Buffer.from(`HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: ${body.length}\r\nConnection: close\r\n\r\n`, "latin1"),
+    body,
+  ]));
+  console.log(`\n[${new Date().toLocaleTimeString("pt-BR")}] Um navegador abriu este endereço. Isso não é uma impressão: nada foi guardado nem mostrado.`);
+  console.log("  Imprima pelo Windows na impressora \"RPM Teste\" em vez de abrir 127.0.0.1:9100 no navegador.");
+}
+
 async function handle(socket: Socket) {
   const chunks: Buffer[] = [];
   let timer: NodeJS.Timeout | undefined;
   let done = false;
+  let checked = false;
   const finish = async () => {
     if (done) return;
     done = true;
@@ -105,7 +127,24 @@ async function handle(socket: Socket) {
     passOn(bytes);
   };
   const idle = () => { clearTimeout(timer); timer = setTimeout(finish, idleMs); };
-  socket.on("data", chunk => { chunks.push(chunk); idle(); });
+  socket.on("data", chunk => {
+    if (done) return;
+    chunks.push(chunk);
+    if (!checked) {
+      const start = Buffer.concat(chunks);
+      if (start.length >= 16 || start.includes(0x0a)) {
+        checked = true;
+        if (httpRequest.test(start.subarray(0, 64).toString("latin1"))) {
+          done = true;
+          clearTimeout(timer);
+          chunks.length = 0;
+          refuseBrowser(socket);
+          return;
+        }
+      }
+    }
+    idle();
+  });
   socket.on("end", finish);
   socket.on("close", finish);
   socket.on("error", () => { void finish(); });
