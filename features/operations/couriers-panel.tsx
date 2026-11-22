@@ -13,8 +13,10 @@ const statusKey: Record<string, string> = {
   "Disponível": "available", "Reservado": "reserved", "Em rota": "on-route", "Retornando": "returning", "Turno pendente": "pending",
 };
 
-export function CouriersPanel({ state, managementHref, onReviewShift, pending, pay }: {
+export function CouriersPanel({ state, managementHref, onReviewShift, pending, pay, onOpenCourier }: {
   state: DemoState; managementHref?: string;
+  /** Real data: the name opens the courier card. */
+  onOpenCourier?: (id: string, name: string) => void;
   /** Real data: the counter approves the shift of a courier who arrived. */
   onReviewShift?: (shiftId: string, approve: boolean) => void; pending?: boolean;
   /** Real data: rates and the day's settlement. */
@@ -61,7 +63,12 @@ export function CouriersPanel({ state, managementHref, onReviewShift, pending, p
                   <span className="ops-queue-number" aria-label={position >= 0 ? `Posição ${position + 1}` : undefined}>
                     {position >= 0 ? `${position + 1}º` : ""}
                   </span>
-                  <strong dir="auto" title={c.name}>{c.name}</strong>
+                  {onOpenCourier
+                    ? <button type="button" className="ops-courier-name" dir="auto" title={c.name}
+                        aria-label={`Abrir ficha de ${c.name}`} onClick={() => onOpenCourier(c.id, c.name)}>
+                        <strong>{c.name}</strong>
+                      </button>
+                    : <strong dir="auto" title={c.name}>{c.name}</strong>}
                   {/* "1º" and the highlighted row already say it; the word stays for screen readers. */}
                   {position === 0 && <span className="ops-visually-hidden">Próximo da fila</span>}
                   <span className={`ops-courier-status status-${statusKey[label]}`}>

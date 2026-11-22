@@ -202,6 +202,13 @@ class WorkScreensTest {
         node("Você está na fila").assertIsDisplayed()
 
         menu(); pick("Meu cadastro")
+        // No photo yet: the initials hold its place, and the button adds one.
+        compose.onNodeWithContentDescription("Sem foto").assertIsDisplayed()
+        node("PS").assertIsDisplayed()
+        node("Adicionar foto").assertHeightIsAtLeast(48.dp)
+        compose.onNodeWithText("Remover foto").assertDoesNotExist()
+        assertTrue("the photo is read when Meu cadastro opens", fake.calls.contains("photo"))
+        captureEvidence(compose, "work-15-profile-photo-390")
         node("(11) 98765-4321").assertIsDisplayed()
         node("ABC1D23").assertIsDisplayed()
         menu(); pick("Avisos e permissões")

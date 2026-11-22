@@ -33,6 +33,11 @@ data class WorkState(
     val invite: InviteCard? = null,
     /** "Entregue" far from the address: the courier confirms or not. */
     val farPrompt: FarPrompt? = null,
+    /** Meu cadastro: the courier's photo (JPEG), read when the section opens; null without one. */
+    val photo: ByteArray? = null,
+    val photoLoading: Boolean = false,
+    /** Sending or removing the photo. */
+    val photoSaving: Boolean = false,
 ) {
     val historyOpen: Boolean get() = section == Section.Earnings
 }
@@ -174,6 +179,62 @@ class WorkController(
     fun show(section: Section) {
         if (section == Section.Earnings) openHistory()
         else mutable.update { it.copy(section = section) }
+        if (section == Section.Profile) loadPhoto()
+    }
+
+    /** Reads the courier's own photo each time Meu cadastro opens. A failure just leaves the initials. */
+    fun loadPhoto() {
+        if (mutable.value.photoLoading || mutable.value.photoSaving) return
+        mutable.update { it.copy(photoLoading = true) }
+        scope.launch {
+            try {
+                val photo = repository.photo()
+                mutable.update { it.copy(photo = photo, photoLoading = false) }
+            } catch (error: CancellationException) { throw error }
+            catch (error: WorkProblem) {
+                mutable.update { it.copy(photoLoading = false) }
+                if (error.expired) expire()
+            } catch (_: Exception) { mutable.update { it.copy(photoLoading = false) } }
+        }
+    }
+
+    /**
+     * Sends a new photo. [read] turns the picked image into a square JPEG off the main thread;
+     * null means the image could not be opened.
+     */
+    fun savePhoto(read: suspend () -> ByteArray?) {
+        if (mutable.value.photoSaving) return
+        mutable.update { it.copy(photoSaving = true, message = null, notice = null) }
+        scope.launch {
+            try {
+                val jpeg = read() ?: throw WorkProblem.refused("PHOTO_UNREADABLE")
+                repository.savePhoto(jpeg)
+                mutable.update { it.copy(photo = jpeg, photoSaving = false, notice = "Foto salva. As lojas em que você trabalha já veem a nova foto.") }
+            } catch (error: CancellationException) { throw error }
+            catch (error: WorkProblem) {
+                mutable.update { it.copy(photoSaving = false) }
+                if (error.expired) expire() else mutable.update { it.copy(message = error.safeMessage) }
+            } catch (_: Exception) {
+                mutable.update { it.copy(photoSaving = false, message = WorkCopy.forCode("PHOTO_UNREADABLE")) }
+            }
+        }
+    }
+
+    fun removePhoto() {
+        if (mutable.value.photoSaving) return
+        mutable.update { it.copy(photoSaving = true, message = null, notice = null) }
+        scope.launch {
+            try {
+                repository.removePhoto()
+                mutable.update { it.copy(photo = null, photoSaving = false, notice = "Foto removida.") }
+            } catch (error: CancellationException) { throw error }
+            catch (error: WorkProblem) {
+                mutable.update { it.copy(photoSaving = false) }
+                if (error.expired) expire() else mutable.update { it.copy(message = error.safeMessage) }
+            } catch (_: Exception) {
+                mutable.update { it.copy(photoSaving = false, message = WorkCopy.GENERIC) }
+            }
+        }
     }
 
     /** Reads the last 30 days, each time the history opens or the courier retries. */

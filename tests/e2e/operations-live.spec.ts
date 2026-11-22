@@ -304,6 +304,68 @@ test("pagamento dos motoboys: valores da loja e acerto do dia", async ({ page })
   expect(errors).toEqual([]);
 });
 
+test("ficha do motoboy: clicar no nome mostra foto, contato, moto e números do dia", async ({ page }) => {
+  const errors = watchErrors(page);
+  const backend = storeBackend();
+  const calls = await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  // The photo lives in a private bucket: the panel asks for a short signed link, then loads it.
+  const storage: string[] = [];
+  await page.route("http://127.0.0.1:54321/storage/v1/object/**", async route => {
+    const url = new URL(route.request().url());
+    storage.push(`${route.request().method()} ${url.pathname}`);
+    if (route.request().method() === "OPTIONS") return route.fulfill({ status: 200, headers: { "access-control-allow-origin": "*", "access-control-allow-headers": "*" } });
+    if (url.pathname.startsWith("/storage/v1/object/sign/") && route.request().method() === "POST")
+      return route.fulfill({ headers: { "access-control-allow-origin": "*" },
+        json: { signedURL: "/object/sign/courier-photos/u-ana/avatar.jpg?token=e2e-signed" } });
+    return route.fulfill({ path: "public/courier/mascot-256.webp", contentType: "image/webp",
+      headers: { "access-control-allow-origin": "*" } });
+  });
+  await openPanel(page);
+  await showArea(page, /^Motoboys/);
+
+  await page.getByRole("button", { name: "Abrir ficha de Ana Souza" }).click();
+  const card = page.getByRole("dialog", { name: "Ana Souza" });
+  await expect(card).toBeVisible();
+  expect(backend.commandCalls().at(-1)).toEqual({ fn: "get_courier_card", body: { p_shift_id: "s-ana" } });
+  const photo = card.getByRole("img", { name: "Foto de Ana Souza" });
+  await expect(photo).toBeVisible();
+  await expect.poll(() => photo.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  expect(storage).toContain("POST /storage/v1/object/sign/courier-photos/u-ana/avatar.jpg");
+  await expect(card.getByRole("link", { name: "(11) 98765-0011" })).toHaveAttribute("href", "tel:+5511987650011");
+  await expect(card).toContainText("Honda CG 160 · Vermelha");
+  await expect(card).toContainText("ABC1D23");
+  await expect(card.getByRole("definition").filter({ hasText: "desde" })).toHaveText("Ativo desde 02/11/2026");
+  await expect(card).toContainText("Em rota");
+  await expect(card).toContainText("há 3 min");
+  const numbers = card.getByLabel("Números nesta loja");
+  await expect(numbers).toContainText("3entregas hoje");
+  await expect(numbers).toContainText("R$ 51,00a receber hoje");
+  await expect(numbers).toContainText("42entregas nesta loja");
+  const width = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
+  expect(width[0]).toBeLessThanOrEqual(width[1]);
+  await card.getByRole("button", { name: "Fechar ficha de Ana Souza" }).click();
+  await expect(card).toBeHidden();
+
+  // Without a photo or registration: initials and plain words, never a broken image.
+  await page.getByRole("button", { name: "Abrir ficha de Bruno Alves" }).click();
+  const bruno = page.getByRole("dialog", { name: "Bruno Alves" });
+  await expect(bruno).toContainText("Sem foto. O motoboy adiciona em Meu cadastro, no app.");
+  await expect(bruno.locator(".ops-courier-photo")).toHaveText("BA");
+  await expect(bruno.getByRole("img")).toHaveCount(0);
+  await expect(bruno).toContainText("Não informado");
+  await expect(bruno).toContainText("Ainda não enviou");
+  await page.keyboard.press("Escape");
+  await expect(bruno).toBeHidden();
+
+  // Gone from the shift meanwhile: the card says so.
+  backend.failOnce("get_courier_card", { status: 404, json: { code: "P0002", message: "RPM_COURIER_NOT_FOUND" } });
+  await page.getByRole("button", { name: "Abrir ficha de Dani Lima" }).click();
+  await expect(page.getByRole("dialog", { name: "Dani Lima" }).getByRole("alert"))
+    .toContainText("Esse motoboy não está mais no turno desta loja.");
+  expect(calls.unexpected).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
 test("pagamento dos motoboys: operador vê o acerto sem alterar valores", async ({ page }) => {
   const backend = storeBackend();
   backend.pay.canEdit = false;

@@ -197,6 +197,40 @@ class WorkControllerTest {
         assertEquals(1, deleted)
     }
 
+    @Test fun theProfilePhotoIsReadWhenMeuCadastroOpensThenSavedAndRemoved() = runTest {
+        val work = WorkController(fake, this, onExpired = { expired++ })
+        fake.photo = byteArrayOf(1, 2, 3)
+        work.show(Section.Profile); advanceUntilIdle()
+        assertArrayEquals(byteArrayOf(1, 2, 3), work.state.value.photo)
+        assertFalse(work.state.value.photoLoading)
+
+        work.savePhoto { byteArrayOf(9, 9) }; advanceUntilIdle()
+        assertArrayEquals(byteArrayOf(9, 9), fake.photo)
+        assertArrayEquals(byteArrayOf(9, 9), work.state.value.photo)
+        assertEquals("Foto salva. As lojas em que você trabalha já veem a nova foto.", work.state.value.notice)
+        assertFalse(work.state.value.photoSaving)
+
+        // An image the phone could not open never reaches the server.
+        work.savePhoto { null }; advanceUntilIdle()
+        assertEquals("Não foi possível abrir esta imagem. Escolha outra foto.", work.state.value.message)
+        assertEquals(1, fake.calls.count { it == "save_photo" })
+
+        // No connection: the old photo stays, and the courier can try again.
+        fake.failOnce("save_photo", WorkProblem.network())
+        work.savePhoto { byteArrayOf(7) }; advanceUntilIdle()
+        assertEquals(WorkProblem.network().safeMessage, work.state.value.message)
+        assertArrayEquals(byteArrayOf(9, 9), work.state.value.photo)
+
+        work.removePhoto(); advanceUntilIdle()
+        assertNull(fake.photo)
+        assertNull(work.state.value.photo)
+        assertEquals("Foto removida.", work.state.value.notice)
+
+        fake.failOnce("photo", WorkProblem.expired())
+        work.show(Section.Profile); advanceUntilIdle()
+        assertEquals(1, expired)
+    }
+
     @Test fun historyLoadsAndAnExpiredSessionSignsOut() = runTest {
         val work = WorkController(fake, this, onExpired = { expired++ })
         work.loadHistory(); advanceUntilIdle()

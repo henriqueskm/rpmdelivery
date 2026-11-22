@@ -89,6 +89,7 @@ export function supportedLive(command: Command | StoreCommand) {
 }
 
 const MESSAGES: Record<string, string> = {
+  RPM_COURIER_NOT_FOUND: "Esse motoboy não está mais no turno desta loja. O painel foi atualizado.",
   RPM_MANAGER_REQUIRED: "Só o dono ou o gerente da loja altera o pagamento dos motoboys.",
   RPM_ORDER_NOT_CANCELLABLE: "Esse pedido já saiu da fila de despacho. O painel foi atualizado.",
   RPM_ORDER_NOT_EDITABLE: "Esse pedido já entrou em uma rota e não pode mais ser editado. O painel foi atualizado.",

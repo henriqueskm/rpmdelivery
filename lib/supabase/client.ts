@@ -52,6 +52,7 @@ type Database = {
       cancel_delivery_on_route: { Args: Record<string, unknown>; Returns: unknown };
       review_shift: { Args: Record<string, unknown>; Returns: unknown };
       get_courier_pay: { Args: { p_restaurant_id: string; p_day?: string }; Returns: unknown };
+      get_courier_card: { Args: { p_shift_id: string }; Returns: unknown };
       set_courier_pay: { Args: { p_restaurant_id: string; p_shift_fee_cents: number; p_delivery_fee_cents: number }; Returns: unknown };
       update_restaurant_profile: {
         Args: {

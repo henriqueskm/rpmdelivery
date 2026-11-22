@@ -1470,6 +1470,39 @@
 .ops-courier-line strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; overflow-wrap: normal; }
 .ops-courier-line .ops-next { margin: 0; flex-shrink: 0; }
 .ops-courier-line .ops-courier-status { display: inline; margin: 0; flex-shrink: 0; }
+/* The name opens the courier card: plain text that reads as a link on hover, row height unchanged. */
+.operations .ops-courier-name {
+  flex: 1; min-width: 0; min-height: 30px; display: flex; align-items: center;
+  border: 0; border-radius: 4px; background: none; padding: 0; text-align: start; color: inherit;
+}
+.operations .ops-courier-name strong { flex: 1; }
+.operations .ops-courier-name:hover strong { text-decoration: underline; text-underline-offset: 3px; }
+
+.ops-courier-card { width: min(460px, calc(100% - 32px)); }
+.ops-courier-card-loading { color: #647068; font-size: 13px; margin: 20px 0 4px; }
+.ops-courier-card-body { display: grid; gap: 16px; margin-top: 16px; }
+.ops-courier-photo {
+  width: 112px; height: 112px; border-radius: 50%; overflow: hidden; justify-self: center;
+  display: grid; place-items: center; background: #e7ece4; color: #3d4a41;
+  font-size: 34px; font-weight: 650; border: 1px solid var(--line);
+}
+.ops-courier-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ops-courier-photo-note { margin: -8px 0 0; text-align: center; font-size: 12px; color: #647068; }
+.ops-courier-facts { margin: 0; display: grid; gap: 0; border-top: 1px solid var(--line); }
+.ops-courier-facts > div {
+  display: flex; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px solid var(--line);
+  font-size: 14px; min-width: 0;
+}
+.ops-courier-facts dt { color: #647068; flex-shrink: 0; }
+.ops-courier-facts dd { margin: 0; text-align: end; min-width: 0; overflow-wrap: anywhere; }
+.ops-courier-facts a { color: inherit; font-weight: 600; }
+.ops-courier-numbers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.ops-courier-numbers > div {
+  background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; min-width: 0;
+  display: grid; gap: 2px; text-align: center;
+}
+.ops-courier-numbers strong { font-size: 18px; overflow-wrap: anywhere; }
+.ops-courier-numbers span { font-size: 11px; color: #647068; }
 .ops-courier .ops-shift-review { display: flex; gap: 6px; margin: 4px 0 2px 30px; }
 .ops-courier-status { color: #536258; }
 .ops-courier-pill {
