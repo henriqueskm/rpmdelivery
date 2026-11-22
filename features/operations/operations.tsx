@@ -20,6 +20,7 @@ import { tabs, useOperationsController, type LiveSource } from "./use-operations
 import { useOperationsBoard } from "./live/use-operations-board";
 import { CourierPay, type CourierPayHandle } from "./live/courier-pay";
 import { CourierCardDialog } from "./live/courier-card-dialog";
+import { RouteSuggestions } from "./live/route-suggestions";
 import { StoreMenu } from "./store-menu";
 import { RouteTracker, routesToRelease } from "./route-tracker";
 import { ConfirmDialog, type Confirmation } from "./live/confirm-dialog";
@@ -212,6 +213,8 @@ function OperationsWorkspace({
   const [trackerOpen, setTrackerOpen] = useState(false);
   /** Real data: the courier card opened from a name in the couriers column. */
   const [openCourier, setOpenCourier] = useState<{ id: string; name: string } | null>(null);
+  /** Real data: "Sugerir rotas" is open; the number changes on every opening (a fresh snapshot). */
+  const [suggestionsOpen, setSuggestionsOpen] = useState<number | null>(null);
   const toRelease = routesToRelease(state);
   /** Opens "Acompanhar rotas", on a given route when there is one (scrolled to and focused). */
   function followRoute(id?:string) {
@@ -264,8 +267,10 @@ function OperationsWorkspace({
       <div className="ops-body">
         {/* The top line already says "Central de despacho": the page title stays for screen readers only. */}
         <h1 className="ops-visually-hidden">Central de operações</h1>
-        <div className="ops-page-actions-compact">{!live && <button ref={automaticTriggerCompact} disabled={!!editingId}
-          onClick={()=>setAutomatic(true)}>Montagem automática</button>}
+        <div className="ops-page-actions-compact">{live
+          ? <button disabled={!!editingId} onClick={() => setSuggestionsOpen(Date.now())}>Sugerir rotas</button>
+          : <button ref={automaticTriggerCompact} disabled={!!editingId}
+              onClick={()=>setAutomatic(true)}>Montagem automática</button>}
           <button className="ops-primary" onClick={openNewOrder}><Icon name="plus" /> Novo pedido</button></div>
         {live ? offline && (
           <div className="ops-demo-banner ops-offline-banner" role="status">
@@ -381,9 +386,13 @@ function OperationsWorkspace({
               editingId={editingId}
               courierId={courierId}
               onSuggest={live ? undefined : () => setSuggesting(true)}
-              headingAction={!live && <button ref={automaticTrigger} className="ops-automatic-trigger" disabled={!!editingId}
-                title={editingId?"Conclua ou cancele a edição da rota atual antes de usar a montagem automática.":undefined}
-                onClick={()=>setAutomatic(true)}>Montagem automática</button>}
+              headingAction={live
+                ? <button className="ops-automatic-trigger" disabled={!!editingId}
+                    title={editingId ? "Conclua ou cancele a edição da rota atual antes de pedir sugestões." : undefined}
+                    onClick={() => setSuggestionsOpen(Date.now())}>Sugerir rotas</button>
+                : <button ref={automaticTrigger} className="ops-automatic-trigger" disabled={!!editingId}
+                    title={editingId?"Conclua ou cancele a edição da rota atual antes de usar a montagem automática.":undefined}
+                    onClick={()=>setAutomatic(true)}>Montagem automática</button>}
               live={!!live}
               pending={saving}
               onCourier={setCourierId}
@@ -411,6 +420,8 @@ function OperationsWorkspace({
       </div>
       <NewOrderDialog dialogRef={newDialog} now={now} defaultPromiseMinutes={state.defaultPromiseMinutes} onAdd={add} live={!!live} />
       {live && <ConfirmDialog request={confirmation} onClose={() => setConfirmation(null)} />}
+      {live && <RouteSuggestions open={suggestionsOpen} state={state} now={now} onClose={() => setSuggestionsOpen(null)}
+        onUse={(ids, courier) => { setSelected(ids); if (courier) setCourierId(courier); setActiveTab("builder"); }} />}
       {live && <CourierCardDialog shiftId={openCourier?.id ?? null} name={openCourier?.name ?? ""}
         onClose={() => setOpenCourier(null)} />}
       {live && <EditOrderDialog dialogRef={editDialog} order={state.orders.find(o => o.id === editingOrder)} now={now}
