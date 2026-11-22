@@ -91,3 +91,32 @@ test("desvio acima de 10 minutos não entra, a não ser no mesmo endereço", () 
   const twin = order("T", "R. Norte, 1", "Norte", -22.98, -46.8);
   assert.deepEqual(suggestRoutes(store, [north, twin, south], NOW, strict).suggestions.map(r => r.stops.length), [2, 1]);
 });
+
+test("com tempos das ruas: um rio entre dois bairros vizinhos separa as rotas; sem o tempo, vale a estimativa", async () => {
+  const { streetLegs, parseStreetTable } = await import("../../features/route-planning/street-legs.ts");
+  const a = order("A", "Rua Um, 1", "Centro", -23.01, -46.8);
+  const b = order("B", "Rua Dois, 2", "Outro Lado", -23.01, -46.787);
+  // 1.3 km apart: neighbors, and together by the estimate.
+  assert.deepEqual(suggestRoutes(store, [a, b], NOW).suggestions.map(r => r.stops.length), [2]);
+  // On the streets the only bridge is far: 25 min from A to B, and from the store to B.
+  const points = [store, a.location!, b.location!];
+  const table = parseStreetTable({ partial: false,
+    durations: [[0, 200, 1500], [200, 0, 1500], [1500, 1500, 0]],
+    distances: [[0, 1400, 9000], [1400, 0, 9000], [9000, 9000, 0]] }, 3)!;
+  const streets = streetLegs(points, table);
+  const result = suggestRoutes(store, [a, b], NOW, DEFAULT_SUGGESTION_PARAMETERS, streets);
+  assert.deepEqual(result.suggestions.map(r => r.stops.length), [2], "B rides along: 25 min to B is the trip anyway");
+  // Opposite bank AND the other way round: now the detour is real and B goes alone.
+  const detour = parseStreetTable({ partial: false,
+    durations: [[0, 200, 600], [200, 0, 1800], [600, 1800, 0]],
+    distances: [[0, 1400, 4000], [1400, 0, 12000], [4000, 12000, 0]] }, 3)!;
+  assert.deepEqual(suggestRoutes(store, [a, b], NOW, DEFAULT_SUGGESTION_PARAMETERS, streetLegs(points, detour))
+    .suggestions.map(r => r.stops.length), [1, 1]);
+  // An unknown leg (null) falls back to the estimate; a malformed table is refused.
+  const unknown = parseStreetTable({ durations: [[0, null, null], [null, 0, null], [null, null, 0]],
+    distances: [[0, null, null], [null, 0, null], [null, null, 0]], partial: true }, 3)!;
+  assert.equal(unknown.partial, true);
+  assert.deepEqual(suggestRoutes(store, [a, b], NOW, DEFAULT_SUGGESTION_PARAMETERS, streetLegs(points, unknown)),
+    suggestRoutes(store, [a, b], NOW));
+  assert.equal(parseStreetTable({ durations: [[0]], distances: [[0]] }, 3), null);
+});

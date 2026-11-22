@@ -1,8 +1,8 @@
 // Route suggestions, phase 1 (docs/route-suggestions.md): the store's own rules decide what goes together,
 // and an estimated detour on the way decides whether it is worth it. Pure: no React, no fetch, no clock.
 //
-// Travel times are ESTIMATES in this phase: straight-line distance × ROAD_FACTOR at a city motorcycle
-// speed. Phase 2 swaps them for street times (Mapbox Matrix) without changing the rules below.
+// Travel times come from [LegSource] (street times from Mapbox, cached per store; phase 2) and fall back
+// to an ESTIMATE where unknown: straight-line distance × ROAD_FACTOR at a city motorcycle speed.
 
 import { MAX_STOPS, type Coordinate } from "../route-optimization/types.ts";
 
@@ -90,6 +90,12 @@ export function estimateLeg(a: Coordinate, b: Coordinate) {
 
 type Located = SuggestionOrder & { location: Coordinate };
 
+/** Street time and distance between two points; null when unknown (the estimate is used then). */
+export type LegSource = (from: Coordinate, to: Coordinate) => { seconds: number; meters: number } | null;
+
+/** The legs in use during one suggestRoutes call: street times when given, estimates otherwise. */
+let leg: (a: Coordinate, b: Coordinate) => { seconds: number; meters: number } = estimateLeg;
+
 /** The strongest written relation between two orders, if any. */
 export function relation(a: SuggestionOrder, b: SuggestionOrder, params: SuggestionParameters): { reason: Reason; meters?: number } | null {
   const sa = splitAddress(a.address), sb = splitAddress(b.address);
@@ -108,13 +114,13 @@ function walk(store: Coordinate, stops: Located[], departureAt: number, serviceS
   let at = store, seconds = 0, meters = 0;
   const done: { id: string; lateSeconds: number; completedAt: number }[] = [];
   for (const stop of stops) {
-    const step = estimateLeg(at, stop.location);
+    const step = leg(at, stop.location);
     seconds += step.seconds; meters += step.meters;
     const completedAt = departureAt + (seconds + serviceSeconds) * 1000;
     done.push({ id: stop.id, completedAt, lateSeconds: Math.max(0, Math.round((completedAt - stop.deadlineAt) / 1000)) });
     seconds += serviceSeconds; at = stop.location;
   }
-  const back = estimateLeg(at, store);
+  const back = leg(at, store);
   return { seconds: seconds + back.seconds, meters: meters + back.meters, done };
 }
 
@@ -122,7 +128,7 @@ function walk(store: Coordinate, stops: Located[], departureAt: number, serviceS
 function rideSeconds(store: Coordinate, stops: Located[]) {
   const points = [store, ...stops.map(stop => stop.location), store];
   let seconds = 0;
-  for (let i = 0; i < points.length - 1; i++) seconds += estimateLeg(points[i], points[i + 1]).seconds;
+  for (let i = 0; i < points.length - 1; i++) seconds += leg(points[i], points[i + 1]).seconds;
   return seconds;
 }
 
@@ -169,7 +175,7 @@ function bestSequence(store: Coordinate, group: Located[], departureAt: number, 
   const n = group.length;
   if (n < 2) return group;
   const points = [store, ...group.map(o => o.location)];
-  const time = points.map(a => points.map(b => estimateLeg(a, b).seconds));
+  const time = points.map(a => points.map(b => (a === b ? 0 : leg(a, b).seconds)));
   const due = group.map(o => (o.deadlineAt - departureAt) / 1000);
   let best: number[] | null = null, bestOrder: number[] = [];
   const order: number[] = [], used = new Array(n).fill(false);
@@ -202,8 +208,9 @@ function bestSequence(store: Coordinate, group: Located[], departureAt: number, 
  * Orders without a pin are never guessed: they come back in [SuggestionResult.withoutLocation].
  */
 export function suggestRoutes(store: Coordinate, orders: SuggestionOrder[], departureAt: number,
-  params: SuggestionParameters = DEFAULT_SUGGESTION_PARAMETERS): SuggestionResult {
-  return suggest(store, orders, departureAt, params);
+  params: SuggestionParameters = DEFAULT_SUGGESTION_PARAMETERS, streets?: LegSource): SuggestionResult {
+  leg = streets ? (a, b) => streets(a, b) ?? estimateLeg(a, b) : estimateLeg;
+  try { return suggest(store, orders, departureAt, params); } finally { leg = estimateLeg; }
 }
 
 function suggest(store: Coordinate, orders: SuggestionOrder[], departureAt: number, params: SuggestionParameters): SuggestionResult {

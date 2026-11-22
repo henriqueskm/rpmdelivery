@@ -9,6 +9,7 @@ import { useWorkspace } from "@/hooks/use-workspace";
 import { formatBrazilianMobilePhone, isValidBrazilianMobilePhone } from "@/lib/brazilian-mobile-phone";
 import { loadRestaurantProfile, updateRestaurantProfile, type RestaurantProfile } from "@/services/restaurant";
 import type { ResolvedAddress } from "@/services/geocoding/types";
+import { RouteSettingsCard } from "./route-settings";
 import "@/features/invitations/invitations.css";
 import "./store.css";
 
@@ -91,5 +92,6 @@ export function StoreProfile() {
       </fieldset>
       {message && <p className={`notice ${message.error ? "error" : ""} invite-message`} role={message.error ? "alert" : "status"}>{message.text}</p>}
     </form>}
+    {profile && <RouteSettingsCard restaurantId={profile.id} />}
   </main>;
 }

@@ -56,6 +56,37 @@ test("dados da loja: o operador só consulta", async ({ page }) => {
   await expect(page.getByText("Somente o dono ou um gerente da loja altera estes dados.")).toBeVisible();
   await expect(page.getByLabel("Nome da loja")).toBeDisabled();
   await expect(page.getByRole("button", { name: "Trocar endereço" })).toHaveCount(0);
+  // The montagem limits are read-only too.
+  const limits = page.getByRole("form", { name: "Montagem automática" });
+  await expect(limits.getByText("Somente o dono ou um gerente da loja altera estes limites.")).toBeVisible();
+  await expect(limits.getByLabel("Entregas por rota")).toBeDisabled();
+});
+
+test("dados da loja: o dono ajusta os limites da montagem automática", async ({ page }) => {
+  const saved: Record<string, unknown>[] = [];
+  await mockSupabase(page, { existing: true, rpc: {
+    set_route_settings: body => {
+      saved.push(body);
+      return { json: { maxStops: body.p_max_stops, maxDetourMinutes: body.p_max_detour_minutes,
+        neighborMeters: body.p_neighbor_meters, canEdit: true } };
+    },
+  } });
+  await signIn(page);
+  await page.goto("/loja");
+  const limits = page.getByRole("form", { name: "Montagem automática" });
+  await expect(limits.getByLabel("Entregas por rota")).toHaveValue("8");
+  await expect(limits.getByLabel("Desvio máximo para ir no caminho (minutos)")).toHaveValue("10");
+  await expect(limits.getByLabel("Bairros vizinhos até (km)")).toHaveValue("2");
+
+  // Out of range: nothing is sent.
+  await limits.getByLabel("Entregas por rota").fill("9");
+  await expect(limits.getByRole("button", { name: "Salvar limites" })).toBeDisabled();
+  await limits.getByLabel("Entregas por rota").fill("5");
+  await limits.getByLabel("Desvio máximo para ir no caminho (minutos)").fill("7");
+  await limits.getByLabel("Bairros vizinhos até (km)").fill("1,5");
+  await limits.getByRole("button", { name: "Salvar limites" }).click();
+  await expect(limits.getByRole("status")).toContainText("Limites salvos.");
+  expect(saved).toEqual([{ p_restaurant_id: testRestaurant.id, p_max_stops: 5, p_max_detour_minutes: 7, p_neighbor_meters: 1500 }]);
 });
 
 test("painel avisa a entrega confirmada longe do endereço", async ({ page }) => {

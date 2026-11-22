@@ -320,11 +320,24 @@ test("sugerir rotas: junta pela rua e pelo caminho, explica o motivo e preenche 
     // The other way round, 8 km west: never "on the way" of the others.
     pinned("2104", "Tito Alves", "Estrada Oeste, 900", "Chácaras", -23.0, -46.88));
   const calls = await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  // The street times are down: the suggestions fall back to the estimate and say so.
+  const legRequests: unknown[] = [];
+  await page.route("**/api/routing/legs", route => {
+    legRequests.push(route.request().postDataJSON());
+    return route.fulfill({ status: 503, json: { message: "Tempos pelas ruas indisponíveis no momento." } });
+  });
   await openPanel(page);
   await showArea(page, /^Montagem/);
   await page.getByRole("button", { name: "Sugerir rotas" }).click();
   const dialog = page.getByRole("dialog", { name: "Sugestões de rota" });
   await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("Sem os tempos das ruas agora: tempos estimados pela distância.");
+  await expect(dialog).toContainText("de bairros vizinhos (até 2 km)");
+  await expect(dialog.getByRole("link", { name: "Ajustar limites em Dados da loja" })).toHaveAttribute("href", "/loja");
+  // The store first, then the pinned waiting orders, most urgent first.
+  expect(legRequests[0]).toMatchObject({ restaurantId: testRestaurant.id });
+  expect((legRequests[0] as { points: unknown[] }).points[0]).toEqual({ latitude: -23.0, longitude: -46.8 });
+  expect((legRequests[0] as { points: unknown[] }).points).toHaveLength(5);
 
   const first = dialog.getByRole("listitem", { name: "Rota sugerida 1" });
   await expect(first).toContainText("3 entregas");
@@ -358,6 +371,34 @@ test("sugerir rotas: junta pela rua e pelo caminho, explica o motivo e preenche 
     p_restaurant_id: testRestaurant.id, p_shift_id: "s-bruno", p_delivery_ids: ["d-2101", "d-2102", "d-2103"] });
   expect(calls.unexpected).toEqual([]);
   expect(errors).toEqual([]);
+});
+
+test("sugerir rotas com os tempos das ruas e os limites da loja", async ({ page }) => {
+  const backend = storeBackend();
+  Object.assign(backend.board, { storeLocation: { latitude: -23.0, longitude: -46.8 } });
+  const pinned = (reference: string, customer: string, address: string, neighborhood: string, latitude: number, longitude: number) => ({
+    ...structuredClone(backend.board.orders[0]), deliveryId: `d-${reference}`, orderId: `o-${reference}`, reference, customer,
+    address, neighborhood, latitude, longitude });
+  // 1.3 km apart, neighbors by the estimate; on the streets a river puts them 25 min apart, the other way round.
+  backend.board.orders.push(
+    pinned("3101", "Ana Beira", "Rua Um, 1", "Centro", -23.01, -46.8),
+    pinned("3102", "Beto Ponte", "Rua Dois, 2", "Outro Lado", -23.01, -46.787));
+  // The store limits suggestions to 2 per route (owner).
+  backend.handlers.get_route_settings = () => ({ json: { maxStops: 2, maxDetourMinutes: 5, neighborMeters: 1500, canEdit: true } });
+  await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  await page.route("**/api/routing/legs", route => route.fulfill({ json: { partial: false, fetched: 6,
+    durations: [[0, 200, 600], [200, 0, 1800], [600, 1800, 0]],
+    distances: [[0, 1400, 4000], [1400, 0, 12000], [4000, 12000, 0]] } }));
+  await openPanel(page);
+  await showArea(page, /^Montagem/);
+  await page.getByRole("button", { name: "Sugerir rotas" }).click();
+  const dialog = page.getByRole("dialog", { name: "Sugestões de rota" });
+  await expect(dialog).toContainText("Tempos pelas ruas, sem trânsito.");
+  await expect(dialog).toContainText("de bairros vizinhos (até 1,5 km) e os que ficam no caminho (até 5 min a mais)");
+  await expect(dialog).toContainText("com até 2 entregas por rota");
+  // Separated by the street times; each alone.
+  await expect(dialog.getByRole("listitem", { name: "Rota sugerida 1" })).toContainText("1 entrega");
+  await expect(dialog.getByRole("listitem", { name: "Rota sugerida 2" })).toContainText("1 entrega");
 });
 
 test("sugerir rotas sem o endereço da loja no mapa explica o que falta", async ({ page }) => {

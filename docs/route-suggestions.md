@@ -48,10 +48,33 @@ Valores padrão, decididos pelo dono em 2026-11-22:
 
 **Normalização do texto:** acentos, maiúsculas e abreviações (R., Av., Jd., Vl., Pq.) não separam o mesmo lugar.
 
+## Tempos pelas ruas (F2)
+
+**De onde vêm os tempos:**
+- Ao abrir **Sugerir rotas**, o painel manda para `POST /api/routing/legs` (`lib/routing/legs-handler.ts`) a loja e os pedidos com pino, em até 60 pontos, primeiro os mais urgentes.
+- O servidor confere o login com o token do usuário.
+- Ele lê os trechos que a loja já tem (`read_route_legs`) e pede ao Mapbox Matrix só os que faltam. São blocos de até 24 pontos, origens × destinos (`lib/routing/leg-blocks.ts`), no máximo 25 pedidos por vez.
+- Depois guarda os trechos novos (`save_route_legs`).
+
+**O cache:**
+- Fica em `private.route_legs`, separado por loja.
+- Os pontos são arredondados a 5 casas, cerca de 1 m.
+- Um trecho vale por 90 dias, e depois é pedido de novo.
+- Como cada trecho só é pago uma vez, os 100 mil elementos grátis por mês do Mapbox cobrem milhares de pedidos.
+
+**Quando falta algum tempo:** se o Mapbox falhar (limite, fora do ar, tempo esgotado), a resposta traz o que se sabe com `partial: true`. Os trechos sem tempo usam a estimativa, e a tela diz se os tempos são das ruas, parciais ou estimados.
+
+**Os limites da loja:**
+- Ficam em `restaurants.route_max_stops`, `route_max_detour_minutes` e `route_neighbor_meters`.
+- Os padrões são 8 entregas, 10 min e 2 km.
+- O dono ou o gerente muda em **Dados da loja → Montagem automática** (`set_route_settings`). Os outros membros só leem.
+
+**O token:** o servidor usa o `MAPBOX_ACCESS_TOKEN`, o token sem restrição de URL. O token do mapa, restrito ao site, não serve aqui.
+
 ## Fases
 
-- **F1 (esta):** tempos **estimados** pela linha reta × 1,35, a 25 km/h, sem custo nem API. Por isso a tela avisa que é estimativa.
-- **F2:** tempos reais pelas ruas (Mapbox Matrix, 100 mil elementos por mês grátis, até 25 pontos por consulta). Cada trecho calculado fica guardado no banco. A loja ajusta os limites.
+- **F1:** regras e desvio estimado em linha reta × 1,35, a 25 km/h.
+- **F2 (esta):** tempos reais pelas ruas, com cache por loja e limites ajustáveis pela loja. A estimativa continua como reserva.
 - **F3:** bairros vizinhos aprendidos com as entregas já feitas, e a sugestão aparece sozinha quando um motoboy chega na fila.
 
 ## Testes
@@ -63,4 +86,17 @@ Valores padrão, decididos pelo dono em 2026-11-22:
   - atraso;
   - desvio (incluindo o mesmo endereço sem limite);
   - resultado sempre igual.
-- `tests/e2e/operations-live.spec.ts` ("sugerir rotas") cobre a tela, os motivos, os pedidos sem pino, o preenchimento da Montagem e o `create_route` com a sequência e o motoboy.
+- `tests/unit/route-legs.test.ts` cobre:
+  - os blocos do Mapbox;
+  - a rota do servidor: cache, pedir só o que falta, salvar, falha do Mapbox, login inválido e outra loja.
+- `tests/sql/delivery-core/route-legs-contracts.sql` cobre:
+  - cache por loja, arredondamento, 90 dias e valores inválidos;
+  - tabela inacessível diretamente;
+  - limites (padrões, dono, operador, faixas).
+- `tests/e2e/operations-live.spec.ts` ("sugerir rotas") cobre:
+  - a tela, os motivos e os pedidos sem pino;
+  - o preenchimento da Montagem e o `create_route` com a sequência e o motoboy;
+  - os tempos das ruas separando bairros vizinhos;
+  - os limites da loja;
+  - a queda para a estimativa.
+- `tests/e2e/store-profile.spec.ts` cobre os limites em Dados da loja.
