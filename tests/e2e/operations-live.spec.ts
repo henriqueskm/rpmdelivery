@@ -406,6 +406,10 @@ test("sugerir rotas: junta pela rua e pelo caminho, explica o motivo e preenche 
     pinned("2103", "Sara Lopes", "Rua Sul, 1", "Jardim Sul", -23.045, -46.8),
     // The other way round, 8 km west: never "on the way" of the others.
     pinned("2104", "Tito Alves", "Estrada Oeste, 900", "Chácaras", -23.0, -46.88));
+  // The store's history: Centro and Jardim Sul have centers 1.5 km apart, so they are neighbors.
+  backend.handlers.get_neighborhood_centers = () => ({ json: [
+    { neighborhood: "Centro", latitude: -23.0229, longitude: -46.8, orders: 10 },
+    { neighborhood: "Jardim Sul", latitude: -23.0364, longitude: -46.8, orders: 4 } ] });
   const calls = await mockSupabase(page, { existing: true, rpc: backend.handlers });
   // The street times are down: the suggestions fall back to the estimate and say so.
   const legRequests: unknown[] = [];
@@ -414,8 +418,11 @@ test("sugerir rotas: junta pela rua e pelo caminho, explica o motivo e preenche 
     return route.fulfill({ status: 503, json: { message: "Tempos pelas ruas indisponíveis no momento." } });
   });
   await openPanel(page);
-  await showArea(page, /^Montagem/);
-  await page.getByRole("button", { name: "Sugerir rotas" }).click();
+  // Bruno is free and 4 orders wait with a pin: the panel offers the suggestions.
+  const free = page.getByRole("region", { name: "Motoboy livre" });
+  await expect(free).toContainText("Bruno Alves está livre");
+  await expect(free).toContainText("4 pedidos esperando com endereço no mapa");
+  await free.getByRole("button", { name: "Sugerir rotas" }).click();
   const dialog = page.getByRole("dialog", { name: "Sugestões de rota" });
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText("Sem os tempos das ruas agora: tempos estimados pela distância.");
@@ -434,9 +441,9 @@ test("sugerir rotas: junta pela rua e pelo caminho, explica o motivo e preenche 
   await expect(stops.nth(0)).toContainText("Pedido base da rota");
   await expect(stops.nth(1)).toContainText("#2102 Rui Campos");
   await expect(stops.nth(1)).toContainText("Mesma rua de #2101");
-  // Further down the same way: on the way, at almost no extra riding.
+  // Further down the same way, in a bairro the history says is next door.
   await expect(stops.nth(2)).toContainText("#2103 Sara Lopes");
-  await expect(stops.nth(2)).toContainText(/No caminho de #210[12]/);
+  await expect(stops.nth(2)).toContainText(/Bairro vizinho de #210[12] \(centros a 1,5 km\)/);
   const second = dialog.getByRole("listitem", { name: "Rota sugerida 2" });
   await expect(second).toContainText("#2104 Tito Alves");
   await expect(second).toContainText("Sem motoboy disponível agora");
@@ -477,6 +484,11 @@ test("sugerir rotas com os tempos das ruas e os limites da loja", async ({ page 
     durations: [[0, 200, 600], [200, 0, 1800], [600, 1800, 0]],
     distances: [[0, 1400, 4000], [1400, 0, 12000], [4000, 12000, 0]] } }));
   await openPanel(page);
+  // "Agora não" hides the free-courier notice; the Montagem button still opens the suggestions.
+  const free = page.getByRole("region", { name: "Motoboy livre" });
+  await expect(free).toContainText("2 pedidos esperando");
+  await free.getByRole("button", { name: "Agora não" }).click();
+  await expect(free).toHaveCount(0);
   await showArea(page, /^Montagem/);
   await page.getByRole("button", { name: "Sugerir rotas" }).click();
   const dialog = page.getByRole("dialog", { name: "Sugestões de rota" });

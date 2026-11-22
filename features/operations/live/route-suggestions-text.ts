@@ -17,7 +17,8 @@ export function reasonText(stop: SuggestedStop): string {
     case "same-address": return `Mesmo endereço de ${ref}`;
     case "same-street": return `Mesma rua de ${ref}`;
     case "same-neighborhood": return `Mesmo bairro de ${ref}`;
-    case "neighbor": return `Bairro vizinho de ${ref}${stop.meters !== undefined ? ` (${metersText(stop.meters)})` : ""}`;
+    case "neighbor": return `Bairro vizinho de ${ref}${stop.meters !== undefined
+      ? ` (${stop.learned ? "centros a " : ""}${metersText(stop.meters)})` : ""}`;
     case "on-the-way": return stop.detourSeconds && stop.detourSeconds >= 30
       ? `No caminho de ${ref} (+${minutes(stop.detourSeconds)} min)` : `No caminho de ${ref}`;
   }

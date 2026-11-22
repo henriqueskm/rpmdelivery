@@ -21,12 +21,13 @@ import { useOperationsBoard } from "./live/use-operations-board";
 import { CourierPay, type CourierPayHandle } from "./live/courier-pay";
 import { CourierCardDialog } from "./live/courier-card-dialog";
 import { RouteSuggestions } from "./live/route-suggestions";
+import { freeCourierNotice } from "./live/free-courier";
 import { StoreMenu } from "./store-menu";
 import { RouteTracker, routesToRelease } from "./route-tracker";
 import { ConfirmDialog, type Confirmation } from "./live/confirm-dialog";
 import { useOperationsClock } from "./use-operations-clock";
 import { Icon } from "./ui";
-import { courierLabel, plural } from "./model";
+import { availableCouriers, courierLabel, plural } from "./model";
 import "./operations.css";
 import "./operations-deadlines.css";
 import "./automatic.css";
@@ -215,6 +216,10 @@ function OperationsWorkspace({
   const [openCourier, setOpenCourier] = useState<{ id: string; name: string } | null>(null);
   /** Real data: "Sugerir rotas" is open; the number changes on every opening (a fresh snapshot). */
   const [suggestionsOpen, setSuggestionsOpen] = useState<number | null>(null);
+  /** "Agora não" on the free-courier notice: courier → orders waiting at that moment. */
+  const [dismissedFree, setDismissedFree] = useState<Record<string, number>>({});
+  const freeNotice = live && !editingId ? freeCourierNotice(availableCouriers(state)[0],
+    state.orders.filter(order => order.delivery === "WAITING" && order.location).length, dismissedFree) : null;
   const toRelease = routesToRelease(state);
   /** Opens "Acompanhar rotas", on a given route when there is one (scrolled to and focused). */
   function followRoute(id?:string) {
@@ -309,6 +314,16 @@ function OperationsWorkspace({
             <span dir="auto">{toRelease.map(r=>`${r.reference} · ${state.couriers.find(c=>c.id===r.courierId)?.name??"motoboy"}`).join(" · ")}</span>
           </p>
           <button className="ops-release-alert-open" onClick={()=>followRoute(toRelease[0].id)}>Abrir e liberar</button>
+        </div>}
+        {/* A courier is free and orders are waiting: one click to the suggestions, never an automatic route. */}
+        {freeNotice && <div className="ops-free-alert" role="region" aria-label="Motoboy livre">
+          <p>
+            <strong dir="auto">{freeNotice.name} está livre</strong>
+            <span>{freeNotice.waiting === 1 ? "1 pedido esperando com endereço no mapa" : `${freeNotice.waiting} pedidos esperando com endereço no mapa`}</span>
+          </p>
+          <button className="ops-free-alert-open" onClick={() => setSuggestionsOpen(Date.now())}>Sugerir rotas</button>
+          <button className="ops-link-button" onClick={() =>
+            setDismissedFree(previous => ({ ...previous, [freeNotice.courierId]: freeNotice.waiting }))}>Agora não</button>
         </div>}
         {preview&&scenario.startsWith("issues-")&&<IssueDemoControls state={state} onCommand={courierCommand}/>}
         <NewIssueBanner issues={alerts.alerts} state={state} now={now} onDismiss={ids=>{
