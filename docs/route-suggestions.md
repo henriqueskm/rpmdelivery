@@ -71,11 +71,25 @@ Valores padrão, decididos pelo dono em 2026-11-22:
 
 **O token:** o servidor usa o `MAPBOX_ACCESS_TOKEN`, o token sem restrição de URL. O token do mapa, restrito ao site, não serve aqui.
 
+## Bairros vizinhos e motoboy livre (F3)
+
+**Bairros vizinhos pelo histórico:**
+- `get_neighborhood_centers(restaurant)`, da migration `20261129120000`, só para membros da loja, calcula o **centro de cada bairro**. É a média dos pinos dos pedidos da loja nos últimos 180 dias, só os confirmados no mapa.
+- O bairro é agrupado sem diferenciar maiúsculas. No painel, as grafias que se normalizam igual, como "Jd." e "Jardim", são somadas pelo número de pedidos.
+- Dois bairros são vizinhos quando os **centros** estão a até a distância da loja (2 km por padrão). O motivo aparece como "Bairro vizinho de #X (centros a 1,5 km)".
+- Um bairro sem histórico volta a usar a distância entre os dois pedidos.
+- Com os centros, dois bairros cujos centros estão longe não são vizinhos, mesmo que estes dois pedidos estejam perto.
+
+**Motoboy livre:**
+- Quando o primeiro motoboy da fila está livre e há pedidos esperando com pino, o painel mostra **"Bruno Alves está livre · 4 pedidos esperando com endereço no mapa"**, com **Sugerir rotas** e **Agora não**.
+- "Agora não" esconde o aviso para aquele motoboy até chegar mais pedido.
+- O aviso não aparece enquanto uma rota está sendo editada. Nunca cria rota sozinho.
+
 ## Fases
 
 - **F1:** regras e desvio estimado em linha reta × 1,35, a 25 km/h.
-- **F2 (esta):** tempos reais pelas ruas, com cache por loja e limites ajustáveis pela loja. A estimativa continua como reserva.
-- **F3:** bairros vizinhos aprendidos com as entregas já feitas, e a sugestão aparece sozinha quando um motoboy chega na fila.
+- **F2:** tempos reais pelas ruas, com cache por loja e limites ajustáveis pela loja. A estimativa continua como reserva.
+- **F3 (esta):** centros dos bairros aprendidos com o histórico da loja, e o aviso de motoboy livre com pedidos esperando.
 
 ## Testes
 

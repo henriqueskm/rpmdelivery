@@ -1753,3 +1753,15 @@
 }
 .ops-known-customer p { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .operations .ops-known-customer button { min-height: 44px; font-weight: 600; }
+
+/* A courier is free and orders are waiting: calm, below the release banner, one click to the suggestions. */
+.ops-free-alert {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 10px; padding: 10px 12px 10px 14px;
+  border: 1px solid #9cc5ae; border-radius: 10px; background: #eaf5ee; color: #1f4733;
+}
+.ops-free-alert p { flex: 1 1 220px; min-width: 0; margin: 0; display: grid; gap: 1px; }
+.ops-free-alert strong { font-size: 15px; overflow-wrap: anywhere; }
+.ops-free-alert p span { font-size: 13px; }
+.operations .ops-free-alert-open { min-height: 44px; padding: 6px 18px; font-size: 14px; font-weight: 700; background: #275940; border-color: #275940; color: #fff; }
+.operations .ops-free-alert-open:hover { background: #1d4531; }
+.operations .ops-free-alert .ops-link-button { min-height: 44px; }

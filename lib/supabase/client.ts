@@ -55,6 +55,7 @@ type Database = {
       get_courier_card: { Args: { p_shift_id: string }; Returns: unknown };
       get_route_settings: { Args: { p_restaurant_id: string }; Returns: unknown };
       find_customer: { Args: { p_restaurant_id: string; p_phone: string }; Returns: unknown };
+      get_neighborhood_centers: { Args: { p_restaurant_id: string }; Returns: unknown };
       set_route_settings: { Args: { p_restaurant_id: string; p_max_stops: number; p_max_detour_minutes: number; p_neighbor_meters: number }; Returns: unknown };
       set_courier_pay: { Args: { p_restaurant_id: string; p_shift_fee_cents: number; p_delivery_fee_cents: number }; Returns: unknown };
       update_restaurant_profile: {

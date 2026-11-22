@@ -119,7 +119,9 @@ export async function mockSupabase(page: Page, options: Options = {}) {
         ?? (name === "get_route_settings" ? (): RpcReply => ({ json: { maxStops: 8, maxDetourMinutes: 10, neighborMeters: 2000,
           canEdit: (options.role ?? "OWNER") !== "OPERATOR" } }) : undefined)
         // A WhatsApp typed in a new order: nobody ordered from it before.
-        ?? (name === "find_customer" ? (): RpcReply => ({ json: null }) : undefined);
+        ?? (name === "find_customer" ? (): RpcReply => ({ json: null }) : undefined)
+        // "Sugerir rotas": no bairro history yet.
+        ?? (name === "get_neighborhood_centers" ? (): RpcReply => ({ json: [] }) : undefined);
       if (!handler) {
         calls.unexpected.push(path);
         await reply({ message: "Unexpected mock endpoint" }, 500);

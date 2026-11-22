@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getSupabase } from "@/lib/supabase/client";
 import {
-  DEFAULT_SUGGESTION_PARAMETERS, suggestRoutes, type SuggestionOrder, type SuggestionParameters, type SuggestionResult,
+  DEFAULT_SUGGESTION_PARAMETERS, neighborhoodCenters, suggestRoutes, type NeighborhoodCenters, type SuggestionOrder,
+  type SuggestionParameters, type SuggestionResult,
 } from "../../route-planning/grouping";
 import { parseStreetTable, streetLegs } from "../../route-planning/street-legs";
 import { availableCouriers, type DemoState } from "../model";
@@ -56,11 +57,12 @@ function Suggestions({ restaurantId, state, now, close, onUse }: {
     if (!input) return;
     let current = true;
     void (async () => {
-      const [settings, table] = await Promise.all([loadSettings(restaurantId), loadStreets(restaurantId, input.points)]);
+      const [settings, table, centers] = await Promise.all([
+        loadSettings(restaurantId), loadStreets(restaurantId, input.points), loadCenters(restaurantId)]);
       if (!current) return;
       const streets = table ? streetLegs(input.points, table) : undefined;
       setComputed({
-        result: suggestRoutes(input.store, input.orders, input.now, settings, streets),
+        result: suggestRoutes(input.store, input.orders, input.now, settings, streets, centers),
         settings, streets: !table ? "none" : table.partial ? "partial" : "all",
       });
     })();
@@ -174,6 +176,18 @@ async function loadSettings(restaurantId: string): Promise<Settings> {
       maxDetourSeconds: (value.maxDetourMinutes as number) * 60, neighborMeters: value.neighborMeters as number,
       canEdit: value.canEdit === true };
   } catch { return fallback; }
+}
+
+/** Where each bairro is, from the store's past orders; without it, neighbors go by the two orders' distance. */
+async function loadCenters(restaurantId: string): Promise<NeighborhoodCenters | undefined> {
+  try {
+    const { data, error } = await getSupabase().rpc("get_neighborhood_centers", { p_restaurant_id: restaurantId });
+    if (error || !Array.isArray(data)) return undefined;
+    const valid = (data as Record<string, unknown>[]).filter(c => typeof c.neighborhood === "string"
+      && typeof c.latitude === "number" && typeof c.longitude === "number" && Number.isInteger(c.orders)) as
+      { neighborhood: string; latitude: number; longitude: number; orders: number }[];
+    return neighborhoodCenters(valid);
+  } catch { return undefined; }
 }
 
 /** Street times among [points] from the panel's server (cached per store); null when unavailable. */

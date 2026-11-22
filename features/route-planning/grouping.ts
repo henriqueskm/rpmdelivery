@@ -46,6 +46,8 @@ export type SuggestedStop = {
   with?: string;
   /** Straight-line meters to that order (neighbor) or estimated extra seconds (on the way). */
   meters?: number; detourSeconds?: number;
+  /** Neighbor bairros by their learned centers ([meters] is between the centers). */
+  learned?: boolean;
   /** Estimated completion after the promised time. */
   lateSeconds: number;
 };
@@ -96,8 +98,32 @@ export type LegSource = (from: Coordinate, to: Coordinate) => { seconds: number;
 /** The legs in use during one suggestRoutes call: street times when given, estimates otherwise. */
 let leg: (a: Coordinate, b: Coordinate) => { seconds: number; meters: number } = estimateLeg;
 
-/** The strongest written relation between two orders, if any. */
-export function relation(a: SuggestionOrder, b: SuggestionOrder, params: SuggestionParameters): { reason: Reason; meters?: number } | null {
+/** Where each bairro is (normalized name → center), learned from the store's past orders (phase 3). */
+export type NeighborhoodCenters = Map<string, Coordinate>;
+
+/** The server's list (get_neighborhood_centers) as a lookup; spellings that normalize alike are merged by weight. */
+export function neighborhoodCenters(list: { neighborhood: string; latitude: number; longitude: number; orders: number }[]): NeighborhoodCenters {
+  const sums = new Map<string, { latitude: number; longitude: number; weight: number }>();
+  for (const item of list) {
+    const key = normalizePlace(item.neighborhood);
+    if (!key || !(item.orders > 0)) continue;
+    const sum = sums.get(key) ?? { latitude: 0, longitude: 0, weight: 0 };
+    sum.latitude += item.latitude * item.orders; sum.longitude += item.longitude * item.orders; sum.weight += item.orders;
+    sums.set(key, sum);
+  }
+  return new Map([...sums].map(([key, sum]) => [key, { latitude: sum.latitude / sum.weight, longitude: sum.longitude / sum.weight }]));
+}
+
+/** The bairro centers in use during one suggestRoutes call. */
+let centers: NeighborhoodCenters | undefined;
+
+/**
+ * The strongest written relation between two orders, if any. Two bairros are neighbors when their
+ * learned centers are within [SuggestionParameters.neighborMeters]; a bairro without history falls
+ * back to the distance between the two orders.
+ */
+export function relation(a: SuggestionOrder, b: SuggestionOrder, params: SuggestionParameters,
+  known: NeighborhoodCenters | undefined = centers): { reason: Reason; meters?: number; learned?: boolean } | null {
   const sa = splitAddress(a.address), sb = splitAddress(b.address);
   const meters = a.location && b.location ? straightMeters(a.location, b.location) : undefined;
   if ((sa.street && sa.street === sb.street && sa.number && sa.number === sb.number)
@@ -105,7 +131,13 @@ export function relation(a: SuggestionOrder, b: SuggestionOrder, params: Suggest
   if (sa.street && sa.street === sb.street) return { reason: "same-street" };
   const na = normalizePlace(a.neighborhood), nb = normalizePlace(b.neighborhood);
   if (na && na === nb) return { reason: "same-neighborhood" };
-  if (na && nb && meters !== undefined && meters <= params.neighborMeters) return { reason: "neighbor", meters: Math.round(meters) };
+  if (!na || !nb) return null;
+  const ca = known?.get(na), cb = known?.get(nb);
+  if (ca && cb) {
+    const between = straightMeters(ca, cb);
+    return between <= params.neighborMeters ? { reason: "neighbor", meters: Math.round(between), learned: true } : null;
+  }
+  if (meters !== undefined && meters <= params.neighborMeters) return { reason: "neighbor", meters: Math.round(meters) };
   return null;
 }
 
@@ -208,9 +240,10 @@ function bestSequence(store: Coordinate, group: Located[], departureAt: number, 
  * Orders without a pin are never guessed: they come back in [SuggestionResult.withoutLocation].
  */
 export function suggestRoutes(store: Coordinate, orders: SuggestionOrder[], departureAt: number,
-  params: SuggestionParameters = DEFAULT_SUGGESTION_PARAMETERS, streets?: LegSource): SuggestionResult {
+  params: SuggestionParameters = DEFAULT_SUGGESTION_PARAMETERS, streets?: LegSource, learned?: NeighborhoodCenters): SuggestionResult {
   leg = streets ? (a, b) => streets(a, b) ?? estimateLeg(a, b) : estimateLeg;
-  try { return suggest(store, orders, departureAt, params); } finally { leg = estimateLeg; }
+  centers = learned;
+  try { return suggest(store, orders, departureAt, params); } finally { leg = estimateLeg; centers = undefined; }
 }
 
 function suggest(store: Coordinate, orders: SuggestionOrder[], departureAt: number, params: SuggestionParameters): SuggestionResult {
@@ -232,7 +265,7 @@ function suggest(store: Coordinate, orders: SuggestionOrder[], departureAt: numb
       for (const candidate of located) {
         if (!left.has(candidate.id)) continue;
         // The strongest relation to any order already in the route.
-        let link: { reason: Reason; meters?: number; with: string } | null = null;
+        let link: { reason: Reason; meters?: number; learned?: boolean; with: string } | null = null;
         for (const member of route) {
           const found = relation(candidate, member, params);
           if (found && (!link || RANK[found.reason] < RANK[link.reason])) link = { ...found, with: member.reference };
@@ -249,6 +282,7 @@ function suggest(store: Coordinate, orders: SuggestionOrder[], departureAt: numb
           best = { order: candidate, rank, extra: inserted.extraSeconds, route: inserted.route, info: {
             reason, with: link?.with ?? nearestReference(candidate, route),
             ...(reason === "neighbor" && link?.meters !== undefined ? { meters: link.meters } : {}),
+            ...(reason === "neighbor" && link?.learned ? { learned: true } : {}),
             ...(reason === "on-the-way" ? { detourSeconds: inserted.extraSeconds } : {}),
           } };
         }
