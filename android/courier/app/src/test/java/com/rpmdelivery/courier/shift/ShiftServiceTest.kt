@@ -3,12 +3,14 @@ package com.rpmdelivery.courier.shift
 import android.app.NotificationManager
 import android.content.Context
 import androidx.core.app.NotificationCompat
+import com.rpmdelivery.courier.BuildConfig
 import com.rpmdelivery.courier.work.CourierHome
 import com.rpmdelivery.courier.work.CourierRoute
 import com.rpmdelivery.courier.work.Shift
 import com.rpmdelivery.courier.work.Store
 import com.rpmdelivery.courier.work.StoreContact
 import org.junit.Assert.*
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -17,20 +19,32 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
-/** The service in an unconfigured APK: it goes to the foreground and never touches location while waiting. */
+/** The shift service: its notification channels, and the foreground line while waiting (no location read). */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class ShiftServiceTest {
+    @Test fun createsTheShiftAndAlertChannelsInAnyBuild() {
+        val controller = Robolectric.buildService(ShiftService::class.java).create()
+        val manager = RuntimeEnvironment.getApplication().getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        assertNotNull(manager.getNotificationChannel("turno"))
+        assertNotNull(manager.getNotificationChannel("avisos"))
+        assertEquals(NotificationManager.IMPORTANCE_HIGH, manager.getNotificationChannel("avisos").importance)
+        controller.destroy()
+    }
+
+    /**
+     * Unconfigured APK only (as in CI). A build with android/courier/auth.local.properties filled reaches
+     * the real project: with no session saved, the first read ends the shift and removes the line at once,
+     * which is right for a signed-out phone but not what this test looks at. There it is skipped.
+     */
     @Test fun startsInTheForegroundWithTheShiftLineAndStopsCleanly() {
+        assumeTrue("needs an APK without a project (auth.local.properties empty)",
+            BuildConfig.SUPABASE_URL.isBlank() || BuildConfig.SUPABASE_PUBLISHABLE_KEY.isBlank())
         val controller = Robolectric.buildService(ShiftService::class.java).create().startCommand(0, 1)
         val service = controller.get()
         val notification = shadowOf(service).lastForegroundNotification
         assertNotNull("the shift line is shown at once", notification)
         assertEquals("Em turno", notification!!.extras.getString(NotificationCompat.EXTRA_TITLE))
-        val manager = RuntimeEnvironment.getApplication().getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        assertNotNull(manager.getNotificationChannel("turno"))
-        assertNotNull(manager.getNotificationChannel("avisos"))
-        assertEquals(NotificationManager.IMPORTANCE_HIGH, manager.getNotificationChannel("avisos").importance)
         controller.destroy()
     }
 
