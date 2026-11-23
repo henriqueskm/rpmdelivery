@@ -42,6 +42,59 @@ test("texto sem nada reconhecível não preenche nada", () => {
   assert.deepEqual(parsePastedOrder("   "), { order: {}, found: [] });
 });
 
+test("linhas quebradas pelo papel estreito voltam para o campo (cupom do teste no PC do trabalho)", () => {
+  // As the Notepad printed it on a narrow page: every value wrapped onto the next lines.
+  const { order } = parsePastedOrder([
+    "Pedido #30", " cliente: maria", " teste", " telefone:", " 11916178357",
+    " endereço: rua", " jovino antonio", " santana, 329", " itatiba",
+  ].join("\n"));
+  assert.deepEqual(order, {
+    reference: "30", customer: "maria teste", phone: "11916178357",
+    address: "rua jovino antonio santana, 329, itatiba",
+  });
+});
+
+test("cupom de 32 colunas: endereço, observação e complemento em duas linhas", () => {
+  const { order } = parsePastedOrder(`
+PEDIDO #812
+--------------------------------
+Cliente: Ana Beatriz Fontes
+Endereço: Avenida Doutor Antonio
+Pires Pimentel, 1200
+Bairro: Jardim das Nações
+Compl.: bloco B apto 34, portao
+lateral
+Obs: tocar o interfone e esperar
+na calcada
+--------------------------------
+1x Pizza grande        R$ 59,90
+Total                  R$ 66,90
+`);
+  assert.equal(order.address, "Avenida Doutor Antonio Pires Pimentel, 1200");
+  assert.equal(order.neighborhood, "Jardim das Nações");
+  assert.equal(order.complement, "bloco B apto 34, portao lateral");
+  assert.equal(order.notes, "tocar o interfone e esperar na calcada");
+  assert.equal(order.customer, "Ana Beatriz Fontes");
+});
+
+test("o que vem depois do campo e não é continuação fica de fora", () => {
+  // After the house number, two words may be the bairro or a name: never glued to the street.
+  const loose = parsePastedOrder("Endereço: Rua A, 10\nVila Mariana\nJoana Reis");
+  assert.equal(loose.order.address, "Rua A, 10");
+  assert.equal(loose.order.neighborhood, undefined, "never guesses a bairro");
+  // A phone, money or a separator ends the field.
+  const name = parsePastedOrder("Cliente: Maria\n(11) 98765-4321\nRua das Flores, 120");
+  assert.equal(name.order.customer, "Maria");
+  assert.equal(name.order.phone, "11987654321");
+  assert.equal(name.order.address, "Rua das Flores, 120", "an unlabeled street after the name is still the address");
+  const notes = parsePastedOrder("Obs: sem cebola\nTotal: R$ 30,00\n------\n2x Coca");
+  assert.equal(notes.order.notes, "sem cebola");
+  // A label alone takes the next line; a label alone before another label stays empty.
+  assert.equal(parsePastedOrder("Endereço:\nRua Nova, 5").order.address, "Rua Nova, 5");
+  assert.equal(parsePastedOrder("Telefone:\nCliente: Bia").order.phone, undefined);
+  assert.equal(parsePastedOrder("Telefone:\nCliente: Bia").order.customer, "Bia");
+});
+
 test("campos longos são cortados no limite do formulário", () => {
   const { order } = parsePastedOrder(`Observações: ${"x".repeat(900)}`);
   assert.equal(order.notes!.length, 500);

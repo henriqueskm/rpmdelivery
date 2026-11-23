@@ -38,6 +38,21 @@ O texto vem do WhatsApp, do app de entrega ou do cupom. `features/operations/pas
 - `#1234` vira o nº do pedido;
 - uma linha curta só de letras vira o nome.
 
+**Linhas quebradas:** papel estreito (32 letras por linha numa térmica de 58 mm) ou o programa que imprime parte um valor comprido em várias linhas. O leitor junta de volta ao campo de cima as linhas sem rótulo que continuam o valor:
+- o rótulo pode vir sozinho ("Telefone:"), com o valor na linha de baixo;
+- até 3 linhas no endereço, 2 no nome, no complemento e na referência, 4 nas observações e 1 no bairro e no telefone;
+- uma linha de separação (----), valor (R$), item (2x), total, pagamento, troco, data ou hora encerra o campo, assim como outro rótulo ou um celular;
+- no nome, só entram letras, e nunca uma rua;
+- no endereço, depois do número, só entra um número ou uma palavra (a cidade), separada por vírgula. Duas palavras depois do número podem ser o bairro sem rótulo ou um nome, e ficam de fora.
+
+Exemplo, do teste com a impressora:
+
+| Linhas | Endereço |
+| --- | --- |
+| `endereço: rua` / `jovino antonio` / `santana, 329` / `itatiba` | rua jovino antonio santana, 329, itatiba |
+
+O separador do rótulo também pode vir repetido: "Compl.: bloco B" lê "bloco B".
+
 **O que ele não faz:** não adivinha bairro nem número.
 
 **Depois de colar:**
