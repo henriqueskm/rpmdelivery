@@ -26,7 +26,9 @@ export function StoreMenu({ restaurantName, email, storeHref, courierManagementH
   /** The control that really signs out, shown in the confirmation. */
   signOut: ReactNode;
   /** Real data: orders read from the printer on this computer (a per-computer choice). */
-  printer?: { enabled: boolean; status: PrinterStatus; onToggle: (enabled: boolean) => void };
+  printer?: { enabled: boolean; status: PrinterStatus; onToggle: (enabled: boolean) => void;
+    /** Automatic mode: saved alone when the receipt and the map agree. */
+    auto: boolean; onAuto: (auto: boolean) => void };
 }) {
   const drawer = useRef<HTMLDialogElement>(null);
   const confirm = useRef<HTMLDialogElement>(null);
@@ -65,6 +67,17 @@ export function StoreMenu({ restaurantName, email, storeHref, courierManagementH
             Pedidos da impressora neste computador
           </label>
           <span id="ops-printer-status" className="ops-drawer-printer-status" role="status">{PRINTER_STATUS[printer.status]}</span>
+          {printer.enabled && <>
+            <label className="ops-drawer-printer-auto">
+              <input type="checkbox" checked={printer.auto} aria-describedby="ops-printer-auto-help"
+                onChange={event => printer.onAuto(event.currentTarget.checked)} />
+              Cadastrar sozinho
+            </label>
+            <span id="ops-printer-auto-help" className="ops-drawer-printer-status">
+              O pedido vai direto para Aguardando despacho quando o mapa acha a mesma rua e número do cupom, perto da loja,
+              com bairro e celular. Senão, ele espera você conferir.
+            </span>
+          </>}
         </div>}
         <div className="ops-drawer-foot">
           <button type="button" onClick={() => confirm.current?.showModal()}>Sair</button>

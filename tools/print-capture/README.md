@@ -80,6 +80,15 @@ Com o programa aberto, cada cupom em texto que tem nome, WhatsApp ou endereço f
 
 **Descartar** tira o aviso sem criar pedido.
 
+**Cadastrar sozinho:** com a impressora ligada, o menu mostra a opção **"Cadastrar sozinho"** (também por computador). Com ela ligada, o pedido vai direto para Aguardando despacho, com o prazo padrão da loja, quando:
+
+- o cupom tem nome, celular e endereço com número;
+- o mapa acha a **mesma rua e o mesmo número** do cupom;
+- o endereço encontrado fica a até 30 km da loja (se a loja tem endereço no mapa);
+- há bairro (o do cupom, ou o que o mapa achou).
+
+Faltando qualquer um, o pedido fica no aviso **"Pedido da impressora para conferir"**, com o motivo ("não achei esse endereço no mapa com certeza", por exemplo), e você confere no formulário como antes.
+
 **Cupom impresso de novo:** o mesmo número no mesmo dia é o mesmo pedido. Cadastrar de novo não cria outro; o painel avisa que ele já estava lá. Sem número no cupom, vale o texto inteiro: um cupom idêntico é o mesmo pedido.
 
 **Os pedidos ficam só na memória do programa.** Fechar o programa descarta os que ainda não foram conferidos. O painel só consegue ler esses pedidos se a opção estiver ligada e o programa responde apenas ao painel do RpmDelivery (`localhost:3000` ou o endereço oficial). Outros sites são recusados. Para o painel em outro endereço, use `--origem https://endereco-do-painel`.

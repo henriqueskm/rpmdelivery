@@ -121,7 +121,9 @@ test("cada comando do painel vira a RPC certa, com a versão e a idempotência",
     { fn: "cancel_delivery_on_route", args: { p_restaurant_id: restaurant, p_delivery_id: "d2" } });
   assert.deepEqual(rpcFor({ type: "review-shift", shiftId: "s2", approve: true }, restaurant, live, "x"),
     { fn: "review_shift", args: { p_restaurant_id: restaurant, p_shift_id: "s2", p_approve: true } });
-  assert.equal(rpcFor({ type: "default-promise", minutes: 30 }, restaurant, live, "x"), null);
+  assert.deepEqual(rpcFor({ type: "default-promise", minutes: 30 }, restaurant, live, "x"),
+    { fn: "set_default_promise", args: { p_restaurant_id: restaurant, p_minutes: 30 } });
+  assert.equal(rpcFor({ type: "deadline", orderId: "d1", orderedAt: now, minutes: 30 }, restaurant, live, "x"), null);
 });
 
 test("erros do banco viram frases para o balcão", () => {

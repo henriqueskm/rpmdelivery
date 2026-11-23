@@ -9,7 +9,8 @@ import type { OrderPrefill } from "../dialogs.tsx";
 /** An order brought into the new-order form from another system: what it fills and where it came from. */
 export type IncomingOrder = { id: string; values: OrderPrefill; filled: string; origin: OrderOrigin };
 
-export function printedToIncoming(item: PrintedOrder): IncomingOrder {
+/** [review]: why the automatic mode left it for the store, said first. */
+export function printedToIncoming(item: PrintedOrder, review?: string): IncomingOrder {
   const { order } = item;
   const values: OrderPrefill = { orderedAt: Date.parse(item.receivedAt) };
   for (const key of ["customer", "address", "neighborhood", "complement", "reference", "notes"] as const)
@@ -20,7 +21,8 @@ export function printedToIncoming(item: PrintedOrder): IncomingOrder {
     order.address ? "Escolha o endereço na lista para confirmar no mapa." : "O cupom não tem endereço: digite o do cliente.",
     ...(order.phone ? [] : ["O cupom não tem celular: peça o WhatsApp do cliente."]),
   ];
-  return { id: item.id, values, filled: `Lido do cupom: ${foundText(item.found)}. ${hints.join(" ")}`,
+  const why = review ? `Não cadastrei sozinho: ${review}. ` : "";
+  return { id: item.id, values, filled: `${why}Lido do cupom: ${foundText(item.found)}. ${hints.join(" ")}`,
     origin: { source: "PRINTER", app: item.app, externalId: item.externalId } };
 }
 

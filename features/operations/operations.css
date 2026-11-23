@@ -1425,6 +1425,7 @@
 .operations .ops-drawer-printer input { margin: 0; }
 /* Not a <small>: the drawer sits inside .ops-account, whose small text is hidden on phones. */
 .ops-drawer-printer-status { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.ops-drawer-printer .ops-drawer-printer-auto { margin-top: 6px; }
 .ops-signout-dialog { max-width: 360px; }
 .ops-signout-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
 .ops-signout-actions > div { display: contents; }

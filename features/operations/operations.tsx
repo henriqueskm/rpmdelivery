@@ -23,6 +23,7 @@ import { CourierCardDialog } from "./live/courier-card-dialog";
 import { RouteSuggestions } from "./live/route-suggestions";
 import { freeCourierNotice } from "./live/free-courier";
 import { usePrinterInbox } from "./live/use-printer-inbox";
+import { useAutoPrinted } from "./live/use-auto-printed";
 import { printedSummary, printedToIncoming, type IncomingOrder } from "./live/printed-order";
 import { StoreMenu } from "./store-menu";
 import { RouteTracker, routesToRelease } from "./route-tracker";
@@ -226,11 +227,21 @@ function OperationsWorkspace({
   /** Real data: orders read from the printer on this computer, checked one at a time in the new-order form. */
   const printer = usePrinterInbox(!!live);
   const printed = live ? printer.orders : [];
+  // Automatic mode: what checks out is saved alone; the banner keeps only what the store must check.
+  const autoOn = !!live && printer.auto;
+  const printedAuto = useAutoPrinted({ active: autoOn, orders: printed, busy: saving,
+    defaultPromiseMinutes: state.defaultPromiseMinutes, store: state.restaurantLocation,
+    save: async (id, order) => {
+      if (!(await add(order, true))) return false;
+      void printer.take(id);
+      return true;
+    } });
+  const toCheck = autoOn ? printed.filter(order => printedAuto.reviews[order.id]) : printed;
   const [incoming, setIncoming] = useState<IncomingOrder | null>(null);
   function openPrinted(id: string) {
     const item = printed.find(order => order.id === id);
     if (!item) return;
-    setIncoming(printedToIncoming(item));
+    setIncoming(printedToIncoming(item, autoOn ? printedAuto.reviews[id] : undefined));
     newDialog.current?.showModal();
   }
   /** Opens "Acompanhar rotas", on a given route when there is one (scrolled to and focused). */
@@ -270,7 +281,8 @@ function OperationsWorkspace({
             <StoreMenu restaurantName={restaurantName} email={email} storeHref={storeHref}
               courierManagementHref={courierManagementHref} signOut={accountAction}
               onPay={live ? () => payMenu.current?.open() : undefined}
-              printer={live ? { enabled: printer.enabled, status: printer.status, onToggle: printer.setEnabled } : undefined} />
+              printer={live ? { enabled: printer.enabled, status: printer.status, onToggle: printer.setEnabled,
+                auto: printer.auto, onAuto: printer.setAuto } : undefined} />
             {live && <CourierPay restaurantId={live.restaurantId} ref={payMenu} trigger={false} />}
           </> : <>
             <div>
@@ -339,14 +351,17 @@ function OperationsWorkspace({
             setDismissedFree(previous => ({ ...previous, [freeNotice.courierId]: freeNotice.waiting }))}>Agora não</button>
         </div>}
         {/* An order read from a printed receipt: the store checks it (address on the map) before it is saved. */}
-        {printed.length > 0 && <div className="ops-free-alert ops-printer-alert" role="region" aria-label="Pedidos da impressora">
+        {toCheck.length > 0 && <div className="ops-free-alert ops-printer-alert" role="region" aria-label="Pedidos da impressora">
           <span className="ops-printer-alert-icon" aria-hidden="true"><Icon name="printer" /></span>
           <p>
-            <strong>{printed.length === 1 ? "Pedido chegou pela impressora" : `${printed.length} pedidos chegaram pela impressora`}</strong>
-            <span dir="auto">{printedSummary(printed[0])}</span>
+            <strong>{autoOn
+              ? toCheck.length === 1 ? "Pedido da impressora para conferir" : `${toCheck.length} pedidos da impressora para conferir`
+              : toCheck.length === 1 ? "Pedido chegou pela impressora" : `${toCheck.length} pedidos chegaram pela impressora`}</strong>
+            <span dir="auto">{printedSummary(toCheck[0])}</span>
+            {autoOn && <span>Não cadastrei sozinho: {printedAuto.reviews[toCheck[0].id]}.</span>}
           </p>
-          <button className="ops-free-alert-open" onClick={() => openPrinted(printed[0].id)}>Conferir e cadastrar</button>
-          <button className="ops-link-button" onClick={() => void printer.take(printed[0].id)}>Descartar</button>
+          <button className="ops-free-alert-open" onClick={() => openPrinted(toCheck[0].id)}>Conferir e cadastrar</button>
+          <button className="ops-link-button" onClick={() => void printer.take(toCheck[0].id)}>Descartar</button>
         </div>}
         {preview&&scenario.startsWith("issues-")&&<IssueDemoControls state={state} onCommand={courierCommand}/>}
         <NewIssueBanner issues={alerts.alerts} state={state} now={now} onDismiss={ids=>{
@@ -406,6 +421,7 @@ function OperationsWorkspace({
               onCancelOrder={live ? askCancelOrder : undefined}
               onEditOrder={live ? openEditOrder : undefined}
               onRequeue={live ? (id) => void requeue(id) : undefined}
+              onDefaultPromise={live ? () => setDeadlineTarget("default") : undefined}
               pending={saving}
               selected={selected}
               editingId={editingId}
@@ -472,7 +488,8 @@ function OperationsWorkspace({
           else (automaticTriggerCompact.current?.offsetParent?automaticTriggerCompact:automaticTrigger).current?.focus();}}/>}
       {suggesting && <OptimizationDialog state={state} selected={selected} editingId={editingId} scenario={scenario}
         now={now} onApply={setSelected} onClose={()=>setSuggesting(false)} />}
-      {!live && <DeadlineDialog dialogRef={deadlineDialog} state={state} target={deadlineTarget} onSave={saveDeadline} onClose={() => setDeadlineTarget(undefined)} />}
+      <DeadlineDialog dialogRef={deadlineDialog} state={state} target={deadlineTarget} onSave={saveDeadline}
+        onClose={() => setDeadlineTarget(undefined)} live={!!live} />
       {!live && <CourierDialog
         now={now}
         dialogRef={courierDialog}
