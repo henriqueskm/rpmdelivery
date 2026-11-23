@@ -88,6 +88,13 @@ export function storeBackend() {
         app: (body.p_source_app as string | null) ?? null, externalId: String(body.p_external_id) });
       return reply;
     },
+    set_default_promise(body) {
+      const minutes = Number(body.p_minutes);
+      if (!Number.isInteger(minutes) || minutes < 1 || minutes > 240)
+        return { status: 400, json: { code: "22023", message: "RPM_PROMISE_INVALID" } };
+      board.restaurant.defaultPromiseMinutes = minutes;
+      return ok(minutes);
+    },
     create_route(body) {
       const ids = body.p_delivery_ids as string[];
       if (ids.some(id => find(board.orders, "deliveryId", id)?.deliveryStatus !== "WAITING"))

@@ -48,6 +48,11 @@ O programa fica em `tools/print-capture/`; o passo a passo está no [README](../
 - O programa guarda na memória os cupons em texto que têm nome, WhatsApp ou endereço. Ele os oferece em `127.0.0.1:9180`, só para este computador.
 - No painel, a opção **"Pedidos da impressora neste computador"** fica no menu da loja. Vem desligada e vale por computador (`localStorage`). Ligada, o painel pergunta ao programa a cada 3 segundos, ou a cada 10 enquanto ele estiver fechado.
 - Cada cupom vira o aviso **"Pedido chegou pela impressora"**. **Conferir e cadastrar** abre o formulário de novo pedido preenchido. A loja confirma o endereço no mapa e salva por `import_order`, com origem `PRINTER`. **Descartar** tira o aviso.
+- **Cadastrar sozinho** (opção por computador, abaixo da impressora; `features/operations/live/auto-printed.ts` e `use-auto-printed.ts`):
+  - cada cupom é tentado uma vez, um de cada vez, sem atrapalhar uma ação da loja em andamento;
+  - só cadastra sozinho quando o cupom tem nome, celular e endereço com número, o mapa acha a mesma rua e o mesmo número (abreviações e acentos à parte, nos dois sentidos: "Rua das Flores" não é "Rua das Flores Novas"), o ponto fica a até 30 km da loja e há bairro;
+  - o pedido entra com o endereço e o ponto do mapa, o prazo padrão da loja e o horário da impressão;
+  - o resto fica no aviso "Pedido da impressora para conferir", com o motivo, também mostrado no formulário.
 - **Código do pedido impresso** (`external_id`): o número do cupom com o dia ("5127 · 22/11/2026"), porque muitos sistemas recomeçam a numeração todo dia. Sem número, a impressão digital do texto ("cupom 0123456789ab").
 - **Cupom reimpresso:**
   - o programa troca a cópia que ainda está esperando, para não aparecer em dobro;

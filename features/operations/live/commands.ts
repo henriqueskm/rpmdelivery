@@ -80,6 +80,8 @@ export function rpcFor(command: Command | StoreCommand, restaurantId: string, bo
     }
     case "requeue":
       return { fn: "requeue_delivery", args: { ...restaurant, p_delivery_id: command.orderId } };
+    case "default-promise":
+      return { fn: "set_default_promise", args: { ...restaurant, p_minutes: command.minutes } };
     default:
       return null;
   }
@@ -88,7 +90,7 @@ export function rpcFor(command: Command | StoreCommand, restaurantId: string, bo
 /** Commands of the prototype that real data does not support yet. */
 export function supportedLive(command: Command | StoreCommand) {
   return ["add", "assign", "release", "revoke-release", "cancel-route", "issue-decide", "delivery-cancel",
-    "review-shift", "cancel-order", "edit-order", "requeue", "alert-view", "alert-dismiss"].includes(command.type);
+    "review-shift", "cancel-order", "edit-order", "requeue", "default-promise", "alert-view", "alert-dismiss"].includes(command.type);
 }
 
 const MESSAGES: Record<string, string> = {
@@ -113,6 +115,7 @@ const MESSAGES: Record<string, string> = {
   RPM_COURIER_LINK_REQUIRED: "O vínculo desse motoboy com a loja não está ativo.",
   RPM_ROUTE_FIELDS: "Uma rota leva de 1 a 30 pedidos, sem repetir.",
   RPM_ORDER_FIELDS: "Confira os dados do pedido: nome, celular, endereço, horário e prazo.",
+  RPM_PROMISE_INVALID: "O prazo padrão vai de 1 a 240 minutos.",
   RPM_MEMBER_REQUIRED: "Sua conta não tem mais acesso a esta loja.",
   RPM_AUTH_REQUIRED: "Sua sessão terminou. Entre de novo para continuar.",
 };

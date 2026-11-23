@@ -14,6 +14,7 @@ export function OrdersPanel({
   onCancelOrder,
   onEditOrder,
   onRequeue,
+  onDefaultPromise,
   pending = false,
   now,
 }: {
@@ -29,6 +30,8 @@ export function OrdersPanel({
   onEditOrder?: (id: string) => void;
   /** Real data: a stop the courier brought back goes to the queue again. */
   onRequeue?: (id: string) => void;
+  /** Real data: change the store's default promise ("Padrão 60 min"). */
+  onDefaultPromise?: () => void;
   pending?: boolean;
   now: number;
 }) {
@@ -85,7 +88,8 @@ export function OrdersPanel({
             }}
           />
         </label>
-        {onDeadline ? <button className="ops-default-promise" aria-label="Configurar prazo padrão" onClick={() => onDeadline("default")}>
+        {onDeadline || onDefaultPromise ? <button className="ops-default-promise" aria-label={`Padrão ${state.defaultPromiseMinutes} min, mudar prazo padrão`}
+          title="Mudar o prazo padrão dos próximos pedidos" onClick={() => onDefaultPromise ? onDefaultPromise() : onDeadline?.("default")}>
           <span>Padrão</span><strong>{state.defaultPromiseMinutes} min</strong>
         </button> : <span className="ops-default-promise"><span>Padrão</span><strong>{state.defaultPromiseMinutes} min</strong></span>}
       </div>

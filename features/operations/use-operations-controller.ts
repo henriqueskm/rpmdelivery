@@ -144,11 +144,18 @@ export function useOperationsController(scenario: Scenario, seedTime: number, li
     showArea("builder");
     setNotice(`Editando ${route.reference}. Mudar os pedidos exige nova liberação; só reordenar preserva a retirada liberada.`);
   }
-  async function add(order: NewOrder) {
+  /** [alone]: saved by the automatic mode for printed orders, without the form. */
+  async function add(order: NewOrder, alone = false) {
     const command: Command = { type: "add", order, now: Date.now() };
     if (operationsReducer(state, command) === state) return false;
     lastReply.current = null;
     if (!(await run(command))) return false;
+    if (alone) {
+      const repeated = (lastReply.current as { created?: unknown } | null)?.created === false;
+      setNotice(repeated ? `Esse pedido da impressora já estava no painel (código ${order.origin?.externalId}). Nada foi alterado.`
+        : `Pedido${order.reference ? ` #${order.reference}` : ""} da impressora cadastrado sozinho: ${order.customer}, ${order.address}. Aguardando despacho.`);
+      return true;
+    }
     setActiveTab("orders");
     // The same printed order again (a reprint) answers the one already saved, unchanged.
     if (order.origin && (lastReply.current as { created?: unknown } | null)?.created === false) {
@@ -179,8 +186,14 @@ export function useOperationsController(scenario: Scenario, seedTime: number, li
     setNotice(live ? `Todos os ${route.orderIds.length} pedidos de ${route.reference} liberados juntos. Só o motoboy inicia a rota.`
       : `Todos os ${route.orderIds.length} pedidos de ${route.reference} liberados juntos. PREPARING; início exclusivo pelo motoboy, sem tracking ou notificações.`);
   }
-  function saveDeadline(command: Command) {
+  async function saveDeadline(command: Command) {
     if (operationsReducer(state, command) === state) return false;
+    // Real data: only the store's default (order promises are edited with the order).
+    if (live) {
+      if (command.type !== "default-promise" || !(await run(command))) return false;
+      setNotice(`Prazo padrão: ${command.minutes} min. Vale para os próximos pedidos; os já cadastrados mantêm o prazo deles.`);
+      return true;
+    }
     dispatch(command);
     setNotice(command.type === "default-promise" ? "Prazo padrão atualizado só para novos pedidos nesta demonstração."
       : "Prazo prometido atualizado. Sequência preservada; isto não prevê a chegada.");

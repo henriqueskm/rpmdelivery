@@ -44,6 +44,7 @@ type Database = {
       get_operations_board: { Args: { p_restaurant_id: string }; Returns: unknown };
       create_order: { Args: Record<string, unknown>; Returns: unknown };
       import_order: { Args: Record<string, unknown>; Returns: unknown };
+      set_default_promise: { Args: Record<string, unknown>; Returns: unknown };
       create_route: { Args: Record<string, unknown>; Returns: unknown };
       update_route_composition: { Args: Record<string, unknown>; Returns: unknown };
       release_route_pickup: { Args: Record<string, unknown>; Returns: unknown };

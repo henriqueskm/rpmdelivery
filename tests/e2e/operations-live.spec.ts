@@ -762,6 +762,91 @@ test("impressora deste computador: pedido impresso vira pedido do painel depois 
   expect(errors).toEqual([]);
 });
 
+test("impressora em modo automático: endereço certo vai direto para a fila; o resto espera conferir", async ({ page }) => {
+  const errors = watchErrors(page);
+  const backend = storeBackend();
+  await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  // The map finds "Rua das Flores, 120" with its bairro.
+  const geocoding = await mockGeocoding(page, { neighborhood: "Jardim Paulista" });
+  const receivedAt = new Date(Math.floor((Date.now() - 2 * 60_000) / 60_000) * 60_000).toISOString();
+  const good = { id: "job-ok", receivedAt, externalId: "81 · 22/11/2026", app: null,
+    order: { customer: "Rita Alves", phone: "11912340081", address: "R. das Flores, 120", complement: "Apto 4",
+      notes: "Sem cebola", reference: "81" }, found: [] };
+  const unknown = { id: "job-check", receivedAt, externalId: "82 · 22/11/2026", app: null,
+    order: { customer: "Caio Lima", phone: "11912340082", address: "Rua Inventada, 9", reference: "82" }, found: [] };
+  let inbox = [good, unknown];
+  const taken: string[] = [];
+  const cors = { "Access-Control-Allow-Origin": "*" };
+  await page.route("http://127.0.0.1:9180/pedidos", route => route.fulfill({ json: { orders: inbox }, headers: cors }));
+  await page.route("http://127.0.0.1:9180/pedidos/*/concluido", route => {
+    const id = route.request().url().split("/").at(-2)!;
+    taken.push(id);
+    inbox = inbox.filter(item => item.id !== id);
+    return route.fulfill({ status: 204, headers: cors });
+  });
+  await openPanel(page);
+  await showArea(page, /^Pedidos/);
+  await page.getByRole("button", { name: /abrir menu/ }).click();
+  const menu = page.getByRole("dialog", { name: "Menu da loja" });
+  await expect(menu.getByRole("checkbox", { name: "Cadastrar sozinho" }), "only with the printer on").toHaveCount(0);
+  // Both on before the first answer, so no order is offered for manual checking first.
+  await page.route("http://127.0.0.1:9180/pedidos", route => route.fulfill({ json: { orders: [] }, headers: cors }));
+  await menu.getByRole("checkbox", { name: "Pedidos da impressora neste computador" }).check();
+  await menu.getByRole("checkbox", { name: "Cadastrar sozinho" }).check();
+  await menu.getByRole("button", { name: "Fechar menu" }).click();
+  await page.unroute("http://127.0.0.1:9180/pedidos");
+  await page.route("http://127.0.0.1:9180/pedidos", route => route.fulfill({ json: { orders: inbox }, headers: cors }));
+
+  // The good receipt is saved alone, with the map's address and the default promise.
+  await expect.poll(() => taken).toContain("job-ok");
+  const imported = backend.commandCalls().filter(call => call.fn === "import_order");
+  expect(imported).toHaveLength(1);
+  expect(imported[0].body).toMatchObject({ p_source: "PRINTER", p_external_id: "81 · 22/11/2026", p_customer_name: "Rita Alves",
+    p_customer_phone: "+5511912340081", p_delivery_address: resolvedAddress.address, p_neighborhood: "Jardim Paulista",
+    p_complement: "Apto 4", p_notes: "Sem cebola", p_reference: "81", p_promised_minutes: 60, p_ordered_at: receivedAt,
+    p_latitude: resolvedAddress.latitude, p_address_provider_id: resolvedAddress.providerId });
+  await expect(page.getByRole("status").filter({ hasText: "Pedido #81 da impressora cadastrado sozinho: Rita Alves" })).toBeVisible();
+  await expect(page.locator(".ops-order").filter({ hasText: "#81" }).locator(".ops-order-origin svg")).toBeVisible();
+
+  // The other one waits, saying why.
+  const banner = page.getByRole("region", { name: "Pedidos da impressora" });
+  await expect(banner).toContainText("Pedido da impressora para conferir");
+  await expect(banner).toContainText("Caio Lima · #82");
+  await expect(banner).toContainText("Não cadastrei sozinho: não achei esse endereço no mapa com certeza.");
+  expect(geocoding.suggest).toEqual(["R. das Flores, 120", "Rua Inventada, 9"]);
+  await banner.getByRole("button", { name: "Conferir e cadastrar" }).click();
+  const form = page.locator("dialog[open]");
+  await expect(form.getByRole("status").filter({ hasText: "Não cadastrei sozinho: não achei esse endereço no mapa com certeza." }))
+    .toBeVisible();
+  await expect(form.getByLabel("Nome do cliente")).toHaveValue("Caio Lima");
+  await form.getByRole("button", { name: "Fechar novo pedido" }).click();
+  expect(taken).toEqual(["job-ok"]);
+  expect(errors).toEqual([]);
+});
+
+test("prazo padrão: clicar em Padrão 60 min muda o prazo dos próximos pedidos da loja", async ({ page }) => {
+  const errors = watchErrors(page);
+  const backend = storeBackend();
+  await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  await openPanel(page);
+  await showArea(page, /^Pedidos/);
+  await page.getByRole("button", { name: "Padrão 60 min, mudar prazo padrão" }).click();
+  const dialog = page.getByRole("dialog", { name: "Prazo padrão" });
+  await expect(dialog).toContainText("Vale para todos os aparelhos da loja.");
+  await expect(dialog.getByLabel("Prazo padrão (minutos)")).toHaveValue("60");
+  await dialog.getByLabel("Prazo padrão (minutos)").fill("45");
+  await dialog.getByRole("button", { name: "Salvar prazo" }).click();
+  await expect(dialog).toBeHidden();
+  expect(backend.commandCalls().filter(call => call.fn === "set_default_promise").map(call => call.body))
+    .toEqual([{ p_restaurant_id: testRestaurant.id, p_minutes: 45 }]);
+  await expect(page.getByRole("button", { name: "Padrão 45 min, mudar prazo padrão" })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Prazo padrão: 45 min." })).toBeVisible();
+  // The next order starts with the new default.
+  await page.getByRole("button", { name: "Novo pedido" }).first().click();
+  await expect(page.locator("dialog[open]").getByLabel("Prazo prometido (minutos)")).toHaveValue("45");
+  expect(errors).toEqual([]);
+});
+
 test("pedido importado mostra de onde veio: símbolo da impressora ou nome do app", async ({ page }) => {
   const errors = watchErrors(page);
   const backend = storeBackend();

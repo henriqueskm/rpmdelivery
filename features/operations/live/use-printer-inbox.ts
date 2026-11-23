@@ -13,14 +13,20 @@ const RETRY_MS = 10_000;
 export type PrinterStatus = "off" | "waiting" | "connected" | "unreachable";
 
 // Shown only with real data, which loads in the browser: no server render to match.
-function readEnabled() {
+function readFlag(key: string) {
   if (typeof window === "undefined") return false;
-  try { return window.localStorage.getItem(KEY) === "on"; } catch { return false; }
+  try { return window.localStorage.getItem(key) === "on"; } catch { return false; }
 }
+function saveFlag(key: string, value: boolean) {
+  try { window.localStorage.setItem(key, value ? "on" : "off"); } catch { /* private mode: this visit only */ }
+}
+const AUTO_KEY = "rpm:printer-auto";
 
 /** [active]: real data is on screen (the demo never asks the program). */
 export function usePrinterInbox(active: boolean) {
-  const [enabled, setEnabledState] = useState(readEnabled);
+  const [enabled, setEnabledState] = useState(() => readFlag(KEY));
+  /** Automatic mode: save alone when the receipt and the map agree (per computer, off by default). */
+  const [auto, setAutoState] = useState(() => readFlag(AUTO_KEY));
   const [orders, setOrders] = useState<PrintedOrder[]>([]);
   const [status, setStatus] = useState<Exclude<PrinterStatus, "off">>("waiting");
 
@@ -45,8 +51,9 @@ export function usePrinterInbox(active: boolean) {
     return () => { stopped = true; clearTimeout(timer); };
   }, [enabled, active]);
 
+  const setAuto = useCallback((value: boolean) => { saveFlag(AUTO_KEY, value); setAutoState(value); }, []);
   const setEnabled = useCallback((value: boolean) => {
-    try { window.localStorage.setItem(KEY, value ? "on" : "off"); } catch { /* private mode: this visit only */ }
+    saveFlag(KEY, value);
     setOrders([]);
     setStatus("waiting");
     setEnabledState(value);
@@ -61,5 +68,6 @@ export function usePrinterInbox(active: boolean) {
     } catch { /* the program closed: it forgets the order anyway */ }
   }, []);
 
-  return { enabled, setEnabled, status: enabled ? status : "off" as PrinterStatus, orders: enabled ? orders : [], take };
+  return { enabled, setEnabled, auto: enabled && auto, setAuto, status: enabled ? status : "off" as PrinterStatus,
+    orders: enabled ? orders : [], take };
 }

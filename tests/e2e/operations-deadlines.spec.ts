@@ -113,7 +113,7 @@ test("prazo original, override, contagem compartilhada e padrão para novos pedi
   await page.clock.runFor(4 * minute);
   await expect(counter(page, "1047")).toContainText("Vencido · 2m");
   expect(await page.locator(".ops-order-ref").allTextContents()).toEqual(references);
-  await page.getByRole("button", { name: "Configurar prazo padrão" }).click();
+  await page.getByRole("button", { name: /mudar prazo padrão/ }).click();
   const settings = page.getByRole("dialog", { name: "Prazo padrão", exact: true });
   await settings.getByLabel("Prazo padrão (minutos)").fill("90");
   await settings.getByRole("button", { name: "Salvar prazo (demo)" }).click();
