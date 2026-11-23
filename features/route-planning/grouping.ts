@@ -55,6 +55,11 @@ export type Suggestion = {
   stops: SuggestedStop[];
   /** Estimated: leaving now, back at the store. */
   durationSeconds: number; distanceMeters: number; lateCount: number;
+  /**
+   * Split off a bigger route so a free courier does not wait: that route's base order, and how much
+   * sooner the most helped customer gets the order than in the route as one.
+   */
+  split?: { from: string; soonerSeconds: number };
 };
 export type SuggestionResult = { suggestions: Suggestion[]; withoutLocation: string[] };
 
@@ -238,68 +243,161 @@ function bestSequence(store: Coordinate, group: Located[], departureAt: number, 
  * (same address, street, bairro, neighbor bairro), then the smallest detour. A candidate only rides
  * along when its detour fits (the same address always does) and it makes no other stop late.
  * Orders without a pin are never guessed: they come back in [SuggestionResult.withoutLocation].
+ *
+ * [freeCouriers]: couriers waiting in line now. While there are more of them than routes, the longest
+ * route is split in two ([bestSplit]), so nobody waits while another rides with several orders
+ * (the store's decision, 2026-11-23). 0 never splits.
  */
 export function suggestRoutes(store: Coordinate, orders: SuggestionOrder[], departureAt: number,
-  params: SuggestionParameters = DEFAULT_SUGGESTION_PARAMETERS, streets?: LegSource, learned?: NeighborhoodCenters): SuggestionResult {
+  params: SuggestionParameters = DEFAULT_SUGGESTION_PARAMETERS, streets?: LegSource, learned?: NeighborhoodCenters,
+  freeCouriers = 0): SuggestionResult {
   leg = streets ? (a, b) => streets(a, b) ?? estimateLeg(a, b) : estimateLeg;
   centers = learned;
-  try { return suggest(store, orders, departureAt, params); } finally { leg = estimateLeg; centers = undefined; }
+  try { return suggest(store, orders, departureAt, params, freeCouriers); } finally { leg = estimateLeg; centers = undefined; }
 }
 
-function suggest(store: Coordinate, orders: SuggestionOrder[], departureAt: number, params: SuggestionParameters): SuggestionResult {
+type Why = Omit<SuggestedStop, "id" | "lateSeconds">;
+type Group = {
+  route: Located[]; why: Map<string, Why>;
+  /** Split off a bigger route: its base order, and when each of its stops would have been done. */
+  split?: { from: string; before: Map<string, number> };
+};
+
+/** Most urgent first: the promised time, then who ordered first. */
+const urgency = (a: SuggestionOrder, b: SuggestionOrder) =>
+  a.deadlineAt - b.deadlineAt || a.createdAt - b.createdAt || a.id.localeCompare(b.id);
+const baseOf = (route: Located[]) => [...route].sort(urgency)[0];
+
+function suggest(store: Coordinate, orders: SuggestionOrder[], departureAt: number, params: SuggestionParameters,
+  freeCouriers: number): SuggestionResult {
   const maxStops = Math.min(MAX_STOPS, Math.max(1, Math.floor(params.maxStops)));
-  const located = orders.filter((o): o is Located => !!o.location)
-    .sort((a, b) => a.deadlineAt - b.deadlineAt || a.createdAt - b.createdAt || a.id.localeCompare(b.id));
+  const service = params.serviceSeconds;
+  const located = orders.filter((o): o is Located => !!o.location).sort(urgency);
   const withoutLocation = orders.filter(o => !o.location).map(o => o.id);
   const left = new Set(located.map(o => o.id));
-  const suggestions: Suggestion[] = [];
+  const groups: Group[] = [];
 
   for (const seed of located) {
     if (!left.has(seed.id)) continue;
     left.delete(seed.id);
     let route: Located[] = [seed];
-    const why = new Map<string, Omit<SuggestedStop, "id" | "lateSeconds">>();
+    const why = new Map<string, Why>();
     while (route.length < maxStops) {
-      const current = walk(store, route, departureAt, params.serviceSeconds);
-      let best: { order: Located; rank: number; extra: number; route: Located[]; info: Omit<SuggestedStop, "id" | "lateSeconds"> } | null = null;
+      const current = walk(store, route, departureAt, service);
+      let best: { order: Located; rank: number; extra: number; route: Located[]; info: Why } | null = null;
       for (const candidate of located) {
         if (!left.has(candidate.id)) continue;
-        // The strongest relation to any order already in the route.
-        let link: { reason: Reason; meters?: number; learned?: boolean; with: string } | null = null;
-        for (const member of route) {
-          const found = relation(candidate, member, params);
-          if (found && (!link || RANK[found.reason] < RANK[link.reason])) link = { ...found, with: member.reference };
-        }
-        const inserted = insertion(store, route, candidate, departureAt, params.serviceSeconds);
+        const link = strongestLink(candidate, route, params);
+        const inserted = insertion(store, route, candidate, departureAt, service);
         if (link?.reason !== "same-address" && inserted.extraSeconds > params.maxDetourSeconds) continue;
         // Never make a stop late that would be on time: count what was late before, plus the candidate alone.
-        const alone = walk(store, [candidate], departureAt, params.serviceSeconds);
-        const after = walk(store, inserted.route, departureAt, params.serviceSeconds);
+        const alone = walk(store, [candidate], departureAt, service);
+        const after = walk(store, inserted.route, departureAt, service);
         if (lateCount(after.done) > lateCount(current.done) + lateCount(alone.done)) continue;
-        const reason: Reason = link?.reason ?? "on-the-way";
-        const rank = RANK[reason];
-        if (!best || rank < best.rank || (rank === best.rank && inserted.extraSeconds < best.extra)) {
-          best = { order: candidate, rank, extra: inserted.extraSeconds, route: inserted.route, info: {
-            reason, with: link?.with ?? nearestReference(candidate, route),
-            ...(reason === "neighbor" && link?.meters !== undefined ? { meters: link.meters } : {}),
-            ...(reason === "neighbor" && link?.learned ? { learned: true } : {}),
-            ...(reason === "on-the-way" ? { detourSeconds: inserted.extraSeconds } : {}),
-          } };
-        }
+        const info = whyText(candidate, route, link, inserted.extraSeconds);
+        const rank = RANK[info.reason!];
+        if (!best || rank < best.rank || (rank === best.rank && inserted.extraSeconds < best.extra))
+          best = { order: candidate, rank, extra: inserted.extraSeconds, route: inserted.route, info };
       }
       if (!best) break;
       left.delete(best.order.id);
       route = best.route;
       why.set(best.order.id, best.info);
     }
-    const ordered = bestSequence(store, route, departureAt, params.serviceSeconds);
-    const result = walk(store, ordered, departureAt, params.serviceSeconds);
-    suggestions.push({
+    groups.push({ route, why });
+  }
+
+  // More couriers waiting than routes: split the longest route that can be split, one at a time.
+  while (groups.length < freeCouriers) {
+    const longest = groups.map((group, index) => ({ index, group,
+      seconds: walk(store, bestSequence(store, group.route, departureAt, service), departureAt, service).seconds }))
+      .filter(item => item.group.route.length > 1).sort((a, b) => b.seconds - a.seconds);
+    let splitted = false;
+    for (const { index, group } of longest) {
+      const parts = bestSplit(store, group.route, departureAt, params);
+      if (!parts) continue;
+      const split = group.split ?? { from: baseOf(group.route).reference,
+        before: new Map(walk(store, bestSequence(store, group.route, departureAt, service), departureAt, service).done
+          .map(stop => [stop.id, stop.completedAt])) };
+      groups.splice(index, 1, ...parts.map(part => ({ route: part, why: explain(store, part, departureAt, params), split })));
+      splitted = true;
+      break;
+    }
+    if (!splitted) break;
+  }
+
+  const suggestions = groups.map(({ route, why, split }): Suggestion => {
+    const result = walk(store, bestSequence(store, route, departureAt, service), departureAt, service);
+    const sooner = split ? Math.max(0, ...result.done.map(stop => (split.before.get(stop.id)! - stop.completedAt) / 1000)) : 0;
+    return {
       stops: result.done.map(stop => ({ id: stop.id, ...why.get(stop.id), lateSeconds: stop.lateSeconds })),
       durationSeconds: result.seconds, distanceMeters: result.meters, lateCount: lateCount(result.done),
-    });
-  }
+      ...(split ? { split: { from: split.from, soonerSeconds: Math.round(sooner) } } : {}),
+    };
+  });
   return { suggestions, withoutLocation };
+}
+
+/** The strongest written relation of [candidate] to any order in [route]. */
+function strongestLink(candidate: Located, route: Located[], params: SuggestionParameters) {
+  let link: { reason: Reason; meters?: number; learned?: boolean; with: string } | null = null;
+  for (const member of route) {
+    const found = relation(candidate, member, params);
+    if (found && (!link || RANK[found.reason] < RANK[link.reason])) link = { ...found, with: member.reference };
+  }
+  return link;
+}
+
+/** Why [candidate] rides with [route]: its strongest relation, or on the way with its detour. */
+function whyText(candidate: Located, route: Located[], link: ReturnType<typeof strongestLink>, extraSeconds: number): Why {
+  const reason: Reason = link?.reason ?? "on-the-way";
+  return {
+    reason, with: link?.with ?? nearestReference(candidate, route),
+    ...(reason === "neighbor" && link?.meters !== undefined ? { meters: link.meters } : {}),
+    ...(reason === "neighbor" && link?.learned ? { learned: true } : {}),
+    ...(reason === "on-the-way" ? { detourSeconds: extraSeconds } : {}),
+  };
+}
+
+/** The reasons again for a route that was split: its own base, each stop against the others left in it. */
+function explain(store: Coordinate, route: Located[], departureAt: number, params: SuggestionParameters) {
+  const base = baseOf(route);
+  const why = new Map<string, Why>();
+  for (const stop of route) {
+    if (stop === base) continue;
+    const others = route.filter(other => other !== stop);
+    const extra = insertion(store, bestSequence(store, others, departureAt, params.serviceSeconds), stop, departureAt,
+      params.serviceSeconds).extraSeconds;
+    why.set(stop.id, whyText(stop, others, strongestLink(stop, others, params), extra));
+  }
+  return why;
+}
+
+/**
+ * The route in two, for a courier who would wait otherwise; null when it cannot be split (one stop,
+ * or every stop at the same address). Tries every split (at most 2^7 = 128), never parting the same
+ * address, and keeps the best: fewer late stops, fewer late seconds, the longer of the two routes in
+ * whole minutes (the work shared fairly), then less riding in all. The more urgent part comes first.
+ */
+function bestSplit(store: Coordinate, route: Located[], departureAt: number, params: SuggestionParameters): Located[][] | null {
+  const n = route.length;
+  if (n < 2) return null;
+  const together: [number, number][] = [];
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++)
+    if (relation(route[i], route[j], params)?.reason === "same-address") together.push([i, j]);
+  let best: { parts: Located[][]; value: number[] } | null = null;
+  // route[0] stays in the first part; bit i-1 sends route[i] to the second.
+  for (let mask = 1; mask < 1 << (n - 1); mask++) {
+    const side = (i: number) => (i === 0 ? 0 : (mask >> (i - 1)) & 1);
+    if (together.some(([i, j]) => side(i) !== side(j))) continue;
+    const parts = [route.filter((_, i) => side(i) === 0), route.filter((_, i) => side(i) === 1)];
+    const walked = parts.map(part => walk(store, bestSequence(store, part, departureAt, params.serviceSeconds), departureAt, params.serviceSeconds));
+    const value = [walked.reduce((sum, w) => sum + lateCount(w.done), 0),
+      walked.reduce((sum, w) => sum + w.done.reduce((s, stop) => s + stop.lateSeconds, 0), 0),
+      Math.round(Math.max(...walked.map(w => w.seconds)) / 60), walked.reduce((sum, w) => sum + w.seconds, 0)];
+    if (!best || better(value, best.value)) best = { parts, value };
+  }
+  return best ? best.parts.sort((a, b) => urgency(baseOf(a), baseOf(b))) : null;
 }
 
 function nearestReference(candidate: Located, route: Located[]): string {

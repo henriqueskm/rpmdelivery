@@ -500,6 +500,71 @@ test("sugerir rotas com os tempos das ruas e os limites da loja", async ({ page 
   await expect(dialog.getByRole("listitem", { name: "Rota sugerida 2" })).toContainText("1 entrega");
 });
 
+test("sugerir rotas com dois motoboys livres divide a rota para nenhum ficar parado", async ({ page }) => {
+  const errors = watchErrors(page);
+  const backend = storeBackend();
+  Object.assign(backend.board, { storeLocation: { latitude: -23.0, longitude: -46.8 } });
+  // Eva joins the line after Bruno: two couriers waiting.
+  backend.board.couriers.push({ shiftId: "s-eva", name: "Eva Rocha", status: "AVAILABLE", linkActive: true,
+    requestedAt: new Date(Date.now() - 30 * 60_000).toISOString(), availableSince: new Date(Date.now() - 5 * 60_000).toISOString() });
+  const pinned = (reference: string, customer: string, address: string, neighborhood: string, latitude: number, longitude: number) => ({
+    ...structuredClone(backend.board.orders[0]), deliveryId: `d-${reference}`, orderId: `o-${reference}`, reference, customer,
+    address, neighborhood, latitude, longitude });
+  // One way south: two on a street in Centro, two further down in Jardim Sul, the bairro next door.
+  // With one courier they would all go together.
+  backend.board.orders.push(
+    pinned("2201", "Paula Rocha", "Rua das Acácias, 55", "Centro", -23.0225, -46.8),
+    pinned("2202", "Rui Campos", "R. das Acacias, 140", "Centro", -23.0233, -46.8003),
+    pinned("2203", "Sara Lopes", "Rua Sul, 1", "Jardim Sul", -23.045, -46.8),
+    pinned("2204", "Teo Dias", "Rua Sul, 300", "Jardim Sul", -23.047, -46.8));
+  backend.handlers.get_neighborhood_centers = () => ({ json: [
+    { neighborhood: "Centro", latitude: -23.0229, longitude: -46.8, orders: 10 },
+    { neighborhood: "Jardim Sul", latitude: -23.0355, longitude: -46.8, orders: 4 } ] });
+  const calls = await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  await page.route("**/api/routing/legs", route => route.fulfill({ status: 503, json: { message: "Tempos pelas ruas indisponíveis no momento." } }));
+  await openPanel(page);
+  const free = page.getByRole("region", { name: "Motoboy livre" });
+  await free.getByRole("button", { name: "Agora não" }).click();
+  await showArea(page, /^Montagem/);
+  await page.getByRole("button", { name: "Sugerir rotas" }).click();
+  const dialog = page.getByRole("dialog", { name: "Sugestões de rota" });
+  await expect(dialog).toContainText("Com mais motoboys livres do que rotas, divide as maiores para nenhum ficar parado.");
+
+  const first = dialog.getByRole("listitem", { name: "Rota sugerida 1" });
+  await expect(first).toContainText("2 entregas");
+  await expect(first).toContainText("Motoboy: Bruno Alves · próximo da fila");
+  await expect(first).toContainText("#2201 Paula Rocha");
+  await expect(first).toContainText("#2202 Rui Campos");
+  await expect(first.locator(".ops-suggestion-split")).toHaveText(/^Dividida da rota de #2201 para nenhum motoboy ficar parado/);
+
+  const second = dialog.getByRole("listitem", { name: "Rota sugerida 2" });
+  await expect(second).toContainText("2 entregas");
+  await expect(second).toContainText("Motoboy: Eva Rocha");
+  // Its own base, and the reasons told again inside it; its customers no longer wait for Centro.
+  const stops = second.locator(".ops-suggestion-stops > li");
+  await expect(stops.nth(0)).toContainText("#2203 Sara Lopes");
+  await expect(stops.nth(0)).toContainText("Pedido base da rota");
+  await expect(stops.nth(1)).toContainText("#2204 Teo Dias");
+  await expect(stops.nth(1)).toContainText("Mesma rua de #2203");
+  await expect(second.locator(".ops-suggestion-split")).toHaveText(
+    /^Dividida da rota de #2201 para nenhum motoboy ficar parado · um pedido chega até \d+ min antes$/);
+  await expect(dialog.getByRole("listitem", { name: "Rota sugerida 3" })).toHaveCount(0);
+  const width = await page.evaluate(() => [document.documentElement.scrollWidth, innerWidth]);
+  expect(width[0]).toBeLessThanOrEqual(width[1]);
+
+  // Eva's route fills the Montagem with her.
+  await second.getByRole("button", { name: "Usar esta rota na montagem" }).click();
+  await expect(dialog).toBeHidden();
+  const sequence = page.getByLabel("Sequência planejada").locator(".ops-sequence > li");
+  await expect(sequence).toHaveCount(2);
+  await expect(sequence.nth(0)).toContainText("#2203 · Sara Lopes");
+  await page.getByRole("button", { name: "Atribuir rota", exact: false }).click();
+  await expect.poll(() => backend.commandCalls().find(call => call.fn === "create_route")?.body).toMatchObject({
+    p_shift_id: "s-eva", p_delivery_ids: ["d-2203", "d-2204"] });
+  expect(calls.unexpected).toEqual([]);
+  expect(errors).toEqual([]);
+});
+
 test("sugerir rotas sem o endereço da loja no mapa explica o que falta", async ({ page }) => {
   const backend = storeBackend();
   await mockSupabase(page, { existing: true, rpc: backend.handlers });

@@ -120,3 +120,39 @@ test("com tempos das ruas: um rio entre dois bairros vizinhos separa as rotas; s
     suggestRoutes(store, [a, b], NOW));
   assert.equal(parseStreetTable({ durations: [[0]], distances: [[0]] }, 3), null);
 });
+
+test("motoboy livre sobrando: a rota mais longa é dividida em duas, sem separar o mesmo endereço", () => {
+  // Two orders south and two east, together in one route when the detour is wide.
+  const wide = { ...DEFAULT_SUGGESTION_PARAMETERS, maxDetourSeconds: 60 * 60 };
+  const orders = [
+    order("A", "Rua Sul, 10", "Sul", -23.02, -46.8, 30),
+    order("B", "Rua Baixa, 20", "Sul", -23.025, -46.8, 40),
+    order("C", "Rua Leste, 30", "Leste", -23.0, -46.775, 50),
+    order("D", "Rua Nascente, 40", "Leste", -23.0, -46.77, 60),
+  ];
+  const ids = (result: ReturnType<typeof suggestRoutes>) => result.suggestions.map(s => s.stops.map(stop => stop.id).sort());
+  // One courier (or none counted): one route, as before.
+  assert.deepEqual(ids(suggestRoutes(store, orders, NOW, wide)), [["A", "B", "C", "D"]]);
+  assert.deepEqual(ids(suggestRoutes(store, orders, NOW, wide, undefined, undefined, 1)), [["A", "B", "C", "D"]]);
+  assert.equal(suggestRoutes(store, orders, NOW, wide, undefined, undefined, 1).suggestions[0].split, undefined);
+
+  // Two couriers: south with one, east with the other; the more urgent part first.
+  const two = suggestRoutes(store, orders, NOW, wide, undefined, undefined, 2);
+  assert.deepEqual(ids(two), [["A", "B"], ["C", "D"]]);
+  const [south, east] = two.suggestions;
+  assert.equal(south.split?.from, "A"); assert.equal(east.split?.from, "A");
+  assert.ok(east.split!.soonerSeconds > 5 * 60, "the east customers no longer wait for the south ones");
+  // The reasons are told again inside each part.
+  const why = Object.fromEntries(east.stops.map(s => [s.id, s]));
+  assert.equal(why.C.reason, undefined, "C is the base of its own route now");
+  assert.equal(why.D.reason, "same-neighborhood"); assert.equal(why.D.with, "C");
+  assert.ok(south.durationSeconds < suggestRoutes(store, orders, NOW, wide).suggestions[0].durationSeconds);
+
+  // More couriers than orders: one each.
+  assert.deepEqual(ids(suggestRoutes(store, orders, NOW, wide, undefined, undefined, 6)), [["A"], ["B"], ["C"], ["D"]]);
+
+  // The same building is never parted, whatever the couriers.
+  const twin = order("T", "R. Sul, 10", "Sul", -23.02, -46.8, 35);
+  assert.deepEqual(ids(suggestRoutes(store, [orders[0], twin, orders[2]], NOW, wide, undefined, undefined, 3)), [["A", "T"], ["C"]]);
+  assert.deepEqual(suggestRoutes(store, orders, NOW, wide, undefined, undefined, 2), two, "always the same split");
+});

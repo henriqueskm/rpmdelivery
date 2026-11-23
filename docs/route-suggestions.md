@@ -36,6 +36,18 @@ Valores padrão, decididos pelo dono em 2026-11-22 e apertados em 2026-11-23 (mi
 - 3 km numa estrada fica no caminho de 7 km na mesma estrada, não importa qual pedido chegou primeiro;
 - um pedido na direção oposta custa quase a viagem inteira.
 
+**Motoboy livre sobrando** (decisão do dono em 2026-11-23: um motoboy sair com várias entregas enquanto outro fica parado é injusto):
+- Depois de montar as rotas, enquanto houver **mais motoboys livres na fila do que rotas**, a rota mais longa é dividida em duas. Isso se repete até ter uma rota por motoboy livre, ou até não haver mais o que dividir.
+- A divisão testa todas as formas de partir a rota (até 2⁷ = 128) e escolhe, pela ordem:
+  1. menos atrasos;
+  2. menos minutos de atraso;
+  3. a mais longa das duas rotas, em minutos inteiros, o mais curta possível (o trabalho dividido de forma justa);
+  4. menos tempo rodando no total.
+- O mesmo endereço nunca é separado.
+- Cada parte ganha o seu pedido base, o mais urgente dela, e os motivos são refeitos dentro dela.
+- A sugestão mostra "Dividida da rota de #23 para nenhum motoboy ficar parado", e quanto o pedido mais ajudado chega antes do que chegaria na rota inteira.
+- Com um motoboy livre, ou nenhum, nada muda: as rotas ficam como foram montadas.
+
 **Quando um pedido não entra:**
 - quando o desvio passa do limite. O mesmo endereço sempre entra;
 - quando faz outro pedido atrasar em relação ao horário prometido.

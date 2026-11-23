@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   DEFAULT_SUGGESTION_PARAMETERS, neighborhoodCenters, relation, suggestRoutes, type SuggestionOrder,
 } from "../../features/route-planning/grouping.ts";
-import { reasonText } from "../../features/operations/live/route-suggestions-text.ts";
+import { reasonText, splitText } from "../../features/operations/live/route-suggestions-text.ts";
 import { freeCourierNotice } from "../../features/operations/live/free-courier.ts";
 
 const NOW = Date.UTC(2026, 10, 22, 15, 0);
@@ -45,6 +45,9 @@ test("o motivo diz quando o vizinho vem do centro aprendido", () => {
   assert.equal(reasonText({ id: "x", reason: "neighbor", with: "12", meters: 1200, learned: true, lateSeconds: 0 }),
     "Bairro vizinho de #12 (centros a 1,2 km)");
   assert.equal(reasonText({ id: "x", reason: "neighbor", with: "12", meters: 800, lateSeconds: 0 }), "Bairro vizinho de #12 (800 m)");
+  assert.equal(splitText({ from: "23", soonerSeconds: 12 * 60 }),
+    "Dividida da rota de #23 para nenhum motoboy ficar parado · um pedido chega até 12 min antes");
+  assert.equal(splitText({ from: "23", soonerSeconds: 20 }), "Dividida da rota de #23 para nenhum motoboy ficar parado");
 });
 
 test("aviso de motoboy livre: aparece com pedidos esperando e some com 'agora não' até chegar pedido novo", () => {

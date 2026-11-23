@@ -1,5 +1,5 @@
 // Words for the route suggestions: why each order rides along, and the estimates.
-import type { SuggestedStop } from "../../route-planning/grouping.ts";
+import type { SuggestedStop, Suggestion } from "../../route-planning/grouping.ts";
 
 const minutes = (seconds: number) => Math.max(1, Math.round(seconds / 60));
 
@@ -22,6 +22,12 @@ export function reasonText(stop: SuggestedStop): string {
     case "on-the-way": return stop.detourSeconds && stop.detourSeconds >= 30
       ? `No caminho de ${ref} (+${minutes(stop.detourSeconds)} min)` : `No caminho de ${ref}`;
   }
+}
+
+/** "Dividida da rota de #23 para nenhum motoboy ficar parado · um pedido chega até 12 min antes". */
+export function splitText(split: NonNullable<Suggestion["split"]>): string {
+  return `Dividida da rota de #${split.from} para nenhum motoboy ficar parado${split.soonerSeconds >= 60
+    ? ` · um pedido chega até ${minutes(split.soonerSeconds)} min antes` : ""}`;
 }
 
 /** "~24 min · 6,1 km". */

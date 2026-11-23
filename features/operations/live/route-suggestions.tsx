@@ -9,7 +9,7 @@ import {
 } from "../../route-planning/grouping";
 import { parseStreetTable, streetLegs } from "../../route-planning/street-legs";
 import { availableCouriers, type DemoState } from "../model";
-import { estimateText, lateText, metersText, reasonText } from "./route-suggestions-text";
+import { estimateText, lateText, metersText, reasonText, splitText } from "./route-suggestions-text";
 
 /** Street times for at most this many points (the store and the most urgent orders). */
 const STREET_POINTS = 60;
@@ -62,7 +62,7 @@ function Suggestions({ restaurantId, state, now, close, onUse }: {
       if (!current) return;
       const streets = table ? streetLegs(input.points, table) : undefined;
       setComputed({
-        result: suggestRoutes(input.store, input.orders, input.now, settings, streets, centers),
+        result: suggestRoutes(input.store, input.orders, input.now, settings, streets, centers, input.freeCouriers),
         settings, streets: !table ? "none" : table.partial ? "partial" : "all",
       });
     })();
@@ -90,6 +90,7 @@ function Suggestions({ restaurantId, state, now, close, onUse }: {
         Junta pedidos do mesmo endereço, da mesma rua, do mesmo bairro, de bairros vizinhos
         (até {metersText(computed.settings.neighborMeters)}) e os que ficam no caminho
         (até {Math.round(computed.settings.maxDetourSeconds / 60)} min a mais), sem atrasar ninguém, com até {computed.settings.maxStops} {computed.settings.maxStops === 1 ? "entrega" : "entregas"} por rota.{" "}
+        Com mais motoboys livres do que rotas, divide as maiores para nenhum ficar parado.{" "}
         {computed.streets === "all" && "Tempos pelas ruas, sem trânsito."}
         {computed.streets === "partial" && "Tempos pelas ruas, alguns ainda estimados pela distância."}
         {computed.streets === "none" && "Sem os tempos das ruas agora: tempos estimados pela distância. Confira antes de atribuir."}
@@ -113,6 +114,7 @@ function Suggestions({ restaurantId, state, now, close, onUse }: {
                 <p className="ops-suggestion-courier">{courier
                   ? <>Motoboy: <strong dir="auto">{courier.name}</strong>{index === 0 && " · próximo da fila"}</>
                   : "Sem motoboy disponível agora"}</p>
+                {suggestion.split && <p className="ops-suggestion-split">{splitText(suggestion.split)}</p>}
                 {suggestion.lateCount > 0 && <p className="ops-suggestion-late" role="note">
                   {suggestion.lateCount === 1 ? "1 pedido pode atrasar" : `${suggestion.lateCount} pedidos podem atrasar`} mesmo saindo agora.</p>}
                 <ol className="ops-suggestion-stops">
@@ -161,7 +163,8 @@ function snapshot(state: DemoState, now: number) {
   // Street times for the store and the most urgent pinned orders; the rest are estimated.
   const pinned = orders.filter(order => order.location).sort((a, b) => a.deadlineAt - b.deadlineAt || a.createdAt - b.createdAt);
   const points = [store, ...pinned.slice(0, STREET_POINTS - 1).map(order => order.location!)];
-  return { store, orders, points, now };
+  // Couriers waiting in line now: with more of them than routes, the longest routes are split.
+  return { store, orders, points, now, freeCouriers: availableCouriers(state).length };
 }
 
 /** The store's limits; the defaults when they cannot be read. */
