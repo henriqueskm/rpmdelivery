@@ -7,19 +7,53 @@ export type PastedOrder = {
   complement?: string; reference?: string; notes?: string;
 };
 
-const LABELS: { field: keyof PastedOrder | "landmark"; pattern: RegExp }[] = [
-  { field: "customer", pattern: /^(?:nome(?: do cliente)?|cliente|destinat[aá]rio|para)\s*[:\-–]\s*(.+)$/i },
-  { field: "phone", pattern: /^(?:telefone|tel|fone|celular|cel|whats(?:app)?|zap|contato)\s*[:\-–]\s*(.+)$/i },
-  { field: "address", pattern: /^(?:endere[cç]o(?: de entrega)?|end|entregar em|local de entrega|entrega)\s*[.:\-–]\s*(.+)$/i },
-  { field: "neighborhood", pattern: /^bairro\s*[:\-–]\s*(.+)$/i },
-  { field: "complement", pattern: /^(?:complemento|compl|apto|apartamento)\s*[.:\-–]\s*(.+)$/i },
-  { field: "landmark", pattern: /^(?:ponto de )?refer[eê]ncia\s*[:\-–]\s*(.+)$/i },
-  { field: "notes", pattern: /^(?:observa[cç](?:[oõ]es|[aã]o)|obs)\s*[.:\-–]\s*(.+)$/i },
+type Field = keyof PastedOrder | "landmark";
+
+// A label may come with its value on the same line or alone ("Telefone:"), the value on the next lines.
+const LABELS: { field: Field; pattern: RegExp }[] = [
+  { field: "customer", pattern: /^(?:nome(?: do cliente)?|cliente|destinat[aá]rio|para)\s*[:\-–]\s*(.*)$/i },
+  { field: "phone", pattern: /^(?:telefone|tel|fone|celular|cel|whats(?:app)?|zap|contato)\s*[:\-–]\s*(.*)$/i },
+  { field: "address", pattern: /^(?:endere[cç]o(?: de entrega)?|end|entregar em|local de entrega|entrega)\s*[.:\-–]+\s*(.*)$/i },
+  { field: "neighborhood", pattern: /^bairro\s*[:\-–]\s*(.*)$/i },
+  { field: "complement", pattern: /^(?:complemento|compl|apto|apartamento)\s*[.:\-–]+\s*(.*)$/i },
+  { field: "landmark", pattern: /^(?:ponto de )?refer[eê]ncia\s*[:\-–]\s*(.*)$/i },
+  { field: "notes", pattern: /^(?:observa[cç](?:[oõ]es|[aã]o)|obs)\s*[.:\-–]+\s*(.*)$/i },
   { field: "reference", pattern: /^(?:pedido|n[ºo°]\.? do pedido|n[uú]mero do pedido|c[oó]digo)\s*[:\-–#nº°]*\s*#?\s*([A-Za-z0-9-]{1,40})\b/i },
 ];
 
 const STREET = /^(?:rua|r\.|av\.?|avenida|alameda|al\.|travessa|tv\.|estrada|est\.|rodovia|rod\.|pra[cç]a|p[cç]a\.?|largo|via|viela)\s+\S/i;
 const COMPLEMENT = /\b(?:apto?\.?|apartamento|bloco|bl\.?|casa|fundos|sala|lote|qd\.?|quadra|torre)\b/i;
+
+/**
+ * Narrow paper (a 58 mm printer has 32 letters a line) or a printing program wraps a long value onto
+ * the next lines: "Endereço: rua" / "jovino antonio" / "santana, 329". At most this many lines are
+ * joined back to each field.
+ */
+const WRAPPED_LINES: Partial<Record<Field, number>> = {
+  customer: 2, phone: 1, address: 3, neighborhood: 1, complement: 2, landmark: 2, notes: 4,
+};
+/** A line that never continues a field: a separator, money, items, totals, a date or a time. */
+const ENDS_FIELD = /^[-=_*.·•\s]{3,}$|r\$|^\d+\s*x\b|\b\d+\s*x\s|\b(?:sub)?total\b|pagamento|troco|taxa|\d{1,2}\/\d{1,2}\/\d{2,4}|\b\d{1,2}:\d{2}\b/i;
+const LETTERS = /^[\p{L}][\p{L}' .-]*$/u;
+
+/** Whether [line], with no label of its own, carries on the [field] whose value so far is [value]. */
+function continues(field: Field, value: string, line: string): boolean {
+  if (field === "phone") return !value && findMobile(line) !== null;
+  if (ENDS_FIELD.test(line) || findMobile(line)) return false;
+  switch (field) {
+    // A name wraps into more name: letters only, never a street.
+    case "customer": return LETTERS.test(line) && !STREET.test(line) && `${value} ${line}`.trim().split(/\s+/).length <= 6;
+    case "neighborhood": return LETTERS.test(line);
+    // Before the house number anything carries on the street; after it, only a number or one word
+    // (the city). Two words after the number may be a name or the bairro without a label: left alone.
+    case "address": return !/\d/.test(value) || /\d/.test(line) || /^[\p{L}][\p{L}'.-]*$/u.test(line);
+    default: return true;
+  }
+}
+
+/** "…santana, 329" + "itatiba" → "…santana, 329, itatiba"; otherwise a space. */
+const joinWrapped = (value: string, line: string) =>
+  !value ? line : /\d$/.test(value) && /^\p{L}/u.test(line) ? `${value}, ${line}` : `${value} ${line}`;
 
 /** A Brazilian mobile number anywhere in [text], as typed digits "11987654321"; null when there is none. */
 export function findMobile(text: string): string | null {
@@ -46,15 +80,28 @@ export function parsePastedOrder(text: string): { order: PastedOrder; found: (ke
   let landmark = "";
   const lines = text.split(/\r?\n/).map(clean).filter(Boolean);
   const leftovers: string[] = [];
+  // Each labeled value, with the wrapped lines that carry it on joined back.
+  const entries: { field: Field; value: string }[] = [];
+  let open: { field: Field; value: string; left: number } | null = null;
   for (const line of lines) {
     const label = LABELS.find(item => item.pattern.test(line));
-    if (!label) { leftovers.push(line); continue; }
-    const value = clean(line.match(label.pattern)![1]);
+    if (!label) {
+      if (open && open.left > 0 && continues(open.field, open.value, line)) {
+        open.value = joinWrapped(open.value, line);
+        open.left -= 1;
+      } else { leftovers.push(line); open = null; }
+      continue;
+    }
+    open = { field: label.field, value: clean(line.match(label.pattern)![1]), left: WRAPPED_LINES[label.field] ?? 0 };
+    entries.push(open);
+  }
+  for (const { field, value: raw } of entries) {
+    const value = clean(raw);
     if (!value) continue;
-    if (label.field === "landmark") { landmark = value; continue; }
-    if (label.field === "phone") { const phone = findMobile(value); if (phone) order.phone = phone; continue; }
-    if (label.field === "notes" && order.notes) { extra.push(value); continue; }
-    if (!order[label.field]) order[label.field] = value;
+    if (field === "landmark") { landmark = value; continue; }
+    if (field === "phone") { const phone = findMobile(value); if (phone) order.phone = phone; continue; }
+    if (field === "notes" && order.notes) { extra.push(value); continue; }
+    if (!order[field]) order[field] = value;
   }
 
   // Without labels: the first street line is the address, a mobile anywhere is the phone, "#1234" the order.
