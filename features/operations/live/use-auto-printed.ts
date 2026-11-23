@@ -38,8 +38,14 @@ export function useAutoPrinted({ active, orders, busy, defaultPromiseMinutes, st
       if (blocked) { review(blocked); return; }
       try {
         const suggestions = await suggestAddress(item.order.address!, controller.signal);
-        const match = matchSuggestion(item.order.address!, suggestions);
-        if (!match) { review("não achei esse endereço no mapa com certeza"); return; }
+        const { city } = item.order;
+        const match = matchSuggestion(item.order.address!, suggestions, city);
+        if (!match) {
+          // The same street and number in another city is not good enough: the store checks it.
+          const elsewhere = city && matchSuggestion(item.order.address!, suggestions);
+          review(elsewhere ? `o mapa só achou esse endereço fora de ${city}` : "não achei esse endereço no mapa com certeza");
+          return;
+        }
         const found = await resolveAddress(match.id, controller.signal);
         const result = autoOrder(item, found, defaultPromiseMinutes, store);
         if ("reason" in result) { review(result.reason); return; }

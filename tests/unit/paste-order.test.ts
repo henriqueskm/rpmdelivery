@@ -95,6 +95,38 @@ test("o que vem depois do campo e não é continuação fica de fora", () => {
   assert.equal(parsePastedOrder("Telefone:\nCliente: Bia").order.customer, "Bia");
 });
 
+test("cupom do iFood: cidade do bairro, CEP fora do endereço e Ref na referência", () => {
+  // As the iFood example came out on the work PC, wrapped by Notepad (fictional data).
+  const { order, found } = parsePastedOrder([
+    "PEDIDO #4829", "--------------------", "Data/Hora:", "23/11/2026 - 16:10", "Previsão Entrega:", "16:50 - 17:00",
+    "Tipo: ENTREGA", "PARCEIRA (iFood)", "--------------------",
+    "CLIENTE: Lucas", "Mendes", "Tel: (11) 99999-0000", "(ID: 4412)", "Histórico: 12º", "pedido na loja",
+    "--------------------", "ENDEREÇO DE ENTREGA:", "Rua das Flores, 123", "- Apto 42, Bloco B", "Bairro: Centro -",
+    "Itatiba/SP", "CEP: 13250-000", "Ref: Próximo à praça", "central", "====================", "ITENS DO PEDIDO",
+  ].join("\r\n"));
+  assert.deepEqual(order, {
+    reference: "4829", customer: "Lucas Mendes", phone: "11999990000",
+    address: "Rua das Flores, 123, Itatiba", neighborhood: "Centro", city: "Itatiba",
+    complement: "Apto 42, Bloco B · Próximo à praça central",
+  });
+  assert.equal(foundText(found), "nome, WhatsApp, endereço, bairro, cidade, complemento e nº do pedido");
+});
+
+test("onde a cidade aparece no cupom", () => {
+  const city = (text: string) => parsePastedOrder(text).order;
+  assert.deepEqual(city("Endereço: Rua A, 10 - Itatiba/SP"), { address: "Rua A, 10, Itatiba", city: "Itatiba" });
+  assert.deepEqual(city("Endereço: Rua A, 10\nBairro: Vila Nova, São Paulo - SP"),
+    { address: "Rua A, 10, São Paulo", neighborhood: "Vila Nova", city: "São Paulo" });
+  assert.deepEqual(city("Endereço: Rua A, 10\nCidade: Embu-Guaçu/SP"), { address: "Rua A, 10, Embu-Guaçu", city: "Embu-Guaçu" });
+  assert.deepEqual(city("Endereço: Rua A, 10\nCidade: Itatiba"), { address: "Rua A, 10, Itatiba", city: "Itatiba" });
+  assert.deepEqual(city("Rua A, 10\nItatiba - SP"), { address: "Rua A, 10, Itatiba", city: "Itatiba" }, "a line of its own");
+  assert.deepEqual(city("Endereço: Rua A, 10, Itatiba\nCidade: Itatiba/SP"), { address: "Rua A, 10, Itatiba", city: "Itatiba" },
+    "not twice");
+  // A CEP ends the address: it is not a house number to glue to the street.
+  assert.equal(city("Endereço: Rua A, 10\n13250-000").address, "Rua A, 10");
+  assert.equal(city("Endereço: Rua A, 10 - Bloco B").city, undefined, "a block is not a state");
+});
+
 test("campos longos são cortados no limite do formulário", () => {
   const { order } = parsePastedOrder(`Observações: ${"x".repeat(900)}`);
   assert.equal(order.notes!.length, 500);

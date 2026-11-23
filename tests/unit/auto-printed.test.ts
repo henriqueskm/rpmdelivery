@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { autoOrder, distanceKm, houseNumber, matchSuggestion, receiptBlock, streetWords }
+import { autoOrder, distanceKm, houseNumber, inCity, matchSuggestion, receiptBlock, streetWords }
   from "../../features/operations/live/auto-printed.ts";
 import { parsePrintedOrders } from "../../lib/printing/printer-inbox.ts";
 
@@ -71,4 +71,22 @@ test("pedido salvo sozinho: endereço do mapa, bairro, prazo padrão e origem im
 test("distância em km", () => {
   assert.equal(Math.round(distanceKm({ latitude: -23.55, longitude: -46.63 }, { latitude: -22.9, longitude: -47.06 })), 85);
   assert.equal(distanceKm({ latitude: 0, longitude: 0 }, { latitude: 0, longitude: 0 }), 0);
+});
+
+test("cidade do cupom: só vale a sugestão daquela cidade (cupom do iFood no PC do trabalho)", () => {
+  const at = (secondaryLabel: string) => ({ id: secondaryLabel, label: "Rua das Flores 123", secondaryLabel, kind: "address" as const });
+  const atibaia = at("Brotas, Atibaia - São Paulo, 12950-170, Brasil");
+  const itatiba = at("Centro, Itatiba - São Paulo, 13250-000, Brasil");
+  assert.equal(houseNumber("Rua das Flores, 123, Itatiba"), "123");
+  assert.equal(houseNumber("Rua das Flores 123, Itatiba"), "123", "the number closes the street part");
+  assert.deepEqual(streetWords("Rua das Flores, 123, Itatiba"), ["flores"]);
+  assert.equal(matchSuggestion("Rua das Flores, 123, Itatiba", [atibaia], "Itatiba"), null, "another city");
+  assert.equal(matchSuggestion("Rua das Flores, 123, Itatiba", [atibaia, itatiba], "Itatiba")?.id, itatiba.id);
+  assert.equal(matchSuggestion("Rua das Flores, 123", [atibaia])?.id, atibaia.id, "no city on the receipt: as before");
+  assert.equal(inCity(at("Jardim Itatiba, Atibaia - São Paulo, Brasil"), "Itatiba"), false, "a bairro with the city's name");
+  assert.equal(inCity(at("Centro, São Paulo - São Paulo, Brasil"), "sao paulo"), true, "accents and case");
+  assert.equal(inCity(at("Itatiba, Brasil"), "Itatiba"), true, "another shape: the name anywhere");
+  const fromProgram = printed({ ...maria, city: "Itatiba" });
+  assert.equal(fromProgram.order.city, "Itatiba", "the panel keeps the city the program sends");
+  assert.ok(fromProgram.found.includes("city"));
 });
