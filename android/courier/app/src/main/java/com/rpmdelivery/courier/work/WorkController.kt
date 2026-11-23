@@ -58,6 +58,9 @@ enum class Section(val label: String) {
     Help("Ajuda"),
 }
 
+/** The route closed on the way back without a swipe: the server saw the courier at the store by GPS. */
+const val ARRIVED_BY_GPS = "Chegada na loja registrada pela localização. Você voltou para a fila."
+
 /**
  * The courier's shift and route. Reads every [refreshMillis] while the screen is shown and the app is in
  * the foreground, and right after each command. No background work.
@@ -360,8 +363,12 @@ class WorkController(
             mutable.update {
                 // Once the store changes something, an older notice or refusal no longer describes the screen.
                 val stale = it.home == null || (!afterCommand && shown != it.home)
+                // On the way back the route closed without a swipe: the GPS saw the courier at the store.
+                val arrivedByGps = !afterCommand && it.home?.route?.status == "RETURNING" &&
+                    shown.route?.routeId != it.home?.route?.routeId
                 it.copy(home = shown, loading = false, offline = false,
-                    message = if (stale) null else it.message, notice = if (stale) null else it.notice)
+                    message = if (stale) null else it.message,
+                    notice = if (arrivedByGps) ARRIVED_BY_GPS else if (stale) null else it.notice)
             }
         } catch (error: CancellationException) { throw error }
         catch (error: WorkProblem) {
