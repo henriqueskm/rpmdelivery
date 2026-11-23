@@ -1,0 +1,100 @@
+# Impressora virtual de teste
+
+Um programa pequeno que finge ser uma impressora térmica de rede. Tudo o que for impresso nela fica guardado no computador. O programa também diz:
+
+- se o cupom chegou como **texto** (dá para ler o pedido) ou como **figura** (não dá);
+- o que o "Colar pedido" do painel reconheceria: nome, WhatsApp, endereço, bairro, complemento, nº do pedido e observações.
+
+Serve para descobrir, antes de construir a integração, se o cupom que um sistema de pedidos imprime pode virar um pedido no RPM sem ninguém digitar. Nada sai do computador. A única exceção é o `--repassar`, que manda a impressão também para uma impressora de verdade.
+
+As impressões ficam em `tools/print-capture/impressoes/`. Essa pasta não vai para o Git, porque um cupom real tem nome, telefone e endereço de cliente.
+
+## 1. Ligar a impressora virtual
+
+Num terminal, na pasta do projeto:
+
+```powershell
+npm run print:capture
+```
+
+Deixe esse terminal aberto. Ele mostra cada impressão que chegar. Para confirmar que está ouvindo, abra outro terminal e mande um cupom de exemplo:
+
+```powershell
+npm run print:sample
+```
+
+```powershell
+npm run print:sample -- figura
+```
+
+O primeiro comando manda um cupom em texto, e a impressora virtual mostra os campos reconhecidos. O segundo manda um cupom desenhado como figura, e ela avisa que não há texto para ler.
+
+**Não abra `127.0.0.1:9100` no navegador.** O navegador manda junto os cookies de login dos sites que rodam em `127.0.0.1`. A impressora virtual reconhece isso: responde com uma página de aviso e não guarda nem mostra nada.
+
+## 2. Instalar a impressora "RPM Teste" no Windows (uma vez só)
+
+Este passo muda uma configuração do Windows, então quem faz é você.
+
+1. Abra **Configurações → Bluetooth e dispositivos → Impressoras e scanners**. No Windows 10 é **Configurações → Dispositivos → Impressoras e scanners**.
+2. Clique em **Adicionar impressora**. Espere aparecer **"A impressora que eu quero não está na lista"** e clique nele.
+3. Escolha **"Adicionar uma impressora local ou de rede usando configurações manuais"** e clique em **Avançar**.
+4. Marque **"Criar uma nova porta"**, escolha o tipo **Standard TCP/IP Port** e clique em **Avançar**.
+5. Preencha assim e clique em **Avançar**:
+   - **Nome do host ou endereço IP:** `127.0.0.1`
+   - **Nome da porta:** `RPM Teste 9100`
+   - Desmarque **"Consultar a impressora e selecionar automaticamente o driver"**.
+6. O Windows tenta achar a impressora e não consegue. Quando pedir o tipo de dispositivo, escolha **Personalizado → Configurações…**, confira **Protocolo: Bruto (Raw)** e **Porta: 9100**, clique em **OK** e depois em **Avançar**.
+7. No driver, escolha **Fabricante: Generic** e **Impressoras: Generic / Text Only**. Clique em **Avançar**.
+8. Dê o nome **RPM Teste**, não compartilhe, não defina como padrão e conclua. Se o Windows oferecer imprimir uma página de teste, pode imprimir: ela deve aparecer no terminal da impressora virtual.
+
+Para remover depois, use **Impressoras e scanners → RPM Teste → Remover**. A porta pode ficar.
+
+## 3. Testar
+
+**Teste rápido:** abra o Bloco de Notas, escreva um pedido e imprima na "RPM Teste". Por exemplo:
+
+```
+Pedido #10
+Cliente: Maria Souza
+Telefone: (11) 98765-4321
+Endereço: Rua das Flores, 120 - Apto 3
+Bairro: Centro
+```
+
+**Teste que importa:** no sistema de pedidos do restaurante (gestor de pedidos do app de delivery, PDV, sistema de balcão), escolha a impressora **RPM Teste** e imprima um pedido real ou de teste. O terminal mostra uma de três respostas:
+
+- **"O cupom é TEXTO legível"**, seguido dos campos reconhecidos: a integração pela impressora funciona com esse sistema.
+- **"O cupom chegou como FIGURA"**: esse sistema desenha o cupom como imagem. Ler isso exigiria OCR (reconhecer letras numa foto), que é bem menos confiável. Procure nas configurações do sistema uma opção de "impressão em modo texto", "impressora não fiscal genérica" ou "ESC/POS".
+- **"Chegou um documento PDF/PostScript/PCL"**: a impressora foi instalada com um driver de impressora comum. Refaça o passo 7 com **Generic / Text Only**.
+
+### Ver o que o driver da sua impressora térmica manda
+
+O driver "Generic / Text Only" mostra o melhor caso. Para saber o que o driver de verdade da impressora do restaurante (Epson, Elgin, Bematech, Daruma…) manda, repita o passo 2 usando a **mesma porta `RPM Teste 9100`** e, no passo 7, o **driver dessa impressora**. Imprima nela. Drivers térmicos costumam mandar o cupom como figura quando a impressão vem de um navegador ou de um programa comum. Quando o sistema fala ESC/POS direto com a impressora, costumam mandar texto.
+
+### Continuar imprimindo no papel durante o teste
+
+Se a impressora térmica do restaurante é de rede (tem IP), a impressora virtual pode guardar uma cópia e repassar cada impressão para ela:
+
+```powershell
+npm run print:capture -- --repassar 192.168.0.50:9100
+```
+
+Troque `192.168.0.50` pelo IP da impressora. Ele costuma sair impresso se você ligar a impressora segurando o botão de avanço do papel.
+
+## Outras opções
+
+| Opção | Para quê |
+| --- | --- |
+| `--porta 9101` | Ouvir em outra porta. Use se a 9100 estiver ocupada, e ajuste a porta no Windows igual. |
+| `--pasta C:\outra\pasta` | Guardar as impressões em outro lugar. |
+| `--espera 5000` | Esperar mais tempo sem dados antes de dar a impressão por terminada (o padrão é 3000 ms). |
+| `--ler arquivo.bin` | Ler de novo uma impressão já guardada, sem imprimir. |
+
+Cada impressão gera dois arquivos: o `.bin` (os bytes exatos que chegaram) e o `.txt` (o texto lido). Se algum cupom real não for reconhecido direito, o `.bin` é o que permite ajustar o leitor. Ele tem dados de cliente: não mande para fora sem apagar esses dados.
+
+## Como funciona
+
+- Impressoras térmicas recebem **ESC/POS**: letras misturadas com comandos (negrito, corte do papel, gaveta, figuras, código de barras).
+- O leitor (`lib/printing/receipt-text.ts`) tira os comandos e conta as figuras. Depois decodifica as letras na página de código que o sistema escolheu (comando `ESC t`) ou, quando o sistema não escolhe, na página que faz mais sentido em português: CP850, CP860, Windows-1252 ou UTF-8.
+- O texto passa pelo mesmo leitor do "Colar pedido" (`features/operations/paste-order.ts`).
+- Esta etapa é só o teste. Se o resultado for bom, a próxima etapa é este programa criar o pedido no painel sozinho, com origem "Impressora". O banco já guarda a origem e o código externo do pedido, para não criar o mesmo pedido duas vezes.

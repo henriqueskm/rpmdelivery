@@ -4,7 +4,7 @@ import type { RouteStatus } from "./model";
 export function Icon({
   name,
 }: {
-  name: "orders" | "route" | "courier" | "activity" | "search" | "plus";
+  name: "orders" | "route" | "courier" | "activity" | "search" | "plus" | "printer";
 }) {
   const paths = {
     orders: (
@@ -37,6 +37,13 @@ export function Icon({
       </>
     ),
     plus: <path d="M12 5v14M5 12h14" />,
+    printer: (
+      <>
+        <path d="M7 9V3h10v6" />
+        <path d="M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2" />
+        <path d="M7 14h10v7H7z" />
+      </>
+    ),
   };
   return (
     <svg

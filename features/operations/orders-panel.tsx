@@ -3,6 +3,7 @@ import { OrderActions } from "./order-actions";
 import { editableOrders, normalized, plural, type DemoState } from "./model";
 import { Badge, Empty, Icon } from "./ui";
 import { DeadlineText } from "./deadline-view";
+import { originLabel, originTitle } from "./order-origin";
 
 export function OrdersPanel({
   state,
@@ -151,6 +152,17 @@ export function OrdersPanel({
                 <span className="ops-order-top">
                   <span className="ops-order-identity">
                     <strong className="ops-order-ref">#{o.reference}</strong>
+                    {/* Printed orders show only the printer symbol; delivery apps show their name. */}
+                    {o.origin && (o.origin.source === "PRINTER" ? (
+                      <span className="ops-order-origin is-icon" title={originTitle(o.origin)}>
+                        <Icon name="printer" />
+                        <span className="ops-visually-hidden">{originTitle(o.origin)}</span>
+                      </span>
+                    ) : (
+                      <span className="ops-order-origin" title={originTitle(o.origin)}>
+                        <span className="ops-visually-hidden">Origem: </span>{originLabel(o.origin)}
+                      </span>
+                    ))}
                     <span className="ops-destination">{o.neighborhood}</span>
                     <span className="ops-customer" dir="auto">
                       {o.customer}
