@@ -75,18 +75,18 @@ test("dados da loja: o dono ajusta os limites da montagem automática", async ({
   await page.goto("/loja");
   const limits = page.getByRole("form", { name: "Montagem automática" });
   await expect(limits.getByLabel("Entregas por rota")).toHaveValue("8");
-  await expect(limits.getByLabel("Desvio máximo para ir no caminho (minutos)")).toHaveValue("10");
-  await expect(limits.getByLabel("Bairros vizinhos até (km)")).toHaveValue("2");
+  await expect(limits.getByLabel("Desvio máximo para ir no caminho (minutos)")).toHaveValue("7");
+  await expect(limits.getByLabel("Bairros vizinhos até (km)")).toHaveValue("1,5");
 
   // Out of range: nothing is sent.
   await limits.getByLabel("Entregas por rota").fill("9");
   await expect(limits.getByRole("button", { name: "Salvar limites" })).toBeDisabled();
   await limits.getByLabel("Entregas por rota").fill("5");
-  await limits.getByLabel("Desvio máximo para ir no caminho (minutos)").fill("7");
-  await limits.getByLabel("Bairros vizinhos até (km)").fill("1,5");
+  await limits.getByLabel("Desvio máximo para ir no caminho (minutos)").fill("12");
+  await limits.getByLabel("Bairros vizinhos até (km)").fill("2,5");
   await limits.getByRole("button", { name: "Salvar limites" }).click();
   await expect(limits.getByRole("status")).toContainText("Limites salvos.");
-  expect(saved).toEqual([{ p_restaurant_id: testRestaurant.id, p_max_stops: 5, p_max_detour_minutes: 7, p_neighbor_meters: 1500 }]);
+  expect(saved).toEqual([{ p_restaurant_id: testRestaurant.id, p_max_stops: 5, p_max_detour_minutes: 12, p_neighbor_meters: 2500 }]);
 });
 
 test("painel avisa a entrega confirmada longe do endereço", async ({ page }) => {

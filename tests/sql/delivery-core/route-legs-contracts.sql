@@ -43,12 +43,12 @@ select core_test.check('the cache table is never reachable directly',
 -- ---------------------------------------------------------
 -- The store's limits
 -- ---------------------------------------------------------
-select core_test.check('new stores start with 8 stops, 10 min of detour and 2 km between neighbors',
+select core_test.check('new stores start with 8 stops, 7 min of detour and 1.5 km between neighbors',
  core_test.as_actor(2, format('select public.get_route_settings(%L)', core_test.id(101)))
-  = '{"maxStops": 8, "maxDetourMinutes": 10, "neighborMeters": 2000, "canEdit": false}'::jsonb);
+  = '{"maxStops": 8, "maxDetourMinutes": 7, "neighborMeters": 1500, "canEdit": false}'::jsonb);
 select core_test.check('the owner changes them',
- core_test.as_actor(1, format('select public.set_route_settings(%L, 5, 7, 1500)', core_test.id(101)))
-  = '{"maxStops": 5, "maxDetourMinutes": 7, "neighborMeters": 1500, "canEdit": true}'::jsonb);
+ core_test.as_actor(1, format('select public.set_route_settings(%L, 5, 12, 2500)', core_test.id(101)))
+  = '{"maxStops": 5, "maxDetourMinutes": 12, "neighborMeters": 2500, "canEdit": true}'::jsonb);
 select core_test.check('the operator cannot',
  core_test.try_as(2, format('select public.set_route_settings(%L, 8, 10, 2000)', core_test.id(101))) = '42501');
 select core_test.check('values out of range are refused',
@@ -58,7 +58,7 @@ select core_test.check('values out of range are refused',
 select core_test.check('another store reads neither',
  core_test.try_as(4, format('select public.get_route_settings(%L)', core_test.id(101))) = '42501');
 -- Back to the defaults for anything after this file.
-select core_test.as_actor(1, format('select public.set_route_settings(%L, 8, 10, 2000)', core_test.id(101)));
+select core_test.as_actor(1, format('select public.set_route_settings(%L, 8, 7, 1500)', core_test.id(101)));
 select core_test.check('only signed-in users call these',
  not has_function_privilege('anon', 'public.read_route_legs(uuid, jsonb)', 'EXECUTE')
  and not has_function_privilege('anon', 'public.save_route_legs(uuid, jsonb)', 'EXECUTE')

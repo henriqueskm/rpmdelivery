@@ -22,7 +22,7 @@ test("endereços e bairros escritos de jeitos diferentes viram o mesmo lugar", (
   assert.equal(relation(a, order("b", "R. das Acacias, 55", "", null, 0), DEFAULT_SUGGESTION_PARAMETERS)?.reason, "same-address");
   assert.equal(relation(a, order("c", "Rua das Acácias, 300", "Outro", null, 0), DEFAULT_SUGGESTION_PARAMETERS)?.reason, "same-street");
   assert.equal(relation(a, order("d", "Rua Um, 1", "centro", null, 0), DEFAULT_SUGGESTION_PARAMETERS)?.reason, "same-neighborhood");
-  // Neighbor bairros: 2 km between the two deliveries, no more.
+  // Neighbor bairros: 1.5 km between the two deliveries, no more.
   assert.equal(relation(a, order("e", "Rua Dois, 2", "Vila Nova", -23.015, -46.8), DEFAULT_SUGGESTION_PARAMETERS)?.reason, "neighbor");
   assert.equal(relation(a, order("f", "Rua Três, 3", "Vila Nova", -23.03, -46.8), DEFAULT_SUGGESTION_PARAMETERS), null);
 });
@@ -50,14 +50,14 @@ test("junta por endereço, rua, bairro, bairro vizinho e no caminho; sem pino o 
   assert.equal(why.C.reason, "same-address"); assert.equal(why.C.with, "A");
   assert.equal(why.B.reason, "same-street");
   assert.equal(why.E.reason, "same-neighborhood"); assert.equal(why.E.with, "D");
-  assert.equal(why.F.reason, "neighbor"); assert.ok(why.F.meters! <= 2000);
+  assert.equal(why.F.reason, "neighbor"); assert.ok(why.F.meters! <= 1500);
   assert.equal(south.lateCount, 0);
   // The stops leave in the fastest order: the near street first, then further south.
   assert.deepEqual(south.stops.slice(0, 3).map(s => s.id).sort(), ["A", "B", "C"]);
 
   assert.deepEqual(east.stops.map(s => s.id), ["G", "H"]);
   const rider = east.stops.find(s => s.reason === "on-the-way")!;
-  assert.ok(rider.detourSeconds !== undefined && rider.detourSeconds <= 600);
+  assert.ok(rider.detourSeconds !== undefined && rider.detourSeconds <= 420);
   assert.deepEqual(suggestRoutes(store, orders, NOW), result, "the same orders always give the same suggestion");
 });
 
@@ -79,7 +79,7 @@ test("um pedido que atrasaria outro não entra, mesmo na mesma rua", () => {
   assert.deepEqual(result.suggestions.map(r => r.stops.map(stop => stop.id)), [["S"], ["X"]]);
 });
 
-test("desvio acima de 10 minutos não entra, a não ser no mesmo endereço", () => {
+test("desvio acima de 7 minutos não entra, a não ser no mesmo endereço", () => {
   // Opposite directions: 2.2 km north and 3.3 km south ride about 6 km more than the longer trip alone.
   const north = order("N", "Rua Norte, 1", "Norte", -22.98, -46.8);
   const south = order("S", "Rua Sul, 1", "Sul", -23.03, -46.8);

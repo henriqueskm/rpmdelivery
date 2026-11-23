@@ -406,10 +406,10 @@ test("sugerir rotas: junta pela rua e pelo caminho, explica o motivo e preenche 
     pinned("2103", "Sara Lopes", "Rua Sul, 1", "Jardim Sul", -23.045, -46.8),
     // The other way round, 8 km west: never "on the way" of the others.
     pinned("2104", "Tito Alves", "Estrada Oeste, 900", "Chácaras", -23.0, -46.88));
-  // The store's history: Centro and Jardim Sul have centers 1.5 km apart, so they are neighbors.
+  // The store's history: Centro and Jardim Sul have centers 1.4 km apart, so they are neighbors.
   backend.handlers.get_neighborhood_centers = () => ({ json: [
     { neighborhood: "Centro", latitude: -23.0229, longitude: -46.8, orders: 10 },
-    { neighborhood: "Jardim Sul", latitude: -23.0364, longitude: -46.8, orders: 4 } ] });
+    { neighborhood: "Jardim Sul", latitude: -23.0355, longitude: -46.8, orders: 4 } ] });
   const calls = await mockSupabase(page, { existing: true, rpc: backend.handlers });
   // The street times are down: the suggestions fall back to the estimate and say so.
   const legRequests: unknown[] = [];
@@ -426,7 +426,7 @@ test("sugerir rotas: junta pela rua e pelo caminho, explica o motivo e preenche 
   const dialog = page.getByRole("dialog", { name: "Sugestões de rota" });
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText("Sem os tempos das ruas agora: tempos estimados pela distância.");
-  await expect(dialog).toContainText("de bairros vizinhos (até 2 km)");
+  await expect(dialog).toContainText("de bairros vizinhos (até 1,5 km)");
   await expect(dialog.getByRole("link", { name: "Ajustar limites em Dados da loja" })).toHaveAttribute("href", "/loja");
   // The store first, then the pinned waiting orders, most urgent first.
   expect(legRequests[0]).toMatchObject({ restaurantId: testRestaurant.id });
@@ -443,7 +443,7 @@ test("sugerir rotas: junta pela rua e pelo caminho, explica o motivo e preenche 
   await expect(stops.nth(1)).toContainText("Mesma rua de #2101");
   // Further down the same way, in a bairro the history says is next door.
   await expect(stops.nth(2)).toContainText("#2103 Sara Lopes");
-  await expect(stops.nth(2)).toContainText(/Bairro vizinho de #210[12] \(centros a 1,5 km\)/);
+  await expect(stops.nth(2)).toContainText(/Bairro vizinho de #210[12] \(centros a 1,4 km\)/);
   const second = dialog.getByRole("listitem", { name: "Rota sugerida 2" });
   await expect(second).toContainText("#2104 Tito Alves");
   await expect(second).toContainText("Sem motoboy disponível agora");
