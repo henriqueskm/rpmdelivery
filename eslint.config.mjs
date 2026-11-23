@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     // Generated Playwright diagnostics are not application source.
     "playwright-report/**",
     "test-results/**",
+    // The packaged printer program (npm run print:build) is generated.
+    "tools/print-capture/dist/**",
   ]),
 ]);
 
