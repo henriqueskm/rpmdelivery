@@ -17,13 +17,13 @@ No painel real, **Sugerir rotas** fica na Montagem e, no celular, na barra do to
 
 ## Regras (`features/route-planning/grouping.ts`)
 
-Valores padrão, decididos pelo dono em 2026-11-22:
+Valores padrão, decididos pelo dono em 2026-11-22 e apertados em 2026-11-23 (migration `20261202120000`):
 
 | Regra | Valor |
 |---|---|
 | Entregas por rota | até **8** (pensando em restaurantes com alto volume) |
-| Desvio para entrar "no caminho" | até **10 min** |
-| Bairros vizinhos | até **2 km** entre as entregas |
+| Desvio para entrar "no caminho" | até **7 min** (era 10) |
+| Bairros vizinhos | até **1,5 km** entre os centros dos bairros (era 2 km) |
 | Espera para agrupar | **nenhuma**: sugere com o que existe agora |
 | Tempo em cada porta | 3 min |
 
@@ -66,7 +66,7 @@ Valores padrão, decididos pelo dono em 2026-11-22:
 
 **Os limites da loja:**
 - Ficam em `restaurants.route_max_stops`, `route_max_detour_minutes` e `route_neighbor_meters`.
-- Os padrões são 8 entregas, 10 min e 2 km.
+- Os padrões são 8 entregas, 7 min e 1,5 km. A migration `20261202120000` passou para os novos padrões as lojas que ainda estavam em 10 min e 2 km; quem tinha mudado em Dados da loja manteve o seu valor. Antes disso, ela põe o +55 no celular das lojas gravadas antes da regra de celular (só os 11 dígitos): sem isso, qualquer mudança na linha da loja era recusada, inclusive salvar os limites e o prazo padrão.
 - O dono ou o gerente muda em **Dados da loja → Montagem automática** (`set_route_settings`). Os outros membros só leem.
 
 **O token:** o servidor usa o `MAPBOX_ACCESS_TOKEN`, o token sem restrição de URL. O token do mapa, restrito ao site, não serve aqui.
@@ -76,7 +76,7 @@ Valores padrão, decididos pelo dono em 2026-11-22:
 **Bairros vizinhos pelo histórico:**
 - `get_neighborhood_centers(restaurant)`, da migration `20261129120000`, só para membros da loja, calcula o **centro de cada bairro**. É a média dos pinos dos pedidos da loja nos últimos 180 dias, só os confirmados no mapa.
 - O bairro é agrupado sem diferenciar maiúsculas. No painel, as grafias que se normalizam igual, como "Jd." e "Jardim", são somadas pelo número de pedidos.
-- Dois bairros são vizinhos quando os **centros** estão a até a distância da loja (2 km por padrão). O motivo aparece como "Bairro vizinho de #X (centros a 1,5 km)".
+- Dois bairros são vizinhos quando os **centros** estão a até a distância da loja (1,5 km por padrão). O motivo aparece como "Bairro vizinho de #X (centros a 1,5 km)".
 - Um bairro sem histórico volta a usar a distância entre os dois pedidos.
 - Com os centros, dois bairros cujos centros estão longe não são vizinhos, mesmo que estes dois pedidos estejam perto.
 

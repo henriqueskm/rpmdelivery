@@ -17,9 +17,9 @@ export type SuggestionParameters = {
   serviceSeconds: number;
 };
 
-/** The store's decision (2026-11-22): up to 8 per route, 10 min of detour, 2 km between neighbor bairros. */
+/** The store's decision: up to 8 per route (2026-11-22); 7 min of detour and 1.5 km between neighbor bairros (2026-11-23). */
 export const DEFAULT_SUGGESTION_PARAMETERS: SuggestionParameters = {
-  maxStops: 8, maxDetourSeconds: 600, neighborMeters: 2000, serviceSeconds: 180,
+  maxStops: 8, maxDetourSeconds: 420, neighborMeters: 1500, serviceSeconds: 180,
 };
 
 /** Streets are longer than the straight line; 1.35 is a common urban detour index. */

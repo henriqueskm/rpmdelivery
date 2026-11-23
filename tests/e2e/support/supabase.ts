@@ -116,7 +116,7 @@ export async function mockSupabase(page: Page, options: Options = {}) {
       const handler = options.rpc?.[name]
         ?? (name === "get_operations_board" ? (): RpcReply => ({ json: emptyBoard() }) : undefined)
         // The store's route suggestion limits (Dados da loja, "Sugerir rotas"): the defaults.
-        ?? (name === "get_route_settings" ? (): RpcReply => ({ json: { maxStops: 8, maxDetourMinutes: 10, neighborMeters: 2000,
+        ?? (name === "get_route_settings" ? (): RpcReply => ({ json: { maxStops: 8, maxDetourMinutes: 7, neighborMeters: 1500,
           canEdit: (options.role ?? "OWNER") !== "OPERATOR" } }) : undefined)
         // A WhatsApp typed in a new order: nobody ordered from it before.
         ?? (name === "find_customer" ? (): RpcReply => ({ json: null }) : undefined)
