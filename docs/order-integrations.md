@@ -5,7 +5,7 @@ Esta etapa prepara a entrada de pedidos por outros caminhos além do formulário
 - a **impressora** (capturar o cupom que o sistema do restaurante imprime);
 - o **Open Delivery** (99Food, Keeta e outros apps que seguem o padrão).
 
-Ela ainda não liga nenhum dos dois. Deixa o banco pronto e traz uma impressora virtual para testar se a impressão serve.
+O banco está pronto para os dois. A impressora já funciona de ponta a ponta com a impressora virtual: o cupom vira um aviso no painel, e a loja confere e cadastra. O Open Delivery ainda não está ligado.
 
 ## Banco
 
@@ -43,10 +43,25 @@ O programa fica em `tools/print-capture/`; o passo a passo está no [README](../
 - Rode `npm run print:capture`, instale no Windows uma impressora "Generic / Text Only" apontando para `127.0.0.1:9100` e imprima.
 - O programa guarda o cupom e diz se ele chegou como texto ou como figura. Também mostra o que o "Colar pedido" reconheceria.
 - O leitor (`lib/printing/receipt-text.ts`) entende ESC/POS: tira comandos, figuras, códigos de barras, QR e gaveta. Decodifica as letras em CP850, CP860, CP437, Windows-1252 ou UTF-8. Também reconhece PDF, PostScript e PCL, que indicam driver errado.
-- Ainda não cria pedido sozinho. Se o teste com o sistema do restaurante der texto legível, a próxima etapa liga o programa ao `import_order`, com origem `PRINTER`.
+### Do cupom ao painel
+
+- O programa guarda na memória os cupons em texto que têm nome, WhatsApp ou endereço. Ele os oferece em `127.0.0.1:9180`, só para este computador.
+- No painel, a opção **"Pedidos da impressora neste computador"** fica no menu da loja. Vem desligada e vale por computador (`localStorage`). Ligada, o painel pergunta ao programa a cada 3 segundos, ou a cada 10 enquanto ele estiver fechado.
+- Cada cupom vira o aviso **"Pedido chegou pela impressora"**. **Conferir e cadastrar** abre o formulário de novo pedido preenchido. A loja confirma o endereço no mapa e salva por `import_order`, com origem `PRINTER`. **Descartar** tira o aviso.
+- **Código do pedido impresso** (`external_id`): o número do cupom com o dia ("5127 · 22/11/2026"), porque muitos sistemas recomeçam a numeração todo dia. Sem número, a impressão digital do texto ("cupom 0123456789ab").
+- **Cupom reimpresso:**
+  - o programa troca a cópia que ainda está esperando, para não aparecer em dobro;
+  - se o pedido já foi cadastrado, `import_order` responde o que já existe e o painel avisa "Esse pedido já estava no painel".
+- **Segurança:** o programa só atende pedidos que:
+  - vêm no próprio endereço (`127.0.0.1` ou `localhost` e a porta), o que recusa "DNS rebinding";
+  - trazem o cabeçalho `x-rpm-painel`, que obriga o navegador a perguntar antes;
+  - vêm das páginas do painel (`localhost:3000`, `127.0.0.1:3000`, o endereço oficial ou `--origem`).
+
+  Nada sai do computador: o pedido só vai para o banco quando a loja clica em cadastrar, pela sessão do painel.
 
 ## Próximas etapas
 
-1. Testar a impressora virtual com o sistema de pedidos de um restaurante de verdade.
-2. Se der texto: o programa cria o pedido no painel (`import_order`), com a loja confirmando o endereço no mapa.
-3. Open Delivery: precisa de credenciais de desenvolvedor nos apps (99Food/Keeta) e de uma função no servidor para receber o webhook.
+1. Testar com o sistema de pedidos de um restaurante de verdade. O Gestor de Pedidos do iFood imprime em ESC/POS texto, o caso bom.
+2. Telefone mascarado: cupons de app (iFood, por exemplo) costumam trazer um 0800 com código em vez do celular do cliente. Hoje o formulário exige um celular; vai precisar de uma regra própria.
+3. Um instalador para o restaurante: hoje o programa roda com `npm run print:capture`, que exige o projeto no computador.
+4. Open Delivery: precisa de credenciais de desenvolvedor nos apps (99Food/Keeta) e de uma função no servidor para receber o webhook.

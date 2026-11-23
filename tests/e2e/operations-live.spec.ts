@@ -667,6 +667,101 @@ test("editar pedido aguardando despacho: formulário preenchido, salva e mantém
   expect(errors).toEqual([]);
 });
 
+test("impressora deste computador: pedido impresso vira pedido do painel depois de conferido", async ({ page }) => {
+  const errors = watchErrors(page);
+  const backend = storeBackend();
+  await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  const geocoding = await mockGeocoding(page);
+  // The virtual printer program on this computer (tools/print-capture), with one receipt read.
+  // Whole minutes: "Pedido feito em" keeps hour and minute.
+  const receivedAt = new Date(Math.floor((Date.now() - 2 * 60_000) / 60_000) * 60_000).toISOString();
+  const printed = { id: "job-1", receivedAt, externalId: "77 · 22/11/2026", app: null,
+    order: { customer: "Maria Souza teste 01", phone: "11912345678", address: "Rua das Flores, 100", reference: "77" },
+    found: ["customer", "phone", "address", "reference"] };
+  let inbox = [printed];
+  const taken: string[] = [];
+  const panelHeaders: (string | undefined)[] = [];
+  const cors = { "Access-Control-Allow-Origin": "*" };
+  await page.route("http://127.0.0.1:9180/pedidos", route => {
+    panelHeaders.push(route.request().headers()["x-rpm-painel"]);
+    return route.fulfill({ json: { orders: inbox }, headers: cors });
+  });
+  await page.route("http://127.0.0.1:9180/pedidos/*/concluido", route => {
+    const id = route.request().url().split("/").at(-2)!;
+    taken.push(id);
+    inbox = inbox.filter(item => item.id !== id);
+    return route.fulfill({ status: 204, headers: cors });
+  });
+  await openPanel(page);
+  await showArea(page, /^Pedidos/);
+  // Off by default: the panel never reaches this computer's programs unless the store turns it on here.
+  await expect(page.getByRole("region", { name: "Pedidos da impressora" })).toHaveCount(0);
+  expect(panelHeaders).toEqual([]);
+
+  await page.getByRole("button", { name: /abrir menu/ }).click();
+  const menu = page.getByRole("dialog", { name: "Menu da loja" });
+  await menu.getByRole("checkbox", { name: "Pedidos da impressora neste computador" }).check();
+  await expect(menu.getByRole("status")).toHaveText("Ligado. Os pedidos impressos aparecem em Pedidos para conferir.");
+  await menu.getByRole("button", { name: "Fechar menu" }).click();
+
+  const banner = page.getByRole("region", { name: "Pedidos da impressora" });
+  await expect(banner).toContainText("Pedido chegou pela impressora");
+  await expect(banner).toContainText("Maria Souza teste 01 · #77");
+  expect(panelHeaders.every(value => value === "1")).toBe(true);
+  await banner.getByRole("button", { name: "Conferir e cadastrar" }).click();
+
+  const form = page.locator("dialog[open]");
+  // The kicker is hidden on phones; the notice says it everywhere.
+  await expect(form.locator(".ops-kicker")).toHaveText("PEDIDO DA IMPRESSORA");
+  await expect(form.getByText("Confira o que foi lido do cupom.", { exact: false })).toBeVisible();
+  await expect(form.getByRole("status").filter({ hasText: "Lido do cupom: nome, WhatsApp, endereço e nº do pedido." }))
+    .toContainText("Escolha o endereço na lista para confirmar no mapa.");
+  await expect(form.getByLabel("WhatsApp", { exact: true })).toHaveValue("(11) 91234-5678");
+  await expect(form.getByLabel("Nome do cliente")).toHaveValue("Maria Souza teste 01");
+  await expect(form.locator('input[name="reference"]')).toHaveValue("77");
+  await expect(form.getByRole("combobox", { name: "Endereço" })).toHaveValue("Rua das Flores, 100");
+  await expect.poll(() => geocoding.suggest).toEqual(["Rua das Flores, 100"]);
+  await form.getByRole("option", { name: /Rua das Flores/ }).click();
+  await expect(form.getByText("Localização confirmada", { exact: false })).toBeVisible();
+  await form.getByLabel("Bairro").fill("Centro");
+  await form.getByRole("button", { name: "Cadastrar pedido" }).click();
+  await expect(form).toHaveCount(0);
+
+  expect(backend.commandCalls().map(call => call.fn)).toEqual(["import_order"]);
+  expect(backend.commandCalls()[0].body).toMatchObject({ p_source: "PRINTER", p_external_id: "77 · 22/11/2026",
+    p_source_app: null, p_customer_name: "Maria Souza teste 01", p_customer_phone: "+5511912345678",
+    p_reference: "77", p_neighborhood: "Centro", p_address_provider_id: resolvedAddress.providerId,
+    p_ordered_at: receivedAt });
+  expect(backend.commandCalls()[0].body).not.toHaveProperty("p_request_id");
+  await expect.poll(() => taken).toEqual(["job-1"]);
+  await expect(banner).toHaveCount(0);
+  await expect(page.getByRole("status").filter({ hasText: "Pedido cadastrado. Aguardando despacho." })).toBeVisible();
+  // The new order shows where it came from: the printer symbol.
+  await expect(page.locator(".ops-order").filter({ hasText: "#77" }).locator(".ops-order-origin"))
+    .toHaveText("Veio da impressora · código 77 · 22/11/2026");
+
+  // The same receipt printed again: the panel says it was already there and changes nothing.
+  inbox = [{ ...printed, id: "job-2" }];
+  await expect(banner).toContainText("Maria Souza teste 01 · #77");
+  await banner.getByRole("button", { name: "Conferir e cadastrar" }).click();
+  await expect(form.getByLabel("Nome do cliente")).toHaveValue("Maria Souza teste 01");
+  await form.getByLabel("Bairro").fill("Centro");
+  await form.getByRole("button", { name: "Cadastrar pedido" }).click();
+  await expect(form).toHaveCount(0);
+  await expect(page.getByRole("status").filter({ hasText: "Esse pedido já estava no painel (código 77 · 22/11/2026). Nada foi alterado." }))
+    .toBeVisible();
+  await expect.poll(() => taken).toEqual(["job-1", "job-2"]);
+  expect(backend.board.orders.filter(order => order.reference === "77")).toHaveLength(1);
+
+  // Discarding leaves the order out of the panel.
+  inbox = [{ ...printed, id: "job-3", externalId: "78 · 22/11/2026", order: { ...printed.order, reference: "78" } }];
+  await banner.getByRole("button", { name: "Descartar" }).click();
+  await expect(banner).toHaveCount(0);
+  expect(taken).toEqual(["job-1", "job-2", "job-3"]);
+  expect(backend.commandCalls().filter(call => call.fn === "import_order")).toHaveLength(2);
+  expect(errors).toEqual([]);
+});
+
 test("pedido importado mostra de onde veio: símbolo da impressora ou nome do app", async ({ page }) => {
   const errors = watchErrors(page);
   const backend = storeBackend();

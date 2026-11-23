@@ -99,6 +99,14 @@ test("cada comando do painel vira a RPC certa, com a versão e a idempotência",
   restaurant, live, "req-1"), { fn: "create_order", args: { p_restaurant_id: restaurant, p_request_id: "req-1",
     p_customer_name: "Eva", p_customer_phone: "+5511911112222", p_delivery_address: "Rua C, 5", p_neighborhood: "Vila",
     p_complement: null, p_reference: null, p_notes: null, p_ordered_at: "2026-11-13T22:00:00.000Z", p_promised_minutes: 30 } });
+  // A printed order goes by its code in the store's system, not by a request id.
+  assert.deepEqual(rpcFor({ type: "add", now, order: { reference: "5127", customer: "Eva", phone: "(11) 91111-2222",
+    address: "Rua C, 5", neighborhood: "Vila", complement: "", notes: "", orderedAt: now, promisedMinutes: 30,
+    origin: { source: "PRINTER", app: null, externalId: "5127 · 13/11/2026" } } }, restaurant, live, "req-1"),
+  { fn: "import_order", args: { p_restaurant_id: restaurant, p_source: "PRINTER", p_external_id: "5127 · 13/11/2026",
+    p_source_app: null, p_customer_name: "Eva", p_customer_phone: "+5511911112222", p_delivery_address: "Rua C, 5",
+    p_neighborhood: "Vila", p_complement: null, p_reference: "5127", p_notes: null, p_ordered_at: "2026-11-13T22:00:00.000Z",
+    p_promised_minutes: 30 } });
   assert.deepEqual(rpcFor({ type: "assign", ids: ["d3"], courierId: "s1" }, restaurant, live, "req-2"),
     { fn: "create_route", args: { p_restaurant_id: restaurant, p_request_id: "req-2", p_shift_id: "s1", p_delivery_ids: ["d3"] } });
   assert.deepEqual(rpcFor({ type: "assign", ids: ["d2", "d1"], courierId: "s1", editingId: "r1" }, restaurant, live, "x"),

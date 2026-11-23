@@ -6,14 +6,24 @@
 //   node tools/print-capture/capture.mts --porta 9101          outra porta
 //   node tools/print-capture/capture.mts --repassar 192.168.0.50:9100   imprime também na impressora real
 //   node tools/print-capture/capture.mts --ler arquivo.bin     lê uma impressão já guardada
+//   node tools/print-capture/capture.mts --sistema "Balcão"    nome do sistema que imprime, mostrado no painel
+//   node tools/print-capture/capture.mts --sem-painel          não entrega os pedidos ao painel
+//
+// Cada cupom com pedido fica disponível para o painel aberto neste computador (127.0.0.1:9180), que o
+// mostra em "Pedidos" quando a opção "Pedidos da impressora" está ligada no menu da loja. Os pedidos ficam
+// só na memória deste programa: fechar o programa os descarta.
 //
 // Passo a passo para instalar a impressora no Windows: tools/print-capture/README.md
 
 import { createServer, connect, type Socket } from "node:net";
+import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { readReceipt, type ReceiptReading } from "../../lib/printing/receipt-text.ts";
 import { foundText } from "../../features/operations/paste-order.ts";
+import { allowedRequest, isOrderLike, PANEL_HEADER, PANEL_ORIGINS, PRINTER_INBOX_PORT, printedExternalId,
+  type PrintedOrder } from "../../lib/printing/printer-inbox.ts";
 
 const args = process.argv.slice(2);
 const option = (name: string) => {
@@ -28,6 +38,71 @@ const forward = option("repassar");
 const readFileArg = option("ler");
 // A job is over when the connection closes, or after this long without new bytes (some drivers keep it open).
 const idleMs = Number(option("espera") ?? 3000);
+const panel = !args.includes("--sem-painel");
+const panelPort = Number(option("porta-painel") ?? PRINTER_INBOX_PORT);
+const panelOrigins = [...PANEL_ORIGINS, ...(option("origem") ? [option("origem")!.replace(/\/+$/, "")] : [])];
+const systemName = option("sistema")?.trim().slice(0, 40) || null;
+
+/** Printed orders the panel has not taken yet (newest last), in memory only. */
+const inbox: PrintedOrder[] = [];
+
+function offerToPanel(reading: ReceiptReading, receivedAt: Date) {
+  if (!panel || reading.verdict !== "text" || !isOrderLike(reading.found)) return;
+  const fingerprint = createHash("sha256").update(reading.text.replace(/\s+/g, " ").trim()).digest("hex");
+  const externalId = printedExternalId(reading.order.reference, receivedAt, fingerprint);
+  // A reprint replaces the copy still waiting: one card per order on the panel.
+  const previous = inbox.findIndex(item => item.externalId === externalId);
+  if (previous >= 0) inbox.splice(previous, 1);
+  inbox.push({ id: randomUUID(), receivedAt: receivedAt.toISOString(), externalId, app: systemName,
+    order: reading.order, found: reading.found });
+  if (inbox.length > 50) inbox.shift();
+  console.log(`  → Pronto para o painel (código ${externalId}). Abra "Pedidos" no painel deste computador.`);
+}
+
+function answer(response: ServerResponse, status: number, origin: string | undefined, body?: unknown) {
+  response.statusCode = status;
+  response.setHeader("Vary", "Origin");
+  response.setHeader("Cache-Control", "no-store");
+  if (origin && panelOrigins.includes(origin)) response.setHeader("Access-Control-Allow-Origin", origin);
+  if (body === undefined) { response.end(); return; }
+  response.setHeader("Content-Type", "application/json; charset=utf-8");
+  response.end(JSON.stringify(body));
+}
+
+function servePanel(request: IncomingMessage, response: ServerResponse) {
+  const origin = request.headers.origin;
+  const host = request.headers.host;
+  if (request.method === "OPTIONS") {
+    // The browser asks first because of the panel's header; only the panel's pages get a yes.
+    if (!allowedRequest({ host, origin, panel: "1" }, panelPort, panelOrigins) || !origin) {
+      answer(response, 403, undefined); return;
+    }
+    response.setHeader("Access-Control-Allow-Methods", "GET, POST");
+    response.setHeader("Access-Control-Allow-Headers", PANEL_HEADER);
+    // Chrome asks a public page (the hosted panel) before it reaches this computer.
+    response.setHeader("Access-Control-Allow-Private-Network", "true");
+    response.setHeader("Access-Control-Max-Age", "600");
+    answer(response, 204, origin);
+    return;
+  }
+  const panelHeader = request.headers[PANEL_HEADER];
+  if (!allowedRequest({ host, origin, panel: Array.isArray(panelHeader) ? panelHeader[0] : panelHeader }, panelPort, panelOrigins)) {
+    answer(response, 403, undefined); return;
+  }
+  const path = (request.url ?? "/").split("?")[0];
+  if (request.method === "GET" && path === "/pedidos") { answer(response, 200, origin, { orders: inbox }); return; }
+  const taken = path.match(/^\/pedidos\/([\w-]{1,64})\/concluido$/);
+  if (request.method === "POST" && taken) {
+    const at = inbox.findIndex(item => item.id === taken[1]);
+    if (at >= 0) {
+      const [item] = inbox.splice(at, 1);
+      console.log(`\n[${new Date().toLocaleTimeString("pt-BR")}] O painel tirou da lista o pedido da impressora (código ${item.externalId}).`);
+    }
+    answer(response, 204, origin);
+    return;
+  }
+  answer(response, 404, origin, { error: "not found" });
+}
 
 const FIELD_NAMES: Record<string, string> = {
   customer: "Nome", phone: "WhatsApp", address: "Endereço", neighborhood: "Bairro",
@@ -124,6 +199,7 @@ async function handle(socket: Socket) {
       console.log("  ─── texto do cupom ───");
       console.log(reading.text.split("\n").map(line => `  │ ${line}`).join("\n"));
     }
+    offerToPanel(reading, new Date());
     passOn(bytes);
   };
   const idle = () => { clearTimeout(timer); timer = setTimeout(finish, idleMs); };
@@ -175,4 +251,16 @@ if (readFileArg) {
     if (forward) console.log(`Cada impressão também vai para a impressora ${forward}.`);
     console.log("Imprima algo na impressora \"RPM Teste\" (Ctrl+C para sair).");
   });
+  if (panel) {
+    const panelServer = createHttpServer(servePanel);
+    panelServer.on("error", error => {
+      const code = (error as NodeJS.ErrnoException).code;
+      console.log(code === "EADDRINUSE"
+        ? `  ! A porta ${panelPort} do painel já está em uso: os pedidos não vão para o painel. Use --porta-painel.`
+        : `  ! Não consegui abrir a porta ${panelPort} do painel: ${error.message}`);
+    });
+    // Only this computer: the panel open here asks for the printed orders.
+    panelServer.listen(panelPort, "127.0.0.1", () =>
+      console.log(`Pedidos para o painel deste computador em 127.0.0.1:${panelPort}.`));
+  }
 }

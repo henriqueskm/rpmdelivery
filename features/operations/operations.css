@@ -1419,6 +1419,12 @@
 .ops-drawer nav a:hover, .ops-drawer nav button:hover, .ops-drawer-foot button:hover { background: #f1f3ef; }
 .ops-drawer nav a[aria-current="page"] { background: #e8f2ec; color: #17633d; font-weight: 650; }
 .ops-drawer-foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); }
+/* Per computer: orders read from the printer on this machine. */
+.ops-drawer-printer { margin-top: 12px; padding: 12px 12px 4px; border-top: 1px solid var(--line); display: grid; gap: 4px; }
+.ops-drawer-printer label { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 15px; cursor: pointer; }
+.operations .ops-drawer-printer input { margin: 0; }
+/* Not a <small>: the drawer sits inside .ops-account, whose small text is hidden on phones. */
+.ops-drawer-printer-status { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
 .ops-signout-dialog { max-width: 360px; }
 .ops-signout-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
 .ops-signout-actions > div { display: contents; }
@@ -1765,6 +1771,12 @@
 .operations .ops-free-alert-open { min-height: 44px; padding: 6px 18px; font-size: 14px; font-weight: 700; background: #275940; border-color: #275940; color: #fff; }
 .operations .ops-free-alert-open:hover { background: #1d4531; }
 .operations .ops-free-alert .ops-link-button { min-height: 44px; }
+/* An order read from the printer waits for the store to check it: same calm banner, a printer symbol. */
+.ops-printer-alert { border-color: #a9bcd6; background: #edf2f9; color: #24405f; }
+.ops-printer-alert-icon { display: inline-flex; color: #385578; }
+.ops-printer-alert-icon svg { width: 22px; height: 22px; }
+.operations .ops-printer-alert .ops-free-alert-open { background: #2f4f74; border-color: #2f4f74; }
+.operations .ops-printer-alert .ops-free-alert-open:hover { background: #233d5b; }
 /* Imported order: where it came from (printer capture, delivery app), next to the order number. */
 .ops-order-origin {
   align-self: center;
