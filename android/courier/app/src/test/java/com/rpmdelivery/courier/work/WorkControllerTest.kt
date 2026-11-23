@@ -31,6 +31,41 @@ class WorkControllerTest {
         assertEquals("d-2", work.state.value.home!!.route!!.nextDeliveryId)
     }
 
+    @Test fun arrivalByGpsSaysTheCourierIsBackInLine() = runTest {
+        val work = WorkController(fake, this, onExpired = { expired++ })
+        fake.requestShift("r-1"); fake.approve(); fake.assign(); fake.release()
+        fake.startRoute("route-1", 2)
+        work.refresh(); advanceUntilIdle()
+        repeat(2) {
+            val route = work.state.value.home!!.route!!
+            work.completeDelivery(route, route.next!!); advanceUntilIdle()
+        }
+        assertEquals("RETURNING", work.state.value.home!!.route!!.status)
+
+        // The server closed the way back by GPS: no swipe, the next read finds the courier in line.
+        fake.home = fake.home.copy(route = null, shift = fake.home.shift!!.copy(status = "AVAILABLE", queuePosition = 1))
+        work.refresh(); advanceUntilIdle()
+        assertNull(work.state.value.home!!.route)
+        assertEquals(ARRIVED_BY_GPS, work.state.value.notice)
+        assertFalse("the swipe was not needed", fake.calls.contains("arrive_at_store"))
+        // It stays while nothing else changes.
+        work.refresh(); advanceUntilIdle()
+        assertEquals(ARRIVED_BY_GPS, work.state.value.notice)
+    }
+
+    @Test fun swipeOnTheWayBackKeepsItsOwnNotice() = runTest {
+        val work = WorkController(fake, this, onExpired = { expired++ })
+        fake.requestShift("r-1"); fake.approve(); fake.assign(); fake.release()
+        fake.startRoute("route-1", 2)
+        work.refresh(); advanceUntilIdle()
+        repeat(2) {
+            val route = work.state.value.home!!.route!!
+            work.completeDelivery(route, route.next!!); advanceUntilIdle()
+        }
+        work.arriveAtStore(work.state.value.home!!.route!!); advanceUntilIdle()
+        assertEquals("Chegada registrada. Você voltou para a fila.", work.state.value.notice)
+    }
+
     @Test fun refusalShowsTheStoreSentenceAndReloads() = runTest {
         val work = WorkController(fake, this, onExpired = { expired++ })
         fake.requestShift("r-1"); fake.approve(); fake.assign()

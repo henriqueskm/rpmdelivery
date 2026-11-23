@@ -834,6 +834,8 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
                         actions.navigate(mapQuery(route.store.latitude, route.store.longitude, address))
                     }
                 }
+                Text("Com a localização ligada, você entra na fila sozinho ao chegar na loja, na hora em que chegou. Sem localização, deslize abaixo.",
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 SwipeToConfirm("Deslize quando chegar na loja", busy, SoftCoral, Coral, Coral, busyLabel = "Registrando chegada…") { actions.arrive(route) }
                 Refusal(refusal)
             }

@@ -103,7 +103,7 @@ Segue as regras do protótipo de ocorrências (`docs/delivery-occurrences-protot
 | `start_route(route, expected_version)` | PREPARING, liberação vigente (`RPM_PICKUP_NOT_RELEASED`), versão que o motoboy viu (`RPM_ROUTE_STALE`), turno AVAILABLE e vínculo ACTIVE. Rota e turno viram ON_ROUTE, entregas ON_ROUTE, pedidos DELIVERING; a primeira parada vira NEXT. Repetir devolve o estado. |
 | `complete_delivery(request_id, route, delivery)` | Só a parada NEXT (senão `RPM_DELIVERY_STATE` com o status atual no `detail`, ex.: CANCELLED pela loja). Entrega e pedido DELIVERED; a próxima parada vira NEXT. |
 | `report_delivery_failure(request_id, route, delivery, reason, notes)` | Só a NEXT. Motivos: CUSTOMER_NOT_FOUND, CUSTOMER_NOT_RESPONDING, ADDRESS_PROBLEM, OTHER (relato de 3–500 caracteres). Abre ocorrência com prazo e a rota segue. |
-| `arrive_at_store(route)` | RETURNING → COMPLETED. O turno volta a AVAILABLE com `available_since = agora` (fim da fila). Repetir é sucesso. |
+| `arrive_at_store(route)` | RETURNING → COMPLETED. O turno volta a AVAILABLE com `available_since = agora` (fim da fila). Repetir é sucesso. Desde a migration `20261203120000`, a volta também fecha sozinha pelo GPS: ver "Chegada pelo GPS". |
 | `record_courier_locations(route, points)` | Lote de 1–100 pontos `{latitude, longitude, accuracy?, recordedAt}` em rota ON_ROUTE/RETURNING/COMPLETED. Pontos fora da janela da rota (relógio do aparelho, sincronização atrasada) são descartados; repetidos, ignorados. A posição ao vivo só avança e só com a rota ativa. |
 
 ### Comandos da loja (membro ativo, inclusive OPERATOR)
@@ -251,7 +251,7 @@ Uma leitura só, `stable`, a cada 15 s com o app aberto e logo depois de cada co
 - **Rota:** aguarda a liberação da retirada; "Iniciar rota" (`start_route` com a versão vista) e, em seguida, chama `dispatch-notifications` para o aviso "saiu para entrega". Sem a função publicada, a chamada falha em silêncio e a rota segue.
 - **Parada atual:** pedido, cliente, endereço, complemento, bairro, prazo, tentativa e observações; navegação pelo app de mapas instalado (coordenadas quando existem, senão o endereço escrito).
 - **Deslizar para confirmar:** "Iniciar rota", "Entregue" (`complete_delivery`) e "Cheguei na loja" só acontecem deslizando até o fim; tocar ou soltar no meio não faz nada. Com leitor de tela, o toque duplo aciona a mesma ação. "Encerrar turno" é um link discreto com confirmação. **Não consegui entregar** abre no próprio cartão o motivo e, em "Outro motivo", um relato de 3 a 500 caracteres (`report_delivery_failure`).
-- **Volta:** "Volte para a loja", com o resumo da rota, navegação até a loja e "Cheguei na loja" (`arrive_at_store`), que devolve o motoboy ao fim da fila.
+- **Volta:** "Volte para a loja", com o resumo da rota e a navegação até a loja. Com a localização ligada, o motoboy entra na fila sozinho ao chegar (ver "Chegada pelo GPS"). Sem localização, o deslize "Cheguei na loja" (`arrive_at_store`) devolve o motoboy ao fim da fila.
 - **Ligar para a loja** abre o discador com o telefone da loja. O app nunca recebe o telefone do cliente.
 - **Rota na rua fixa:** em rota e voltando para a loja, a parada atual e as ações ficam paradas na tela. A lista de paradas e "Ligar para a loja" ficam numa aba no rodapé ("Entregas da rota · 1 entregue de 3"), que sobe até três quartos da tela ao puxar ou tocar. Só com letra muito grande, quando a parada não cabe, a parte de cima rola.
 - **Esperando na fila:** "Pronto para os avisos" mostra notificações, localização e economia de bateria, com "Ativar" no que estiver desligado; "Seu dia" mostra desde quando está na fila, entregas de hoje, encosta, valor das entregas, total e "Ver histórico".
@@ -424,3 +424,26 @@ Pendências, Acompanhar rotas e som continuam no topo. Os atalhos "Convites e v�
 - **Horário de cada entrega:** "Entregue às 10:25", vindo de `routeOutcomes.at`.
 - **Copiar link de acompanhamento:** o botão fica em cada pedido aguardando despacho e em cada entrega ainda na rota, dentro de "Acompanhar rotas". Ele copia `…/acompanhar/<token>` para a loja mandar à mão, por exemplo no WhatsApp, enquanto o envio automático não estiver ativo. Sem acesso à área de transferência, o link aparece num campo para copiar.
 - **Quadro:** `get_operations_board` ganhou `routePositions`, `trackingTokens`, `storeLocation` e `routeOutcomes[].at`. O quadro é só da loja: o motoboy nunca lê os links nem os telefones dos clientes.
+
+## Chegada pelo GPS (migration 20261203120000)
+
+Antes, o motoboy só voltava para a fila quando deslizava "Cheguei na loja", e entrava no fim da fila na hora do deslize. Quem esquecia de deslizar perdia a vez.
+
+**Como funciona:**
+- Na volta para a loja (rota `RETURNING`), o app continua mandando o GPS (`record_courier_locations`).
+- O **primeiro ponto da volta** a até **100 m** do pino da loja, com precisão de **50 m ou melhor**, fecha a rota sozinho (`private.store_arrival_at` e `private.finish_return`). Pontos sem precisão contam, porque versões antigas do app não mandavam.
+- O motoboy volta para a fila **na hora em que o GPS o viu na loja** (`available_since` = hora do ponto), não na hora em que alguém percebeu. Entre dois motoboys, quem chegou primeiro fica na frente.
+- `routes.arrival_source` guarda como a volta terminou: `GPS` ou `BUTTON`.
+- O app lê a rota a cada 15 s. Quando a volta some sem deslize, ele avisa: "Chegada na loja registrada pela localização. Você voltou para a fila."
+
+**O que não conta:**
+- Ponto de **antes** da volta. Por exemplo, o motoboy passando em frente à loja entre duas entregas.
+- Ponto com sinal ruim, com precisão pior que 50 m.
+- Loja **sem pino** no mapa: nunca fecha sozinha.
+
+**O deslize continua:**
+- Serve para o celular com a localização desligada ou sem sinal, e funciona como antes, com a regra dos 300 m.
+- Se o GPS já tinha visto o motoboy na loja (um lote que chegou atrasado, por exemplo), a vez conta da hora do GPS.
+- Deslizar depois da chegada automática não dá erro e não muda nada.
+
+**Concorrência:** o fechamento pelo GPS pega as mesmas travas da rota que o deslize (`private.lock_route_execution`) e confere de novo se a rota ainda está voltando. Assim, GPS e deslize ao mesmo tempo fecham a rota uma vez só. As travas só são pegas quando há um ponto na loja; os outros lotes de GPS não esperam por nada.

@@ -49,7 +49,7 @@ Marque o horário de cada passo; o que não acontecer como descrito vai para a t
 1. Na segunda parada, o cliente combina de **não atender**.
 2. Motoboy toca **"Não consegui entregar"**, escolhe **"Cliente não atende"** e envia.
 3. Loja vê a ocorrência com som/aviso e, na Central, escolhe **"Tentar novamente"** uma vez; na segunda falha, **"Devolver"**.
-4. Motoboy recebe "Volte para a loja", navega até a loja e **desliza "Cheguei na loja"**; volta para a fila.
+4. Motoboy recebe "Volte para a loja" e navega até a loja. Ao chegar, entra na fila sozinho pela localização (confira o aviso "Chegada na loja registrada pela localização"). Sem localização, **desliza "Cheguei na loja"**.
 5. Loja vê o pedido em **"Voltaram para a loja"** e toca **"Devolver à fila"** (ou cancela depois).
    - Conferir: o cliente vê "O pedido voltou para a loja"; o motoboy não ganha por essa entrega.
 
