@@ -22,6 +22,8 @@ import { CourierPay, type CourierPayHandle } from "./live/courier-pay";
 import { CourierCardDialog } from "./live/courier-card-dialog";
 import { RouteSuggestions } from "./live/route-suggestions";
 import { freeCourierNotice } from "./live/free-courier";
+import { usePrinterInbox } from "./live/use-printer-inbox";
+import { printedSummary, printedToIncoming, type IncomingOrder } from "./live/printed-order";
 import { StoreMenu } from "./store-menu";
 import { RouteTracker, routesToRelease } from "./route-tracker";
 import { ConfirmDialog, type Confirmation } from "./live/confirm-dialog";
@@ -221,6 +223,16 @@ function OperationsWorkspace({
   const freeNotice = live && !editingId ? freeCourierNotice(availableCouriers(state)[0],
     state.orders.filter(order => order.delivery === "WAITING" && order.location).length, dismissedFree) : null;
   const toRelease = routesToRelease(state);
+  /** Real data: orders read from the printer on this computer, checked one at a time in the new-order form. */
+  const printer = usePrinterInbox(!!live);
+  const printed = live ? printer.orders : [];
+  const [incoming, setIncoming] = useState<IncomingOrder | null>(null);
+  function openPrinted(id: string) {
+    const item = printed.find(order => order.id === id);
+    if (!item) return;
+    setIncoming(printedToIncoming(item));
+    newDialog.current?.showModal();
+  }
   /** Opens "Acompanhar rotas", on a given route when there is one (scrolled to and focused). */
   function followRoute(id?:string) {
     setHighlightedRoute(id);setTrackerOpen(true);
@@ -257,7 +269,8 @@ function OperationsWorkspace({
           {storeHref ? <>
             <StoreMenu restaurantName={restaurantName} email={email} storeHref={storeHref}
               courierManagementHref={courierManagementHref} signOut={accountAction}
-              onPay={live ? () => payMenu.current?.open() : undefined} />
+              onPay={live ? () => payMenu.current?.open() : undefined}
+              printer={live ? { enabled: printer.enabled, status: printer.status, onToggle: printer.setEnabled } : undefined} />
             {live && <CourierPay restaurantId={live.restaurantId} ref={payMenu} trigger={false} />}
           </> : <>
             <div>
@@ -324,6 +337,16 @@ function OperationsWorkspace({
           <button className="ops-free-alert-open" onClick={() => setSuggestionsOpen(Date.now())}>Sugerir rotas</button>
           <button className="ops-link-button" onClick={() =>
             setDismissedFree(previous => ({ ...previous, [freeNotice.courierId]: freeNotice.waiting }))}>Agora não</button>
+        </div>}
+        {/* An order read from a printed receipt: the store checks it (address on the map) before it is saved. */}
+        {printed.length > 0 && <div className="ops-free-alert ops-printer-alert" role="region" aria-label="Pedidos da impressora">
+          <span className="ops-printer-alert-icon" aria-hidden="true"><Icon name="printer" /></span>
+          <p>
+            <strong>{printed.length === 1 ? "Pedido chegou pela impressora" : `${printed.length} pedidos chegaram pela impressora`}</strong>
+            <span dir="auto">{printedSummary(printed[0])}</span>
+          </p>
+          <button className="ops-free-alert-open" onClick={() => openPrinted(printed[0].id)}>Conferir e cadastrar</button>
+          <button className="ops-link-button" onClick={() => void printer.take(printed[0].id)}>Descartar</button>
         </div>}
         {preview&&scenario.startsWith("issues-")&&<IssueDemoControls state={state} onCommand={courierCommand}/>}
         <NewIssueBanner issues={alerts.alerts} state={state} now={now} onDismiss={ids=>{
@@ -434,7 +457,8 @@ function OperationsWorkspace({
         </footer>
       </div>
       <NewOrderDialog dialogRef={newDialog} now={now} defaultPromiseMinutes={state.defaultPromiseMinutes} onAdd={add} live={!!live}
-        restaurantId={live?.restaurantId} />
+        restaurantId={live?.restaurantId} incoming={live ? incoming : null}
+        onIncomingSaved={id => { setIncoming(null); void printer.take(id); }} />
       {live && <ConfirmDialog request={confirmation} onClose={() => setConfirmation(null)} />}
       {live && <RouteSuggestions open={suggestionsOpen} restaurantId={live.restaurantId} state={state} now={now} onClose={() => setSuggestionsOpen(null)}
         onUse={(ids, courier) => { setSelected(ids); if (courier) setCourierId(courier); setActiveTab("builder"); }} />}

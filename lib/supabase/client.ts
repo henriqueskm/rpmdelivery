@@ -43,6 +43,7 @@ type Database = {
       review_courier_membership: { Args: { p_restaurant_id: string; p_relationship_id: string; p_approve: boolean }; Returns: string };
       get_operations_board: { Args: { p_restaurant_id: string }; Returns: unknown };
       create_order: { Args: Record<string, unknown>; Returns: unknown };
+      import_order: { Args: Record<string, unknown>; Returns: unknown };
       create_route: { Args: Record<string, unknown>; Returns: unknown };
       update_route_composition: { Args: Record<string, unknown>; Returns: unknown };
       release_route_pickup: { Args: Record<string, unknown>; Returns: unknown };

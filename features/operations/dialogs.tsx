@@ -6,6 +6,7 @@ import { type DemoOrder, type NewOrder } from "./model";
 import { localDateTime, parseLocalDateTime, MAX_PROMISE_MINUTES } from "./deadlines";
 import { AddressAutocomplete, type AddressHints } from "@/components/address-autocomplete";
 import type { ResolvedAddress } from "@/services/geocoding/types";
+import type { IncomingOrder } from "./live/printed-order";
 
 // A customer's address may be saved as typed: the search helps, it never blocks the order.
 const ORDER_ADDRESS_HINTS: AddressHints = {
@@ -288,6 +289,8 @@ export function NewOrderDialog({
   defaultPromiseMinutes,
   live = false,
   restaurantId,
+  incoming,
+  onIncomingSaved,
 }: {
   dialogRef: RefObject<HTMLDialogElement | null>;
   onAdd: (order: NewOrder) => boolean | Promise<boolean>;
@@ -297,21 +300,39 @@ export function NewOrderDialog({
   live?: boolean;
   /** Real data: returning customers are recognized by the WhatsApp. */
   restaurantId?: string;
+  /** Real data: an order read from a printed receipt; a new object fills the form again. */
+  incoming?: IncomingOrder | null;
+  /** The incoming order was saved (or was already there). */
+  onIncomingSaved?: (id: string) => void;
 }) {
   // A saved order starts the next one from an empty form; a paste or a returning customer refills it.
   const [formKey, setFormKey] = useState(0);
   const [prefill, setPrefill] = useState<{ values: OrderPrefill; filled: string } | null>(null);
+  // The printed order the form holds. Closing without saving lets it go: it stays on the banner.
+  const [held, setHeld] = useState<IncomingOrder | null>(null);
+  const [seen, setSeen] = useState<IncomingOrder | null>(null);
+  if (incoming && incoming !== seen) {
+    setSeen(incoming);
+    setHeld(incoming);
+    setPrefill({ values: incoming.values, filled: incoming.filled });
+    setFormKey(key => key + 1);
+  }
+  function letGo() {
+    if (!held) return;
+    setHeld(null); setPrefill(null); setFormKey(key => key + 1);
+  }
   return (
-    <dialog ref={dialogRef} className="ops-dialog" aria-labelledby="ops-new-title">
+    <dialog ref={dialogRef} className="ops-dialog" aria-labelledby="ops-new-title" onClose={letGo}>
       <div className="ops-dialog-heading">
         <div>
-          <span className="ops-kicker">{live ? "NOVO PEDIDO" : "CADASTRO DEMONSTRATIVO"}</span>
+          <span className="ops-kicker">{held ? "PEDIDO DA IMPRESSORA" : live ? "NOVO PEDIDO" : "CADASTRO DEMONSTRATIVO"}</span>
           <h2 id="ops-new-title">Novo pedido</h2>
         </div>
         <button type="button" aria-label="Fechar novo pedido" onClick={() => dialogRef.current?.close()}>×</button>
       </div>
       <p className="ops-dialog-notice">
-        {live ? "O cliente recebe o link de acompanhamento quando a rota sair."
+        {held ? "Confira o que foi lido do cupom. O cliente recebe o link de acompanhamento quando a rota sair."
+          : live ? "O cliente recebe o link de acompanhamento quando a rota sair."
           : "Use apenas dados fictícios. Nada será salvo ou enviado."}
       </p>
       <OrderForm key={formKey} live={live} now={now} defaultPromiseMinutes={defaultPromiseMinutes}
@@ -319,8 +340,12 @@ export function NewOrderDialog({
         initial={prefill?.values} filled={prefill?.filled}
         restaurantId={live ? restaurantId : undefined}
         onRestart={live ? (values, filled) => { setPrefill({ values, filled }); setFormKey(key => key + 1); } : undefined}
-        onSubmit={order => onAdd(order)}
-        onSaved={() => { dialogRef.current?.close(); setPrefill(null); setFormKey(key => key + 1); }} />
+        onSubmit={order => onAdd(held ? { ...order, origin: held.origin } : order)}
+        onSaved={() => {
+          const saved = held?.id;
+          dialogRef.current?.close(); setHeld(null); setPrefill(null); setFormKey(key => key + 1);
+          if (saved) onIncomingSaved?.(saved);
+        }} />
     </dialog>
   );
 }

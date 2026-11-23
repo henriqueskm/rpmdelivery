@@ -57,6 +57,8 @@ export function useOperationsController(scenario: Scenario, seedTime: number, li
   // so the server answers with what it already created instead of a duplicate.
   const requestIds = useRef(new Map<string, string>());
   const busy = useRef(false);
+  /** What the last successful RPC answered (import_order says whether the order was new). */
+  const lastReply = useRef<unknown>(null);
   const [pending, setPending] = useState(false);
   useEffect(() => {dispatch({type:"issues-tick",now:seedTime});},[seedTime]);
 
@@ -78,8 +80,9 @@ export function useOperationsController(scenario: Scenario, seedTime: number, li
       const call = rpcFor(command, live.restaurantId, liveBoard, requestId);
       if (!call) return false;
       // The command name comes from rpcFor; its arguments were built for that RPC.
-      const { error } = await getSupabase().rpc(call.fn as never, call.args as never);
+      const { data, error } = await getSupabase().rpc(call.fn as never, call.args as never);
       if (error) { setNotice(errorMessage(error)); await live.refresh(); return false; }
+      lastReply.current = data;
       if (key) requestIds.current.delete(key);
       await live.refresh();
       return true;
@@ -144,8 +147,14 @@ export function useOperationsController(scenario: Scenario, seedTime: number, li
   async function add(order: NewOrder) {
     const command: Command = { type: "add", order, now: Date.now() };
     if (operationsReducer(state, command) === state) return false;
+    lastReply.current = null;
     if (!(await run(command))) return false;
     setActiveTab("orders");
+    // The same printed order again (a reprint) answers the one already saved, unchanged.
+    if (order.origin && (lastReply.current as { created?: unknown } | null)?.created === false) {
+      setNotice(`Esse pedido já estava no painel (código ${order.origin.externalId}). Nada foi alterado.`);
+      return true;
+    }
     setNotice(live ? "Pedido cadastrado. Aguardando despacho."
       : "Pedido fictício cadastrado. Aguardando despacho; disponível somente nesta sessão da página.");
     return true;

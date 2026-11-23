@@ -67,6 +67,23 @@ Bairro: Centro
 - **"O cupom chegou como FIGURA"**: esse sistema desenha o cupom como imagem. Ler isso exigiria OCR (reconhecer letras numa foto), que é bem menos confiável. Procure nas configurações do sistema uma opção de "impressão em modo texto", "impressora não fiscal genérica" ou "ESC/POS".
 - **"Chegou um documento PDF/PostScript/PCL"**: a impressora foi instalada com um driver de impressora comum. Refaça o passo 7 com **Generic / Text Only**.
 
+## 4. Mandar o pedido impresso para o painel
+
+Com o programa aberto, cada cupom em texto que tem nome, WhatsApp ou endereço fica pronto para o painel **deste computador**.
+
+1. Abra o painel neste computador, no mesmo navegador de sempre, e entre na conta da loja.
+2. No menu da loja (☰, no canto de cima), ligue **"Pedidos da impressora neste computador"**. A linha abaixo deve dizer "Ligado". A opção vale só para este computador e este navegador.
+   - Se o painel estiver aberto pelo endereço da internet, o Chrome pode pedir permissão para acessar a rede local na primeira vez. Clique em **Permitir**: é assim que o painel fala com o programa neste computador.
+3. Imprima um pedido na "RPM Teste". Em até 3 segundos aparece o aviso **"Pedido chegou pela impressora"**, em Pedidos.
+4. Clique em **Conferir e cadastrar**. O formulário de novo pedido abre preenchido com o que foi lido do cupom. Escolha o endereço na lista para confirmar no mapa, complete o que faltar (o bairro, por exemplo) e clique em **Cadastrar pedido**.
+5. O pedido entra em Aguardando despacho com o símbolo da impressora. Passando o mouse aparece o código, por exemplo "Veio da impressora · código 10 · 22/11/2026".
+
+**Descartar** tira o aviso sem criar pedido.
+
+**Cupom impresso de novo:** o mesmo número no mesmo dia é o mesmo pedido. Cadastrar de novo não cria outro; o painel avisa que ele já estava lá. Sem número no cupom, vale o texto inteiro: um cupom idêntico é o mesmo pedido.
+
+**Os pedidos ficam só na memória do programa.** Fechar o programa descarta os que ainda não foram conferidos. O painel só consegue ler esses pedidos se a opção estiver ligada e o programa responde apenas ao painel do RpmDelivery (`localhost:3000` ou o endereço oficial). Outros sites são recusados. Para o painel em outro endereço, use `--origem https://endereco-do-painel`.
+
 ### Ver o que o driver da sua impressora térmica manda
 
 O driver "Generic / Text Only" mostra o melhor caso. Para saber o que o driver de verdade da impressora do restaurante (Epson, Elgin, Bematech, Daruma…) manda, repita o passo 2 usando a **mesma porta `RPM Teste 9100`** e, no passo 7, o **driver dessa impressora**. Imprima nela. Drivers térmicos costumam mandar o cupom como figura quando a impressão vem de um navegador ou de um programa comum. Quando o sistema fala ESC/POS direto com a impressora, costumam mandar texto.
@@ -89,6 +106,10 @@ Troque `192.168.0.50` pelo IP da impressora. Ele costuma sair impresso se você 
 | `--pasta C:\outra\pasta` | Guardar as impressões em outro lugar. |
 | `--espera 5000` | Esperar mais tempo sem dados antes de dar a impressão por terminada (o padrão é 3000 ms). |
 | `--ler arquivo.bin` | Ler de novo uma impressão já guardada, sem imprimir. |
+| `--sistema "Balcão"` | Nome do sistema que imprime, guardado junto do pedido e mostrado ao passar o mouse. |
+| `--sem-painel` | Não entregar os pedidos ao painel (só o teste no terminal). |
+| `--porta-painel 9181` | Outra porta para o painel. O painel procura na 9180: use só para testes. |
+| `--origem https://endereco` | Aceitar o painel aberto em outro endereço, além de `localhost:3000` e do endereço oficial. |
 
 Cada impressão gera dois arquivos: o `.bin` (os bytes exatos que chegaram) e o `.txt` (o texto lido). Se algum cupom real não for reconhecido direito, o `.bin` é o que permite ajustar o leitor. Ele tem dados de cliente: não mande para fora sem apagar esses dados.
 
@@ -97,4 +118,5 @@ Cada impressão gera dois arquivos: o `.bin` (os bytes exatos que chegaram) e o 
 - Impressoras térmicas recebem **ESC/POS**: letras misturadas com comandos (negrito, corte do papel, gaveta, figuras, código de barras).
 - O leitor (`lib/printing/receipt-text.ts`) tira os comandos e conta as figuras. Depois decodifica as letras na página de código que o sistema escolheu (comando `ESC t`) ou, quando o sistema não escolhe, na página que faz mais sentido em português: CP850, CP860, Windows-1252 ou UTF-8.
 - O texto passa pelo mesmo leitor do "Colar pedido" (`features/operations/paste-order.ts`).
-- Esta etapa é só o teste. Se o resultado for bom, a próxima etapa é este programa criar o pedido no painel sozinho, com origem "Impressora". O banco já guarda a origem e o código externo do pedido, para não criar o mesmo pedido duas vezes.
+- O programa guarda na memória os cupons que parecem pedido e os oferece em `127.0.0.1:9180`, só para o painel. O painel com a opção ligada pergunta a cada 3 segundos (`lib/printing/printer-inbox.ts`, `features/operations/live/use-printer-inbox.ts`).
+- O pedido conferido é salvo por `import_order`, com origem `PRINTER` e o código do cupom: número e dia, ou a impressão digital do texto. O banco não deixa o mesmo código entrar duas vezes.

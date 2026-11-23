@@ -2,13 +2,21 @@
 import Link from "next/link";
 import { useRef, type MouseEvent, type ReactNode } from "react";
 import { Brand } from "@/components/brand";
+import type { PrinterStatus } from "./live/use-printer-inbox";
 
 /**
  * The store's side menu, where "Sair" used to be: who is signed in, the other pages of the store and
  * "Sair" (asked first). Operational buttons (pendências, rotas, som) stay on the top line.
  * A native modal dialog: focus stays inside, Escape and a tap outside close it.
  */
-export function StoreMenu({ restaurantName, email, storeHref, courierManagementHref, onPay, signOut }: {
+const PRINTER_STATUS: Record<PrinterStatus, string> = {
+  off: "Desligado. Ligue no computador onde a impressora de teste (RPM Teste) está instalada.",
+  waiting: "Procurando o programa da impressora neste computador…",
+  connected: "Ligado. Os pedidos impressos aparecem em Pedidos para conferir.",
+  unreachable: "O programa da impressora não está aberto neste computador. Abra com npm run print:capture.",
+};
+
+export function StoreMenu({ restaurantName, email, storeHref, courierManagementHref, onPay, signOut, printer }: {
   restaurantName: string;
   email?: string;
   storeHref?: string;
@@ -17,6 +25,8 @@ export function StoreMenu({ restaurantName, email, storeHref, courierManagementH
   onPay?: () => void;
   /** The control that really signs out, shown in the confirmation. */
   signOut: ReactNode;
+  /** Real data: orders read from the printer on this computer (a per-computer choice). */
+  printer?: { enabled: boolean; status: PrinterStatus; onToggle: (enabled: boolean) => void };
 }) {
   const drawer = useRef<HTMLDialogElement>(null);
   const confirm = useRef<HTMLDialogElement>(null);
@@ -48,6 +58,14 @@ export function StoreMenu({ restaurantName, email, storeHref, courierManagementH
             {storeHref && <li><Link href={storeHref}>Dados da loja</Link></li>}
           </ul>
         </nav>
+        {printer && <div className="ops-drawer-printer">
+          <label>
+            <input type="checkbox" checked={printer.enabled} aria-describedby="ops-printer-status"
+              onChange={event => printer.onToggle(event.currentTarget.checked)} />
+            Pedidos da impressora neste computador
+          </label>
+          <span id="ops-printer-status" className="ops-drawer-printer-status" role="status">{PRINTER_STATUS[printer.status]}</span>
+        </div>}
         <div className="ops-drawer-foot">
           <button type="button" onClick={() => confirm.current?.showModal()}>Sair</button>
         </div>

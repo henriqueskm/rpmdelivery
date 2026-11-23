@@ -52,6 +52,7 @@ export function storeBackend() {
         notes: "Toquei três vezes", reportedAt: minutesAgo(2), decisionDeadline: minutesAhead(8),
         decision: null as string | null, decidedAt: null as string | null, decidedBy: null as string | null },
     ],
+    orderSources: [] as { deliveryId: string; source: string; app: string | null; externalId: string }[],
   };
   const calls: { fn: string; body: Record<string, unknown> }[] = [];
   const failures = new Map<string, RpcReply>();
@@ -76,6 +77,16 @@ export function storeBackend() {
         orderedAt: String(body.p_ordered_at), createdAt: new Date().toISOString(), promisedMinutes: Number(body.p_promised_minutes) };
       board.orders.unshift(created);
       return ok({ orderId: created.orderId, deliveryId: created.deliveryId, created: true });
+    },
+    // Same code from the same system answers the order already there (created: false), unchanged.
+    import_order(body) {
+      const same = board.orderSources.find(source => source.source === body.p_source
+        && (source.app ?? "") === String(body.p_source_app ?? "") && source.externalId === body.p_external_id);
+      if (same) return ok({ orderId: find(board.orders, "deliveryId", same.deliveryId)?.orderId, deliveryId: same.deliveryId, created: false });
+      const reply = commands.create_order(body) as { json: { deliveryId: string } };
+      board.orderSources.push({ deliveryId: reply.json.deliveryId, source: String(body.p_source),
+        app: (body.p_source_app as string | null) ?? null, externalId: String(body.p_external_id) });
+      return reply;
     },
     create_route(body) {
       const ids = body.p_delivery_ids as string[];

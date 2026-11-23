@@ -92,6 +92,8 @@ export type NewOrder = Pick<
 > & {
   /** Real data: the address picked from the search, so the customer's map shows the house. */
   geocode?: { latitude: number; longitude: number; providerId: string };
+  /** Real data: an order brought from another system (a printed receipt); saved through import_order. */
+  origin?: OrderOrigin;
 };
 export type Command =
   | IssueCommand
