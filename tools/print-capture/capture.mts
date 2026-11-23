@@ -115,7 +115,7 @@ function servePanel(request: IncomingMessage, response: ServerResponse) {
 }
 
 const FIELD_NAMES: Record<string, string> = {
-  customer: "Nome", phone: "WhatsApp", address: "Endereço", neighborhood: "Bairro",
+  customer: "Nome", phone: "WhatsApp", address: "Endereço", neighborhood: "Bairro", city: "Cidade",
   complement: "Complemento", reference: "Nº do pedido", notes: "Observações",
 };
 

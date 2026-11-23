@@ -28,7 +28,8 @@ O texto vem do WhatsApp, do app de entrega ou do cupom. `features/operations/pas
 - Endereço
 - Bairro
 - Complemento
-- Referência (vai junto do complemento)
+- Referência ou Ref (vai junto do complemento)
+- Cidade
 - Observações
 - Pedido #
 
@@ -52,6 +53,18 @@ Exemplo, do teste com a impressora:
 | `endereço: rua` / `jovino antonio` / `santana, 329` / `itatiba` | rua jovino antonio santana, 329, itatiba |
 
 O separador do rótulo também pode vir repetido: "Compl.: bloco B" lê "bloco B".
+
+**Cidade:** a mesma rua existe em várias cidades vizinhas. Num teste com um cupom do iFood, "Rua das Flores, 123" foi parar em Atibaia, embora o cupom dissesse Itatiba/SP. O leitor acha a cidade:
+- no rótulo "Cidade:";
+- no fim do bairro ("Bairro: Centro - Itatiba/SP" vira bairro "Centro" e cidade "Itatiba"), mesmo quando o "Itatiba/SP" quebra para a linha de baixo;
+- no fim do endereço ("Rua A, 10 - Itatiba/SP");
+- numa linha só dela ("Itatiba - SP").
+
+Sem rótulo, só conta como cidade o nome seguido da sigla do estado.
+
+A cidade não tem campo no formulário: ela vai para o fim do endereço ("Rua das Flores, 123, Itatiba"), e assim a busca procura nessa cidade. No modo "Cadastrar sozinho", quando o cupom traz a cidade, só vale o endereço que o mapa achar nela. Se o mapa só achar a rua em outra cidade, o pedido espera a loja com o motivo "o mapa só achou esse endereço fora de Itatiba". Quando o cupom não traz a cidade, continua valendo só o limite de 30 km da loja.
+
+O CEP encerra o endereço e não entra na busca: o CEP geral da cidade (13250-000) não é o da rua e atrapalharia a busca.
 
 **O que ele não faz:** não adivinha bairro nem número.
 

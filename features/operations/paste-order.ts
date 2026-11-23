@@ -5,6 +5,12 @@
 export type PastedOrder = {
   customer?: string; phone?: string; address?: string; neighborhood?: string;
   complement?: string; reference?: string; notes?: string;
+  /**
+   * The city the receipt names ("Bairro: Centro - Itatiba/SP"). It is not a field of the form: it goes
+   * at the end of the address, so the search looks in that city, and the automatic mode only accepts
+   * an address found there.
+   */
+  city?: string;
 };
 
 type Field = keyof PastedOrder | "landmark";
@@ -16,7 +22,8 @@ const LABELS: { field: Field; pattern: RegExp }[] = [
   { field: "address", pattern: /^(?:endere[cç]o(?: de entrega)?|end|entregar em|local de entrega|entrega)\s*[.:\-–]+\s*(.*)$/i },
   { field: "neighborhood", pattern: /^bairro\s*[:\-–]\s*(.*)$/i },
   { field: "complement", pattern: /^(?:complemento|compl|apto|apartamento)\s*[.:\-–]+\s*(.*)$/i },
-  { field: "landmark", pattern: /^(?:ponto de )?refer[eê]ncia\s*[:\-–]\s*(.*)$/i },
+  { field: "landmark", pattern: /^(?:(?:ponto de )?refer[eê]ncia|ref)\s*[.:\-–]+\s*(.*)$/i },
+  { field: "city", pattern: /^(?:cidade|munic[ií]pio)\s*[.:\-–]+\s*(.*)$/i },
   { field: "notes", pattern: /^(?:observa[cç](?:[oõ]es|[aã]o)|obs)\s*[.:\-–]+\s*(.*)$/i },
   { field: "reference", pattern: /^(?:pedido|n[ºo°]\.? do pedido|n[uú]mero do pedido|c[oó]digo)\s*[:\-–#nº°]*\s*#?\s*([A-Za-z0-9-]{1,40})\b/i },
 ];
@@ -30,11 +37,25 @@ const COMPLEMENT = /\b(?:apto?\.?|apartamento|bloco|bl\.?|casa|fundos|sala|lote|
  * joined back to each field.
  */
 const WRAPPED_LINES: Partial<Record<Field, number>> = {
-  customer: 2, phone: 1, address: 3, neighborhood: 1, complement: 2, landmark: 2, notes: 4,
+  customer: 2, phone: 1, address: 3, neighborhood: 1, complement: 2, landmark: 2, notes: 4, city: 1,
 };
-/** A line that never continues a field: a separator, money, items, totals, a date or a time. */
-const ENDS_FIELD = /^[-=_*.·•\s]{3,}$|r\$|^\d+\s*x\b|\b\d+\s*x\s|\b(?:sub)?total\b|pagamento|troco|taxa|\d{1,2}\/\d{1,2}\/\d{2,4}|\b\d{1,2}:\d{2}\b/i;
+/** A line that never continues a field: a separator, money, items, totals, a CEP, a date or a time. */
+const ENDS_FIELD = /^[-=_*.·•\s]{3,}$|r\$|^\d+\s*x\b|\b\d+\s*x\s|\b(?:sub)?total\b|pagamento|troco|taxa|\bcep\b|\b\d{5}-\d{3}\b|\d{1,2}\/\d{1,2}\/\d{2,4}|\b\d{1,2}:\d{2}\b/i;
 const LETTERS = /^[\p{L}][\p{L}' .-]*$/u;
+
+const STATES = "AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO";
+/**
+ * A city with its state closing the text: "Itatiba/SP", "Centro - Itatiba/SP", "Rua X, 12, São Paulo - SP".
+ * The city is words joined by a space or a hyphen ("Embu-Guaçu"); before it, " - " or a comma.
+ */
+const CITY_STATE = new RegExp(
+  `^(?:(.*?)\\s*(?:\\s[-–]\\s|,)\\s*)?([\\p{L}][\\p{L}'.]*(?:[ -][\\p{L}][\\p{L}'.]*)*)\\s*(?:\\/|\\s[-–]\\s)\\s*(?:${STATES})\\.?$`, "iu");
+
+/** "Centro - Itatiba/SP" → rest "Centro", city "Itatiba"; null when the text does not end in a city and state. */
+export function splitCity(text: string): { rest: string; city: string } | null {
+  const match = text.trim().match(CITY_STATE);
+  return match ? { rest: (match[1] ?? "").trim(), city: match[2].trim() } : null;
+}
 
 /** Whether [line], with no label of its own, carries on the [field] whose value so far is [value]. */
 function continues(field: Field, value: string, line: string): boolean {
@@ -43,7 +64,9 @@ function continues(field: Field, value: string, line: string): boolean {
   switch (field) {
     // A name wraps into more name: letters only, never a street.
     case "customer": return LETTERS.test(line) && !STREET.test(line) && `${value} ${line}`.trim().split(/\s+/).length <= 6;
-    case "neighborhood": return LETTERS.test(line);
+    // "Bairro: Centro -" / "Itatiba/SP": the city wrapped onto the next line.
+    case "neighborhood": return LETTERS.test(line) || splitCity(line)?.rest === "";
+    case "city": return /[-–]$/.test(value) && /^[\p{L}]{2}$/u.test(line);
     // Before the house number anything carries on the street; after it, only a number or one word
     // (the city). Two words after the number may be a name or the bairro without a label: left alone.
     case "address": return !/\d/.test(value) || /\d/.test(line) || /^[\p{L}][\p{L}'.-]*$/u.test(line);
@@ -71,6 +94,10 @@ function splitComplement(address: string): { address: string; complement?: strin
     return { address: parts[0].trim(), complement: parts.slice(1).join(" - ").trim() };
   return { address: address.trim() };
 }
+
+/** Lower case, no accents, single spaces: to compare names typed in different ways. */
+export const sameText = (text: string) => ` ${text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+  .replace(/[^a-z0-9]+/g, " ").trim()} `;
 
 const clean = (value: string) => value.replace(/\s+/g, " ").replace(/^[*_~\s]+|[*_~\s]+$/g, "").trim();
 
@@ -120,30 +147,50 @@ export function parsePastedOrder(text: string): { order: PastedOrder; found: (ke
   // A short line of letters only, before anything else, reads as the customer's name.
   if (!order.customer) {
     const name = leftovers.find(line => /^[\p{L}][\p{L}' .-]{1,60}$/u.test(line) && line.split(" ").length <= 5
-      && !STREET.test(line) && !COMPLEMENT.test(line) && !/pedido|entrega|total|pagamento|troco|r\$/i.test(line));
+      && !STREET.test(line) && !COMPLEMENT.test(line) && !/pedido|entrega|total|pagamento|troco|r\$/i.test(line)
+      && !splitCity(line));
     if (name) order.customer = name;
   }
+  // The city: its own label, the end of the bairro or of the address, or a line of its own ("Itatiba/SP").
+  if (order.city) order.city = splitCity(order.city)?.city ?? order.city.replace(/\s*[-–,/]\s*$/, "");
+  for (const key of ["neighborhood", "address"] as const) {
+    const split = order[key] ? splitCity(order[key]!) : null;
+    if (!split) continue;
+    order.city ??= split.city;
+    if (split.rest) order[key] = split.rest; else delete order[key];
+  }
+  if (!order.city) {
+    const alone = leftovers.map(line => splitCity(line)).find(split => split?.rest === "");
+    if (alone) order.city = alone.city;
+  }
+  if (order.neighborhood) order.neighborhood = order.neighborhood.replace(/\s*[-–,]\s*$/, "") || undefined;
+  if (!order.neighborhood) delete order.neighborhood;
   if (order.address) {
     const split = splitComplement(order.address);
     order.address = split.address;
     if (split.complement && !order.complement) order.complement = split.complement;
+    // "Rua das Flores, 123, Itatiba": the search looks in the receipt's city, not in the first one it finds.
+    if (order.city && !sameText(order.address).includes(sameText(order.city)))
+      order.address = `${order.address}, ${order.city}`;
   }
   if (landmark) order.complement = order.complement ? `${order.complement} · ${landmark}` : landmark;
   if (extra.length) order.notes = [order.notes, ...extra].filter(Boolean).join(" · ");
 
   // Field limits of the form.
   const limits: Record<keyof PastedOrder, number> = {
-    customer: 120, phone: 24, address: 200, neighborhood: 120, complement: 240, reference: 40, notes: 500,
+    customer: 120, phone: 24, address: 200, neighborhood: 120, complement: 240, reference: 40, notes: 500, city: 80,
   };
   for (const key of Object.keys(order) as (keyof PastedOrder)[]) order[key] = order[key]!.slice(0, limits[key]);
-  const found = (["customer", "phone", "address", "neighborhood", "complement", "reference", "notes"] as const)
-    .filter(key => !!order[key]);
+  const found = ORDER_FIELDS.filter(key => !!order[key]);
   return { order, found };
 }
 
+/** Every field the reader fills, in the order it reports them. */
+export const ORDER_FIELDS = ["customer", "phone", "address", "neighborhood", "city", "complement", "reference", "notes"] as const;
+
 const NAMES: Record<keyof PastedOrder, string> = {
   customer: "nome", phone: "WhatsApp", address: "endereço", neighborhood: "bairro",
-  complement: "complemento", reference: "nº do pedido", notes: "observações",
+  complement: "complemento", reference: "nº do pedido", notes: "observações", city: "cidade",
 };
 /** "nome, WhatsApp e endereço". */
 export function foundText(found: (keyof PastedOrder)[]): string {

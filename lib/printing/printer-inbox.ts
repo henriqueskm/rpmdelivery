@@ -3,7 +3,7 @@
 // them, the store checks the address on the map and saves through import_order (source PRINTER).
 // Pure: shared by the program (Node) and the panel (browser).
 
-import type { PastedOrder } from "../../features/operations/paste-order.ts";
+import { ORDER_FIELDS, type PastedOrder } from "../../features/operations/paste-order.ts";
 
 export const PRINTER_INBOX_PORT = 9180;
 export const PRINTER_INBOX_URL = `http://127.0.0.1:${PRINTER_INBOX_PORT}`;
@@ -41,7 +41,7 @@ export function isOrderLike(found: (keyof PastedOrder)[]): boolean {
   return found.some(key => key === "customer" || key === "phone" || key === "address");
 }
 
-const FIELDS = ["customer", "phone", "address", "neighborhood", "complement", "reference", "notes"] as const;
+const FIELDS = ORDER_FIELDS;
 
 /** The panel's reading of the program's answer; anything malformed is left out. */
 export function parsePrintedOrders(value: unknown): PrintedOrder[] {

@@ -83,7 +83,7 @@ Com o programa aberto, cada cupom em texto que tem nome, WhatsApp ou endereço f
 **Cadastrar sozinho:** com a impressora ligada, o menu mostra a opção **"Cadastrar sozinho"** (também por computador). Com ela ligada, o pedido vai direto para Aguardando despacho, com o prazo padrão da loja, quando:
 
 - o cupom tem nome, celular e endereço com número;
-- o mapa acha a **mesma rua e o mesmo número** do cupom;
+- o mapa acha a **mesma rua e o mesmo número** do cupom e, quando o cupom traz a cidade ("Centro - Itatiba/SP"), nessa cidade;
 - o endereço encontrado fica a até 30 km da loja (se a loja tem endereço no mapa);
 - há bairro (o do cupom, ou o que o mapa achou).
 

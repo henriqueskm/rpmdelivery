@@ -9,6 +9,7 @@ import type { PrintedOrder } from "../../../lib/printing/printer-inbox.ts";
 import type { AddressSuggestion, GeoPoint, ResolvedAddress } from "../../../services/geocoding/types.ts";
 import { formatBrazilianMobilePhone, isValidBrazilianMobilePhone } from "../../../lib/brazilian-mobile-phone.ts";
 import type { NewOrder } from "../model.ts";
+import { sameText } from "../paste-order.ts";
 
 /** Farther than this from the store, the address found is probably another city's street of the same name. */
 export const AUTO_MAX_KM = 30;
@@ -27,7 +28,16 @@ const words = (text: string) => text.normalize("NFD").replace(/[̀-ͯ]/g, "").to
 export function houseNumber(address: string): string | null {
   const afterComma = address.match(/,\s*(?:n[º°o.]*\s*)?(\d{1,6})\b/i);
   if (afterComma) return afterComma[1];
-  return address.match(/\S\s+(?:n[º°o.]*\s*)?(\d{1,6})\s*$/i)?.[1] ?? null;
+  // "Rua das Flores 100, Itatiba": the number closes the street part.
+  return address.split(",")[0].match(/\S\s+(?:n[º°o.]*\s*)?(\d{1,6})\s*$/i)?.[1] ?? null;
+}
+
+/** Whether the map's suggestion lies in [city] ("Brotas, Atibaia - São Paulo" is not Itatiba). */
+export function inCity(suggestion: AddressSuggestion, city: string): boolean {
+  // The map writes "bairro, cidade - estado, CEP, país": the city is what comes before " - ".
+  // Without that shape, the city's name anywhere in it (but never in the street) will do.
+  const mapCity = suggestion.secondaryLabel.split(",").map(part => part.match(/^\s*(.+?)\s+[-–]\s+\S/)?.[1]).find(Boolean);
+  return mapCity ? sameText(mapCity) === sameText(city) : sameText(suggestion.secondaryLabel).includes(sameText(city));
 }
 
 /** The words that name the street ("Rua das Flores, 100" → flores), without its type and links. */
@@ -39,13 +49,17 @@ export function streetWords(address: string): string[] {
 
 const sameWord = (a: string, b: string) => a === b || (a.length >= 3 && b.startsWith(a)) || (b.length >= 3 && a.startsWith(b));
 
-/** The suggestion with the receipt's street and house number, or null when none is sure. */
-export function matchSuggestion(address: string, suggestions: AddressSuggestion[]): AddressSuggestion | null {
+/**
+ * The suggestion with the receipt's street and house number, or null when none is sure. When the
+ * receipt names its [city], only a suggestion in that city counts: the same street name is common.
+ */
+export function matchSuggestion(address: string, suggestions: AddressSuggestion[], city?: string): AddressSuggestion | null {
   const number = houseNumber(address);
   const street = streetWords(address);
   if (!number || !street.length) return null;
   return suggestions.find(suggestion => {
     if (suggestion.kind === "street") return false;
+    if (city && !inCity(suggestion, city)) return false;
     if (houseNumber(suggestion.label) !== number) return false;
     const label = streetWords(suggestion.label);
     // Both ways: "Rua das Flores" is not "Rua das Flores Novas".

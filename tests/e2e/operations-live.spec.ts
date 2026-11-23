@@ -839,7 +839,11 @@ test("impressora em modo automático: endereço certo vai direto para a fila; o 
       notes: "Sem cebola", reference: "81" }, found: [] };
   const unknown = { id: "job-check", receivedAt, externalId: "82 · 22/11/2026", app: null,
     order: { customer: "Caio Lima", phone: "11912340082", address: "Rua Inventada, 9", reference: "82" }, found: [] };
-  let inbox = [good, unknown];
+  // Same street and number, but the receipt says Itatiba and the map only finds it in São Paulo.
+  const elsewhere = { id: "job-city", receivedAt, externalId: "83 · 22/11/2026", app: null,
+    order: { customer: "Lia Prado", phone: "11912340083", address: "Rua das Flores, 120, Itatiba", city: "Itatiba",
+      reference: "83" }, found: [] };
+  let inbox = [good, unknown, elsewhere];
   const taken: string[] = [];
   const cors = { "Access-Control-Allow-Origin": "*" };
   await page.route("http://127.0.0.1:9180/pedidos", route => route.fulfill({ json: { orders: inbox }, headers: cors }));
@@ -875,10 +879,11 @@ test("impressora em modo automático: endereço certo vai direto para a fila; o 
 
   // The other one waits, saying why.
   const banner = page.getByRole("region", { name: "Pedidos da impressora" });
-  await expect(banner).toContainText("Pedido da impressora para conferir");
+  await expect(banner).toContainText("2 pedidos da impressora para conferir");
   await expect(banner).toContainText("Caio Lima · #82");
   await expect(banner).toContainText("Não cadastrei sozinho: não achei esse endereço no mapa com certeza.");
-  expect(geocoding.suggest).toEqual(["R. das Flores, 120", "Rua Inventada, 9"]);
+  // The receipt's city goes with the search, and an address found only in another city waits too.
+  expect(geocoding.suggest).toEqual(["R. das Flores, 120", "Rua Inventada, 9", "Rua das Flores, 120, Itatiba"]);
   await banner.getByRole("button", { name: "Conferir e cadastrar" }).click();
   const form = page.locator("dialog[open]");
   await expect(form.getByRole("status").filter({ hasText: "Não cadastrei sozinho: não achei esse endereço no mapa com certeza." }))
@@ -886,6 +891,12 @@ test("impressora em modo automático: endereço certo vai direto para a fila; o 
   await expect(form.getByLabel("Nome do cliente")).toHaveValue("Caio Lima");
   await form.getByRole("button", { name: "Fechar novo pedido" }).click();
   expect(taken).toEqual(["job-ok"]);
+  await banner.getByRole("button", { name: "Descartar" }).click();
+  await expect(banner).toContainText("Pedido da impressora para conferir");
+  await expect(banner).toContainText("Lia Prado · #83");
+  await expect(banner).toContainText("Não cadastrei sozinho: o mapa só achou esse endereço fora de Itatiba.");
+  expect(taken).toEqual(["job-ok", "job-check"]);
+  expect(backend.commandCalls().filter(call => call.fn === "import_order")).toHaveLength(1);
   expect(errors).toEqual([]);
 });
 

@@ -1,7 +1,7 @@
 import { useRef, useState, type FormEvent, type RefObject } from "react";
 import { formatBrazilianMobilePhone, isValidBrazilianMobilePhone } from "@/lib/brazilian-mobile-phone";
 import { getSupabase } from "@/lib/supabase/client";
-import { foundText, parsePastedOrder } from "./paste-order";
+import { foundText, parsePastedOrder, type PastedOrder } from "./paste-order";
 import { type DemoOrder, type NewOrder } from "./model";
 import { localDateTime, parseLocalDateTime, MAX_PROMISE_MINUTES } from "./deadlines";
 import { AddressAutocomplete, type AddressHints } from "@/components/address-autocomplete";
@@ -120,7 +120,9 @@ function OrderForm({ live, now, defaultPromiseMinutes, initial, submitLabel, foo
       `Dados de ${known.name} preenchidos. Confira se o endereço continua o mesmo.`);
   }
   function fillFromPaste() {
-    const { order, found } = parsePastedOrder(pasteRef.current?.value ?? "");
+    const { order: read, found } = parsePastedOrder(pasteRef.current?.value ?? "");
+    // The city has no field of its own: it already went to the end of the address.
+    const order = Object.fromEntries(Object.entries(read).filter(([key]) => key !== "city")) as Omit<PastedOrder, "city">;
     if (!found.length) {
       setPasteError("Não reconheci nome, WhatsApp nem endereço nesse texto. Confira o que foi colado ou preencha à mão.");
       return;
