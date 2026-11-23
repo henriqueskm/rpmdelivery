@@ -66,7 +66,7 @@ Valores padrão, decididos pelo dono em 2026-11-22 e apertados em 2026-11-23 (mi
 
 **Os limites da loja:**
 - Ficam em `restaurants.route_max_stops`, `route_max_detour_minutes` e `route_neighbor_meters`.
-- Os padrões são 8 entregas, 7 min e 1,5 km. A migration `20261202120000` passou para os novos padrões as lojas que ainda estavam em 10 min e 2 km; quem tinha mudado em Dados da loja manteve o seu valor.
+- Os padrões são 8 entregas, 7 min e 1,5 km. A migration `20261202120000` passou para os novos padrões as lojas que ainda estavam em 10 min e 2 km; quem tinha mudado em Dados da loja manteve o seu valor. Antes disso, ela põe o +55 no celular das lojas gravadas antes da regra de celular (só os 11 dígitos): sem isso, qualquer mudança na linha da loja era recusada, inclusive salvar os limites e o prazo padrão.
 - O dono ou o gerente muda em **Dados da loja → Montagem automática** (`set_route_settings`). Os outros membros só leem.
 
 **O token:** o servidor usa o `MAPBOX_ACCESS_TOKEN`, o token sem restrição de URL. O token do mapa, restrito ao site, não serve aqui.
