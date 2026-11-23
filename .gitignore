@@ -47,3 +47,5 @@ next-env.d.ts
 
 # print capture test: real receipts may hold customer data
 /tools/print-capture/impressoes/
+# the packaged printer program (npm run print:build): node.exe and a generated bundle
+/tools/print-capture/dist/

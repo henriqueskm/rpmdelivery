@@ -68,5 +68,7 @@ O programa fica em `tools/print-capture/`; o passo a passo está no [README](../
 
 1. Testar com o sistema de pedidos de um restaurante de verdade. O Gestor de Pedidos do iFood imprime em ESC/POS texto, o caso bom.
 2. Telefone mascarado: cupons de app (iFood, por exemplo) costumam trazer um 0800 com código em vez do celular do cliente. Hoje o formulário exige um celular; vai precisar de uma regra própria.
-3. Um instalador para o restaurante: hoje o programa roda com `npm run print:capture`, que exige o projeto no computador.
+3. Pasta para o restaurante: feita. `npm run print:build` gera `RpmImpressora.zip`, que leva o Node oficial e o programa num arquivo só. Na primeira vez, o programa instala a impressora RPM e pergunta em qual impressora o cupom continua saindo no papel: USB do Windows em modo RAW, ou de rede pelo IP. O README tem os detalhes. Faltam:
+   - uma assinatura digital, para o Windows não avisar ao abrir;
+   - testar numa loja com a térmica de verdade.
 4. Open Delivery: precisa de credenciais de desenvolvedor nos apps (99Food/Keeta) e de uma função no servidor para receber o webhook.

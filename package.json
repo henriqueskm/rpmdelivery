@@ -19,7 +19,8 @@
     "test:e2e:report": "playwright show-report",
     "test:e2e:install": "playwright install chromium",
     "print:capture": "node --no-warnings tools/print-capture/capture.mts",
-    "print:sample": "node --no-warnings tools/print-capture/send-sample.mts"
+    "print:sample": "node --no-warnings tools/print-capture/send-sample.mts",
+    "print:build": "node --no-warnings tools/print-capture/build.mts"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.2",

@@ -1,10 +1,14 @@
-// Impressora virtual de teste: finge ser uma impressora térmica de rede (porta RAW 9100), guarda cada
-// impressão que chega e diz se o cupom é texto legível e o que o "Colar pedido" reconheceria nele.
+// Impressora virtual: finge ser uma impressora térmica de rede (porta RAW 9100), guarda cada impressão
+// que chega e diz se o cupom é texto legível e o que o "Colar pedido" reconheceria nele.
 // Não manda nada para fora do computador, a não ser que --repassar aponte uma impressora de verdade.
 //
 //   node tools/print-capture/capture.mts                       ouve em 127.0.0.1:9100
 //   node tools/print-capture/capture.mts --porta 9101          outra porta
-//   node tools/print-capture/capture.mts --repassar 192.168.0.50:9100   imprime também na impressora real
+//   node tools/print-capture/capture.mts --repassar 192.168.0.50:9100   imprime também na impressora de rede
+//   node tools/print-capture/capture.mts --repassar "EPSON TM-T20"      ou numa impressora do Windows (USB)
+//   node tools/print-capture/capture.mts --app                 modo loja (pasta RpmImpressora): configuração
+//                                                              e impressões em %APPDATA%\RpmImpressora
+//   node tools/print-capture/capture.mts --app --configurar    refaz a configuração
 //   node tools/print-capture/capture.mts --ler arquivo.bin     lê uma impressão já guardada
 //   node tools/print-capture/capture.mts --sistema "Balcão"    nome do sistema que imprime, mostrado no painel
 //   node tools/print-capture/capture.mts --sem-painel          não entrega os pedidos ao painel
@@ -15,15 +19,19 @@
 //
 // Passo a passo para instalar a impressora no Windows: tools/print-capture/README.md
 
-import { createServer, connect, type Socket } from "node:net";
+import { createServer, type Socket } from "node:net";
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { readReceipt, type ReceiptReading } from "../../lib/printing/receipt-text.ts";
 import { foundText } from "../../features/operations/paste-order.ts";
 import { allowedRequest, isOrderLike, PANEL_HEADER, PANEL_ORIGINS, PRINTER_INBOX_PORT, printedExternalId,
   type PrintedOrder } from "../../lib/printing/printer-inbox.ts";
+import { deliver, inOrder, parseTarget, pointsToSelf, sendNetwork, targetText, type Delivery, type ForwardTarget } from "./forward.mts";
+import { findPrinter, listPrinters, rawPrint } from "./windows.mts";
+import { loadConfig, runSetup, type AppConfig } from "./setup.mts";
 
 const args = process.argv.slice(2);
 const option = (name: string) => {
@@ -31,17 +39,19 @@ const option = (name: string) => {
   return at >= 0 ? args[at + 1] : undefined;
 };
 
+// Store mode (the RpmImpressora folder): settings and prints in the user's AppData, not in the project.
+const appMode = args.includes("--app");
+const appFolder = join(process.env.APPDATA ?? homedir(), "RpmImpressora");
 const host = option("endereco") ?? "127.0.0.1";
 const port = Number(option("porta") ?? 9100);
-const folder = resolve(option("pasta") ?? join("tools", "print-capture", "impressoes"));
-const forward = option("repassar");
+const folder = resolve(option("pasta") ?? (appMode ? join(appFolder, "impressoes") : join("tools", "print-capture", "impressoes")));
 const readFileArg = option("ler");
 // A job is over when the connection closes, or after this long without new bytes (some drivers keep it open).
 const idleMs = Number(option("espera") ?? 3000);
 const panel = !args.includes("--sem-painel");
 const panelPort = Number(option("porta-painel") ?? PRINTER_INBOX_PORT);
 const panelOrigins = [...PANEL_ORIGINS, ...(option("origem") ? [option("origem")!.replace(/\/+$/, "")] : [])];
-const systemName = option("sistema")?.trim().slice(0, 40) || null;
+let systemName = option("sistema")?.trim().slice(0, 40) || null;
 
 /** Printed orders the panel has not taken yet (newest last), in memory only. */
 const inbox: PrintedOrder[] = [];
@@ -149,13 +159,58 @@ async function save(bytes: Uint8Array, reading: ReceiptReading): Promise<string>
   return base;
 }
 
-function passOn(bytes: Uint8Array) {
-  if (!forward) return;
-  const [forwardHost, forwardPort] = forward.split(":");
-  const socket = connect({ host: forwardHost, port: Number(forwardPort ?? 9100) }, () => socket.end(bytes));
-  socket.setTimeout(10_000, () => socket.destroy());
-  socket.on("error", error => console.log(`  ! Não consegui repassar para ${forward}: ${error.message}`));
-  socket.on("close", hadError => { if (!hadError) console.log(`  → Repassado para a impressora ${forward}.`); });
+/** Sends each print on to the real printer, in order, trying again before giving up. Null: no paper. */
+let toPaper: ((bytes: Uint8Array) => Promise<Delivery>) | null = null;
+let paperName = "";
+
+function paperTarget(target: ForwardTarget) {
+  paperName = targetText(target);
+  const send = target.kind === "network"
+    ? (bytes: Uint8Array) => sendNetwork(target, bytes)
+    : (bytes: Uint8Array) => rawPrint(target.name, bytes);
+  toPaper = inOrder(bytes => deliver(() => send(bytes)));
+}
+
+/** Checks the paper printer before the first print: missing, or this program itself, means no paper. */
+async function preparePaper(text: string | undefined) {
+  const target = parseTarget(text);
+  if (!target) return;
+  if (target.kind === "network") {
+    if (pointsToSelf(target.host, target.port, port)) {
+      console.log(`  ! ${targetText(target)} é este próprio programa: repassar para ele imprimiria em círculo. Sem papel.`);
+      return;
+    }
+    paperTarget(target);
+    return;
+  }
+  if (process.platform !== "win32") {
+    console.log(`  ! "${target.name}" é uma impressora do Windows, e este computador não é Windows. Sem papel.`);
+    return;
+  }
+  const printers = await listPrinters().catch(() => null);
+  const printer = printers && findPrinter(printers, target.name);
+  if (printers && !printer) {
+    console.log(`  ! Não achei a impressora "${target.name}" no Windows. Os cupons NÃO vão sair no papel.`);
+    console.log("    Confira o nome em Impressoras e scanners, ou abra \"Configurar RPM Impressora\".");
+    return;
+  }
+  if (printer && pointsToSelf(printer.host, printer.port, port)) {
+    console.log(`  ! "${printer.name}" manda para este próprio programa: repassar para ela imprimiria em círculo. Sem papel.`);
+    console.log("    Escolha a impressora térmica de verdade em \"Configurar RPM Impressora\".");
+    return;
+  }
+  paperTarget(printer ? { kind: "windows", name: printer.name } : target);
+}
+
+function paperResult(result: Delivery) {
+  const time = new Date().toLocaleTimeString("pt-BR");
+  if (result.ok) {
+    console.log(`[${time}] → Saiu no papel em ${paperName}${result.attempts > 1 ? ` (na ${result.attempts}ª tentativa)` : ""}.`);
+    return;
+  }
+  // Loud on purpose (with the terminal bell): the kitchen is waiting for this paper.
+  console.log(`\x07\n[${time}] !!! O CUPOM NÃO SAIU NO PAPEL em ${paperName}: ${result.error}`);
+  console.log("    Confira se a impressora está ligada, com papel e conectada, e imprima o pedido de novo no sistema.");
 }
 
 // A browser opening http://127.0.0.1:9100 sends an HTTP request, cookies and session tokens
@@ -166,7 +221,7 @@ const browserPage = [
   "<!doctype html><meta charset=\"utf-8\"><title>Impressora de teste</title>",
   "<body style=\"font-family:system-ui;max-width:36rem;margin:3rem auto;padding:0 1rem\">",
   "<h1>Esta é a impressora de teste</h1>",
-  "<p>Ela não abre no navegador. Imprima pelo Windows na impressora <b>RPM Teste</b> e veja o resultado no terminal.</p>",
+  "<p>Ela não abre no navegador. Imprima pelo Windows na impressora RPM e veja o resultado na janela do programa.</p>",
 ].join("");
 
 function refuseBrowser(socket: Socket) {
@@ -176,7 +231,7 @@ function refuseBrowser(socket: Socket) {
     body,
   ]));
   console.log(`\n[${new Date().toLocaleTimeString("pt-BR")}] Um navegador abriu este endereço. Isso não é uma impressão: nada foi guardado nem mostrado.`);
-  console.log("  Imprima pelo Windows na impressora \"RPM Teste\" em vez de abrir 127.0.0.1:9100 no navegador.");
+  console.log("  Imprima pelo Windows na impressora RPM em vez de abrir 127.0.0.1:9100 no navegador.");
 }
 
 async function handle(socket: Socket) {
@@ -191,6 +246,8 @@ async function handle(socket: Socket) {
     socket.destroy();
     const bytes = new Uint8Array(Buffer.concat(chunks));
     if (!bytes.length) return; // the driver only checked that the printer is there
+    // Paper first: the kitchen gets its copy whatever the reading finds.
+    const paper = toPaper?.(bytes);
     const reading = readReceipt(bytes);
     const base = await save(bytes, reading);
     console.log(`\n[${new Date().toLocaleTimeString("pt-BR")}] Impressão recebida → ${base}.txt`);
@@ -200,7 +257,7 @@ async function handle(socket: Socket) {
       console.log(reading.text.split("\n").map(line => `  │ ${line}`).join("\n"));
     }
     offerToPanel(reading, new Date());
-    passOn(bytes);
+    if (paper) paperResult(await paper);
   };
   const idle = () => { clearTimeout(timer); timer = setTimeout(finish, idleMs); };
   socket.on("data", chunk => {
@@ -227,29 +284,45 @@ async function handle(socket: Socket) {
   idle();
 }
 
-if (readFileArg) {
-  const bytes = new Uint8Array(await readFile(readFileArg).catch(() => {
-    console.error(`Não encontrei o arquivo ${readFileArg}.`);
-    process.exit(1);
-  }));
-  const reading = readReceipt(bytes);
-  console.log(`${readFileArg}`);
-  console.log(report(reading, bytes.length));
-  if (reading.text) console.log(`  ─── texto do cupom ───\n${reading.text.split("\n").map(line => `  │ ${line}`).join("\n")}`);
-} else {
+async function main() {
+  if (readFileArg) {
+    const bytes = new Uint8Array(await readFile(readFileArg).catch(() => {
+      console.error(`Não encontrei o arquivo ${readFileArg}.`);
+      process.exit(1);
+    }));
+    const reading = readReceipt(bytes);
+    console.log(`${readFileArg}`);
+    console.log(report(reading, bytes.length));
+    if (reading.text) console.log(`  ─── texto do cupom ───\n${reading.text.split("\n").map(line => `  │ ${line}`).join("\n")}`);
+    return;
+  }
+
+  if (appMode) {
+    let config: AppConfig = await loadConfig(appFolder);
+    if (!config.setupDone || args.includes("--configurar"))
+      config = await runSetup(appFolder, port, config, process.env.RPM_LAUNCHER ?? null);
+    systemName = option("sistema")?.trim().slice(0, 40) || config.system || null;
+    await preparePaper(option("repassar") ?? config.forward);
+  } else {
+    await preparePaper(option("repassar"));
+  }
+
   const server = createServer(socket => { void handle(socket); });
   server.on("error", error => {
     const code = (error as NodeJS.ErrnoException).code;
     console.error(code === "EADDRINUSE"
-      ? `A porta ${port} já está em uso (outra cópia deste programa ou uma impressora instalada nela). Use --porta 9101.`
+      ? appMode
+        ? `A porta ${port} já está em uso: o programa já deve estar aberto (veja a barra de tarefas).`
+        : `A porta ${port} já está em uso (outra cópia deste programa ou uma impressora instalada nela). Use --porta 9101.`
       : `Não consegui abrir a porta ${port}: ${error.message}`);
     process.exit(1);
   });
   server.listen(port, host, () => {
     console.log(`Impressora virtual ouvindo em ${host}:${port}.`);
     console.log(`As impressões ficam em ${folder}`);
-    if (forward) console.log(`Cada impressão também vai para a impressora ${forward}.`);
-    console.log("Imprima algo na impressora \"RPM Teste\" (Ctrl+C para sair).");
+    console.log(toPaper ? `Cada cupom também sai no papel em ${paperName}.` : "Sem impressora de papel: os cupons não saem no papel.");
+    console.log(appMode ? "Deixe esta janela aberta (pode minimizar): fechar a janela para de receber os pedidos."
+      : "Imprima algo na impressora \"RPM Teste\" (Ctrl+C para sair).");
   });
   if (panel) {
     const panelServer = createHttpServer(servePanel);
@@ -264,3 +337,5 @@ if (readFileArg) {
       console.log(`Pedidos para o painel deste computador em 127.0.0.1:${panelPort}.`));
   }
 }
+
+void main();
