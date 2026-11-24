@@ -115,3 +115,17 @@ select core_test.check('the closes table and the helpers are out of the API',
  and has_function_privilege('authenticated','public.close_store_day(uuid,uuid)','EXECUTE')
  and (select bool_and(p.prosecdef and p.proconfig = array['search_path=""']) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
    where n.nspname='public' and p.proname in ('close_store_day','get_day_close','get_day_close_report')));
+
+-- The API runs STABLE functions in a READ ONLY transaction (PostgREST): the reads must work there.
+-- They used to lock the membership row and failed with 25006 (migration 20261207120000).
+begin transaction read only;
+select core_test.act(46);
+set local role authenticated;
+select set_config('core.dc_ro', public.get_day_close(core_test.id(106))::text, true);
+select set_config('core.dc_ro_report', public.get_day_close_report(core_test.id(106),
+ (current_setting('core.dc_ro')::jsonb->'closes'->0->>'id')::uuid)::text, true);
+reset role;
+select core_test.check('the day close reads in a read-only transaction, as the API does',
+ current_setting('core.dc_ro')::jsonb ? 'openShifts'
+ and current_setting('core.dc_ro_report')::jsonb ? 'couriers');
+commit;

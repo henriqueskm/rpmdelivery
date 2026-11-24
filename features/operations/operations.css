@@ -1277,6 +1277,15 @@
   }
 }
 
+/* Motoboys column: the count and the "⋯" options (convites e vínculos, pagamentos, fechar o dia). */
+.ops-panel-heading-end { display: inline-flex; align-items: center; gap: 4px; }
+.ops-courier-menu { margin-block: 0; }
+.ops-courier-menu > summary { margin-block: -4px; }
+.ops-courier-menu .ops-order-menu-list { min-width: 200px; }
+.operations .ops-courier-menu .ops-order-menu-item { display: flex; align-items: center; padding: 0 12px;
+  color: #202c25; font-size: 14px; text-decoration: none; border-radius: 6px; }
+.operations .ops-courier-menu a.ops-order-menu-item:hover { background: #f3f5f1; }
+
 /* "Fechar o dia": open shifts, the report and the close. */
 .ops-day-shifts { margin-top: 18px; }
 .ops-day-shifts h3 { margin: 0 0 6px; font-size: 13px; font-weight: 650; }

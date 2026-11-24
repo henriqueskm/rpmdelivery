@@ -291,11 +291,14 @@ test("pagamento dos motoboys: valores da loja e acerto do dia", async ({ page })
   await mockSupabase(page, { existing: true, rpc: backend.handlers });
   await openPanel(page);
   await showArea(page, /^Motoboys/);
-  // "Convites e vínculos" and "Pagamentos" sit on one line.
-  const invites = (await page.getByRole("link", { name: "Convites e vínculos" }).boundingBox())!;
-  const payButton = (await page.getByRole("button", { name: "Pagamentos", exact: true }).boundingBox())!;
-  expect(Math.abs(invites.y + invites.height / 2 - (payButton.y + payButton.height / 2))).toBeLessThan(2);
+  // One "⋯" in the Motoboys heading holds the three options; picking one closes it.
+  const options = page.getByRole("group").filter({ has: page.getByLabel("Opções dos motoboys") });
+  await page.getByLabel("Opções dos motoboys").click();
+  await expect(page.getByRole("link", { name: "Convites e vínculos" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Fechar o dia", exact: true })).toBeVisible();
+  expect((await page.getByLabel("Opções dos motoboys").boundingBox())!.height).toBeGreaterThanOrEqual(40);
   await page.getByRole("button", { name: "Pagamentos", exact: true }).click();
+  await expect(options).not.toHaveAttribute("open", "");
   const dialog = page.getByRole("dialog", { name: "Pagamento dos motoboys" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("row", { name: /Ana Souza/ })).toContainText("R$ 51,00");
@@ -675,6 +678,7 @@ test("pagamento dos motoboys: operador vê o acerto sem alterar valores", async 
   await mockSupabase(page, { existing: true, rpc: backend.handlers });
   await openPanel(page);
   await showArea(page, /^Motoboys/);
+  await page.getByLabel("Opções dos motoboys").click();
   await page.getByRole("button", { name: "Pagamentos", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Pagamento dos motoboys" });
   await expect(dialog.getByText("Nenhum motoboy trabalhou neste dia.")).toBeVisible();
@@ -689,6 +693,7 @@ test("fechar o dia: encerra o turno de quem não está em rota e guarda o relat�
   await mockSupabase(page, { existing: true, rpc: backend.handlers });
   await openPanel(page);
   await showArea(page, /^Motoboys/);
+  await page.getByLabel("Opções dos motoboys").click();
   await page.getByRole("button", { name: "Fechar o dia", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Fechar o dia" });
 
@@ -728,6 +733,7 @@ test("fechar o dia: encerra o turno de quem não está em rota e guarda o relat�
   // The board follows: the ended shifts leave the Motoboys column.
   await expect(page.getByRole("button", { name: "Aprovar turno de Carla Dias" })).toHaveCount(0);
   // The saved report stays readable from the list.
+  await page.getByLabel("Opções dos motoboys").click();
   await page.getByRole("button", { name: "Fechar o dia", exact: true }).click();
   const pick = dialog.getByRole("combobox", { name: /^Relatório/ });
   await expect(pick.getByRole("option", { name: /^Fechado em \d{2}\/\d{2} \d{2}:\d{2} por Operador Teste$/ })).toHaveCount(1);

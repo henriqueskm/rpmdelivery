@@ -6,25 +6,31 @@ import {
 } from "./model";
 import { Badge, Empty, Icon } from "./ui";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useRef, type MouseEvent } from "react";
 
 /** One color per moment of the shift; the word stays, so color is never the only signal. */
 const statusKey: Record<string, string> = {
   "Disponível": "available", "Reservado": "reserved", "Em rota": "on-route", "Retornando": "returning", "Turno pendente": "pending",
 };
 
-export function CouriersPanel({ state, managementHref, onReviewShift, pending, pay, dayClose, onOpenCourier }: {
+export function CouriersPanel({ state, managementHref, onReviewShift, pending, onPay, onDayClose, onOpenCourier }: {
   state: DemoState; managementHref?: string;
   /** Real data: the name opens the courier card. */
   onOpenCourier?: (id: string, name: string) => void;
   /** Real data: the counter approves the shift of a courier who arrived. */
   onReviewShift?: (shiftId: string, approve: boolean) => void; pending?: boolean;
   /** Real data: rates and the day's settlement. */
-  pay?: ReactNode;
+  onPay?: () => void;
   /** Real data: "Fechar o dia", ends every shift and saves the day's report. */
-  dayClose?: ReactNode;
+  onDayClose?: () => void;
 }) {
   const available = availableCouriers(state);
+  const menu = useRef<HTMLDetailsElement>(null);
+  /** Picking an option closes the menu (its dialog opens on top). */
+  function closeOnPick(event: MouseEvent<HTMLDetailsElement>) {
+    if ((event.target as HTMLElement).closest(".ops-order-menu-list button, .ops-order-menu-list a") && menu.current)
+      menu.current.open = false;
+  }
   const rest = state.couriers.filter(
     (c) => !available.some((a) => a.id === c.id),
   );
@@ -34,13 +40,23 @@ export function CouriersPanel({ state, managementHref, onReviewShift, pending, p
         <h2 id="ops-couriers-title">
           <Icon name="courier" /> Motoboys
         </h2>
-        <Badge>{plural(available.length, "disponível", "disponíveis")}</Badge>
+        <span className="ops-panel-heading-end">
+          <Badge>{plural(available.length, "disponível", "disponíveis")}</Badge>
+          {(managementHref || onPay || onDayClose) && (
+            // One "⋯" menu for what is not the queue itself: links, rates and the end of the day.
+            <details ref={menu} className="ops-order-menu ops-courier-menu" onClick={closeOnPick}>
+              <summary aria-label="Opções dos motoboys" title="Convites e vínculos, pagamentos e fechar o dia">
+                <span aria-hidden="true">⋯</span>
+              </summary>
+              <div className="ops-order-menu-list">
+                {managementHref && <Link href={managementHref} className="ops-order-menu-item">Convites e vínculos</Link>}
+                {onPay && <button type="button" className="ops-order-menu-item" onClick={onPay}>Pagamentos</button>}
+                {onDayClose && <button type="button" className="ops-order-menu-item" onClick={onDayClose}>Fechar o dia</button>}
+              </div>
+            </details>
+          )}
+        </span>
       </div>
-      {(managementHref || pay || dayClose) && <div className="ops-courier-links">
-        {managementHref && <Link href={managementHref} className="text-button">Convites e vínculos</Link>}
-        {pay}
-        {dayClose}
-      </div>}
       <div className="ops-courier-caption">Fila por ordem de chegada</div>
       <div
         className="ops-panel-scroll"
