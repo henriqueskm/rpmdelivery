@@ -8,7 +8,9 @@ import type { OrderOrigin } from "../order-origin.ts";
 import { readPaymentJson, validPayment, type OrderPayment } from "../payment.ts";
 
 type BoardOrder = {
-  deliveryId: string; orderId: string; reference: string; customer: string; phone: string;
+  deliveryId: string; orderId: string; reference: string; customer: string;
+  /** Null when the delivery app hid it (customerContacts has its contact). */
+  phone: string | null;
   address: string; neighborhood: string | null; complement: string | null; notes: string | null;
   orderedAt: string; createdAt: string; promisedMinutes: number;
   orderStatus: DemoOrder["status"]; deliveryStatus: DeliveryStatus; failedAttempts: number;
@@ -45,6 +47,8 @@ export type Board = {
   /** Imported orders only (printer capture, delivery apps); absent before the import migration. */
   orderSources?: ({ deliveryId: string } & OrderOrigin)[];
   /** Orders that say how they are paid; absent before the payment migration. */
+  /** The delivery app's contact of orders without a mobile; absent before the payment migration. */
+  customerContacts?: { deliveryId: string; contact: string }[];
   orderPayments?: { deliveryId: string; method: string; amountDueCents: number | null; changeForCents: number | null }[];
   storeLocation?: { latitude: number; longitude: number } | null;
 };
@@ -93,7 +97,7 @@ export function parseBoard(value: unknown): Board | null {
       && oneOf(ROUTE_STATUSES)(r.status) && isCount(r.compositionVersion) && isOptionalTime(r.pickupReleasedAt)
       && isIdList(r.deliveryIds) && isIdList(r.retryDeliveryIds))
     && list(value.orders, o => isText(o.deliveryId) && isText(o.orderId) && isText(o.reference)
-      && isText(o.customer) && isText(o.phone) && isText(o.address) && isOptionalText(o.neighborhood)
+      && isText(o.customer) && isOptionalText(o.phone) && isText(o.address) && isOptionalText(o.neighborhood)
       && isOptionalText(o.complement) && isOptionalText(o.notes) && isTime(o.orderedAt) && isTime(o.createdAt)
       && isCount(o.promisedMinutes) && oneOf(ORDER_STATUSES)(o.orderStatus)
       && oneOf(DELIVERY_STATUSES)(o.deliveryStatus) && isCount(o.failedAttempts))
@@ -110,6 +114,7 @@ export function parseBoard(value: unknown): Board | null {
     && (value.trackingTokens === undefined || list(value.trackingTokens, t => isText(t.deliveryId) && isText(t.token)))
     && (value.orderSources === undefined || list(value.orderSources, s => isText(s.deliveryId)
       && oneOf(["PRINTER", "OPEN_DELIVERY"])(s.source) && isOptionalText(s.app) && isText(s.externalId)))
+    && (value.customerContacts === undefined || list(value.customerContacts, c => isText(c.deliveryId) && isText(c.contact)))
     && (value.orderPayments === undefined || list(value.orderPayments, p => isText(p.deliveryId)))
     && (value.storeLocation === undefined || value.storeLocation === null
       || (isRecord(value.storeLocation) && isLatitude(value.storeLocation.latitude) && isLongitude(value.storeLocation.longitude)));
@@ -149,6 +154,7 @@ export function boardToState(board: Board, { now, receivedAt = now, alertReceipt
   const tokens = new Map((board.trackingTokens ?? []).map(t => [t.deliveryId, t.token]));
   const origins = new Map((board.orderSources ?? []).map(({ deliveryId, source, app, externalId }) =>
     [deliveryId, { source, app, externalId } satisfies OrderOrigin]));
+  const contacts = new Map((board.customerContacts ?? []).map(c => [c.deliveryId, c.contact]));
   // A payment the screens cannot read is shown as not informed, never guessed.
   const payments = new Map((board.orderPayments ?? []).flatMap(item => {
     const payment = readPaymentJson(item);
@@ -162,7 +168,7 @@ export function boardToState(board: Board, { now, receivedAt = now, alertReceipt
       id: order.deliveryId,
       reference: order.reference,
       customer: order.customer,
-      phone: formatBrazilianMobilePhone(order.phone),
+      phone: formatBrazilianMobilePhone(order.phone ?? ""),
       address: order.address,
       neighborhood: order.neighborhood ?? "",
       complement: order.complement ?? "",
@@ -177,6 +183,7 @@ export function boardToState(board: Board, { now, receivedAt = now, alertReceipt
       ...(tokens.has(order.deliveryId) ? { trackingToken: tokens.get(order.deliveryId) } : {}),
       ...(origins.has(order.deliveryId) ? { origin: origins.get(order.deliveryId) } : {}),
       ...(payments.has(order.deliveryId) ? { payment: payments.get(order.deliveryId) } : {}),
+      ...(contacts.has(order.deliveryId) ? { contact: contacts.get(order.deliveryId) } : {}),
       ...(isLatitude(order.latitude) && isLongitude(order.longitude)
         ? { location: { latitude: order.latitude!, longitude: order.longitude!, confirmed: true as const, source: "mapbox" as const } } : {}),
     };

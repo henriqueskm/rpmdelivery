@@ -27,7 +27,8 @@ O banco está pronto para os dois. A impressora já funciona de ponta a ponta co
 - **Mesmo código de novo** (cupom reimpresso, webhook entregue duas vezes): responde o pedido que já existe, com `created: false`, e não muda nada nele.
 - **Duas importações ao mesmo tempo:** o id da requisição é derivado do código externo (`md5(loja|origem|app|código)`). As duas caem na mesma chave de idempotência de `create_order`, e só um pedido é criado.
 - **O mesmo código vindo de outro app, de outra origem ou de outra loja** é outro pedido.
-- **Limite conhecido:** o telefone continua obrigatório, como em `create_order`. Apps que escondem o número (0800 com ramal) vão precisar de uma regra própria antes do Open Delivery.
+- **App que esconde o celular** (o iFood imprime o mesmo 0800 com o ID do pedido): `p_customer_contact` guarda esse contato, e o celular pode ficar vazio. Só a importação aceita isso. Veja `docs/payment-on-delivery.md`.
+- **Retirada na loja:** o programa da impressora não manda o pedido para o painel.
 
 ### Quadro e painel
 

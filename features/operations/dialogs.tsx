@@ -1,7 +1,7 @@
 import { useRef, useState, type FormEvent, type RefObject } from "react";
 import { formatBrazilianMobilePhone, isValidBrazilianMobilePhone } from "@/lib/brazilian-mobile-phone";
 import { getSupabase } from "@/lib/supabase/client";
-import { foundText, parsePastedOrder, type PastedOrder } from "./paste-order";
+import { foundText, isPickup, parsePastedOrder, type PastedOrder } from "./paste-order";
 import { type DemoOrder, type NewOrder } from "./model";
 import { localDateTime, parseLocalDateTime, MAX_PROMISE_MINUTES } from "./deadlines";
 import { AddressAutocomplete, type AddressHints } from "@/components/address-autocomplete";
@@ -24,7 +24,7 @@ type Submit = (order: NewOrder, addressChanged: boolean) => boolean | Promise<bo
 
 /** What a form starts with: an order being edited, a returning customer or a pasted order. */
 export type OrderPrefill = Partial<Pick<DemoOrder, "customer" | "phone" | "address" | "neighborhood" | "complement"
-  | "reference" | "notes" | "orderedAt" | "promisedMinutes">> & {
+  | "reference" | "notes" | "orderedAt" | "promisedMinutes" | "contact">> & {
   /** How the customer pays, maybe only in part (read from a receipt or a message). */
   payment?: PaymentDraft;
   /** Already confirmed on the map (a returning customer's last address). */
@@ -102,6 +102,7 @@ function OrderForm({ live, now, defaultPromiseMinutes, initial, submitLabel, foo
       complement: value("complement"), reference: value("reference"), notes: value("notes"),
       ...(Number.isFinite(orderedAt) ? { orderedAt } : {}), ...(promisedMinutes > 0 ? { promisedMinutes } : {}),
       ...(geocode ? { confirmedAddress: geocode } : {}), ...(payment ? { payment } : {}),
+      ...(initial?.contact ? { contact: initial.contact } : {}),
     };
   }
   async function checkPhone(value: string) {
@@ -128,8 +129,13 @@ function OrderForm({ live, now, defaultPromiseMinutes, initial, submitLabel, foo
     const pasted = pasteRef.current?.value ?? "";
     const { order: read, found } = parsePastedOrder(pasted);
     const payment = readPayment(pasted);
-    // The city has no field of its own: it already went to the end of the address.
-    const order = Object.fromEntries(Object.entries(read).filter(([key]) => key !== "city")) as Omit<PastedOrder, "city">;
+    // The city has no field of its own: it already went to the end of the address. An app's 0800 is
+    // not the customer's WhatsApp: an order typed here needs the mobile (only a printed one may go without).
+    const order = Object.fromEntries(Object.entries(read).filter(([key]) => key !== "city" && key !== "contact")) as Omit<PastedOrder, "city" | "contact">;
+    if (isPickup(pasted)) {
+      setPasteError("Esse pedido é para retirar na loja: não precisa de motoboy.");
+      return;
+    }
     if (!found.length) {
       setPasteError("Não reconheci nome, WhatsApp nem endereço nesse texto. Confira o que foi colado ou preencha à mão.");
       return;
@@ -140,7 +146,7 @@ function OrderForm({ live, now, defaultPromiseMinutes, initial, submitLabel, foo
       value !== "" && !(key in order) && !(order.address && key === "confirmedAddress"))) as OrderPrefill;
     onRestart?.({ ...keep, ...order, ...(order.phone ? { phone: formatBrazilianMobilePhone(order.phone) } : {}),
       ...(order.address ? { searchAddress: true } : {}), ...(payment ? { payment } : {}) },
-      `Preenchido: ${foundText(found)}.${payment ? " Pagamento lido do texto: confira abaixo." : ""}${order.address ? " Escolha o endereço na lista para confirmar no mapa." : ""}`);
+      `Preenchido: ${foundText(found.filter(key => key !== "contact"))}.${payment ? " Pagamento lido do texto: confira abaixo." : ""}${order.address ? " Escolha o endereço na lista para confirmar no mapa." : ""}`);
   }
   // The bairro found with the address fills the field, unless the store already typed another one.
   const neighborhoodRef = useRef<HTMLInputElement>(null);
@@ -166,7 +172,9 @@ function OrderForm({ live, now, defaultPromiseMinutes, initial, submitLabel, foo
       field.value = value(name);
     }
     if (!form.reportValidity()) return;
-    if (!isValidBrazilianMobilePhone(value("phone"))) {
+    // A printed order whose app hides the mobile keeps the app's contact: the WhatsApp is optional then.
+    const appContact = live ? initial?.contact : undefined;
+    if (!(appContact && !value("phone")) && !isValidBrazilianMobilePhone(value("phone"))) {
       phoneRef.current?.setCustomValidity(
         live ? "Informe o celular do cliente com DDD e 9 dígitos." : "Informe um celular fictício com DDD e 9 dígitos.",
       );
@@ -188,6 +196,7 @@ function OrderForm({ live, now, defaultPromiseMinutes, initial, submitLabel, foo
       orderedAt: parseLocalDateTime(value("orderedAt")),
       promisedMinutes: Number(value("promisedMinutes")),
       payment,
+      ...(appContact && !value("phone") ? { contact: appContact } : {}),
       geocode: live && geocode
         ? { latitude: geocode.latitude, longitude: geocode.longitude, providerId: geocode.providerId } : undefined,
     }, value("address") !== (initial?.address ?? "").trim());
@@ -220,7 +229,7 @@ function OrderForm({ live, now, defaultPromiseMinutes, initial, submitLabel, foo
         <input
           name="phone"
           ref={phoneRef}
-          required
+          required={!(live && initial?.contact)}
           type="tel"
           inputMode="tel"
           placeholder="(11) 90000-0000"
@@ -230,6 +239,11 @@ function OrderForm({ live, now, defaultPromiseMinutes, initial, submitLabel, foo
           onInput={event => { phoneRef.current?.setCustomValidity(""); void checkPhone(event.currentTarget.value); }}
         />
       </label>
+      {live && initial?.contact && (
+        <p className="ops-form-wide ops-app-contact" role="note">
+          Contato do app: <strong>{initial.contact}</strong>. O app esconde o celular do cliente: o WhatsApp é opcional.
+        </p>
+      )}
       <label>
         Nome do cliente
         <input name="customer" required maxLength={120} autoComplete="off" defaultValue={initial?.customer} />

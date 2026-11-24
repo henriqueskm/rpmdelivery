@@ -74,7 +74,8 @@ export function matchSuggestion(address: string, suggestions: AddressSuggestion[
 export function receiptBlock(item: PrintedOrder): string | null {
   const { order } = item;
   if (!order.customer) return "o cupom não tem o nome do cliente";
-  if (!order.phone || !isValidBrazilianMobilePhone(order.phone)) return "o cupom não tem um celular do cliente";
+  // The app's contact (iFood's 0800) stands for a hidden mobile.
+  if (!(order.phone ? isValidBrazilianMobilePhone(order.phone) : order.contact)) return "o cupom não tem um celular do cliente";
   if (!order.address) return "o cupom não tem endereço";
   if (!houseNumber(order.address)) return "o endereço do cupom não tem número";
   return paymentBlock(item);
@@ -110,6 +111,7 @@ export function autoOrder(item: PrintedOrder, found: ResolvedAddress, defaultPro
     reference: item.order.reference ?? "",
     customer: item.order.customer ?? "",
     phone: formatBrazilianMobilePhone(item.order.phone ?? ""),
+    ...(item.order.phone || !item.order.contact ? {} : { contact: item.order.contact }),
     address: found.address,
     neighborhood,
     complement: item.order.complement ?? "",

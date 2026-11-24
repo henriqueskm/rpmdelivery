@@ -19,7 +19,7 @@ Pedidos salvos antes desta mudança, ou trazidos sem a informação, ficam **sem
 
 - Colunas em `orders`: `payment_method`, `amount_due_cents` (só quando o motoboy cobra) e `change_for_cents` (a nota do cliente, só em dinheiro e maior que o valor).
 - `create_order`, `import_order` e `update_order` ganham `p_payment_method`, `p_amount_due_cents` e `p_change_for_cents`, todos com padrão `null`. Um painel sem esta versão continua funcionando.
-- As verificações antigas continuam nas funções `private.*_core`. A nova versão pública confere a loja e o pagamento (`RPM_ORDER_FIELDS`, detalhe `payment`) antes de gravar.
+- As três funções foram reescritas com as mesmas verificações de antes, mais o pagamento (`RPM_ORDER_FIELDS`, detalhe `payment`). O cadastro fica em `private.create_order_core`, usado pelo painel e pela importação.
 - **Repetições:**
   - a mesma requisição de `create_order` responde o pedido já salvo e não muda o pagamento;
   - o mesmo código de `import_order` faz o mesmo.
@@ -27,6 +27,28 @@ Pedidos salvos antes desta mudança, ou trazidos sem a informação, ficam **sem
 - **Painel:** `get_operations_board` traz `orderPayments` (`deliveryId`, `method`, `amountDueCents`, `changeForCents`).
 - **App:** `get_courier_route` traz `payment` em cada parada. Continua sem o celular do cliente.
 - Testes: `tests/sql/delivery-core/payment-contracts.sql`.
+
+## O 0800 do iFood (mesma migration)
+
+O iFood esconde o celular do cliente. O cupom imprime o mesmo 0800 para todos os clientes, com o ID do pedido: "0800 718 2283 ID: 12345678". Esse número não pode virar o celular do cliente, por dois motivos:
+- juntaria todos os clientes do iFood em "Já pediu aqui";
+- mandaria o WhatsApp para o 0800.
+
+Como funciona:
+- **Coluna `orders.customer_contact`:** guarda o contato do app ("0800 718 2283 · ID 12345678"). `customer_phone` passa a aceitar vazio, mas todo pedido precisa ter um dos dois (`orders_customer_reach_check`).
+- **Só pedidos trazidos de outro sistema** (`import_order`, com `p_customer_contact`) podem vir sem celular. Pedido digitado no painel (`create_order`) continua exigindo o celular. Um 0800 enviado como celular é recusado.
+- **Na edição**, o contato fica, e a loja pode acrescentar um celular depois.
+- **WhatsApp:** os avisos "saiu para entrega" e "você é o próximo" só entram na fila para pedidos com celular. O próprio iFood avisa o cliente dele, e a rota inicia normalmente.
+- **O app do motoboy** não recebe nem o celular nem o contato.
+- **O painel** recebe `customerContacts` no quadro. No formulário do pedido impresso, aparece "Contato do app: …", e o WhatsApp fica opcional.
+- **O leitor** reconhece o 0800 na linha do telefone, ou solto no texto, com ID, código, localizador ou ramal.
+
+## Retirada na loja
+
+Cupom de retirada ("MODALIDADE: RETIRADA NA LOJA", "Retirar no balcão", "Tipo: Retirada", "Previsão de retirada") não precisa de motoboy:
+- o programa da impressora não manda o pedido para o painel, e a janela avisa "Retirada na loja: não vai para o painel";
+- o cupom sai no papel normalmente;
+- no "Colar pedido", o texto de retirada é recusado com o motivo.
 
 ## Painel
 

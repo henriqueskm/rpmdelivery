@@ -88,6 +88,11 @@ async function loadQueue() {
 
 function offerToPanel(reading: ReceiptReading, receivedAt: Date) {
   if (!panel || reading.verdict !== "text" || !isOrderLike(reading.found)) return;
+  // Picked up at the counter: no courier. The paper still prints; the panel's delivery queue skips it.
+  if (reading.pickup) {
+    console.log("  → Retirada na loja: não vai para o painel (o cupom sai no papel normalmente).");
+    return;
+  }
   const fingerprint = createHash("sha256").update(reading.text.replace(/\s+/g, " ").trim()).digest("hex");
   const placed = placeReceipt(queue, { id: randomUUID(), receivedAt, fingerprint, app: systemName,
     order: reading.order, found: reading.found, payment: reading.payment });
@@ -147,7 +152,7 @@ function servePanel(request: IncomingMessage, response: ServerResponse) {
 }
 
 const FIELD_NAMES: Record<string, string> = {
-  customer: "Nome", phone: "WhatsApp", address: "Endereço", neighborhood: "Bairro", city: "Cidade",
+  customer: "Nome", phone: "WhatsApp", contact: "Contato do app", address: "Endereço", neighborhood: "Bairro", city: "Cidade",
   complement: "Complemento", reference: "Nº do pedido", notes: "Observações",
 };
 

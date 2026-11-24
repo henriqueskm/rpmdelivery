@@ -29,8 +29,9 @@ export function rpcFor(command: Command | StoreCommand, restaurantId: string, bo
     case "add": {
       const { order } = command;
       // An order from another system goes by its code there: the same code again is the same order.
+      // Only an imported order may come with the app's contact in place of the mobile.
       const imported = order.origin ? { fn: "import_order", ids: { p_source: order.origin.source,
-        p_external_id: order.origin.externalId, p_source_app: order.origin.app } } : null;
+        p_external_id: order.origin.externalId, p_source_app: order.origin.app, p_customer_contact: order.contact ?? null } } : null;
       return { fn: imported?.fn ?? "create_order", args: { ...restaurant, ...(imported ? imported.ids : { p_request_id: requestId }),
         p_customer_name: order.customer.trim(), p_customer_phone: parseBrazilianMobilePhone(order.phone),
         p_delivery_address: order.address.trim(), p_neighborhood: blank(order.neighborhood),

@@ -41,6 +41,9 @@ test("cupom ESC/POS em CP850: tira os comandos e lê o pedido", () => {
   );
   const reading = readReceipt(bytes);
   assert.deepEqual(reading.payment, { method: "CARD", amountDueCents: 3200 }, "the payment goes to the panel too");
+  assert.equal(reading.pickup, false);
+  assert.equal(readReceipt(job("*** MODALIDADE: RETIRADA NA LOJA ***\nCLIENTE: Maria Oliveira\n")).pickup, true,
+    "a pickup never goes to the panel's delivery queue");
   assert.equal(reading.format, "escpos");
   assert.equal(reading.encoding, "cp850");
   assert.equal(reading.verdict, "text");

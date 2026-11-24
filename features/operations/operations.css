@@ -1803,6 +1803,8 @@
   height: 14px;
 }
 
+.ops-app-contact { margin: 0; font-size: 13px; color: #385578; background: #e9eef6; padding: 8px 10px; border-radius: 6px; overflow-wrap: anywhere; }
+
 /* Pagamento: how the customer pays and what the courier collects. */
 .ops-payment { margin: 0; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: 8px; display: grid; gap: 10px; min-width: 0; }
 .ops-payment legend { padding: 0 4px; font-size: 12px; font-weight: 600; }

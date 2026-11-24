@@ -862,6 +862,23 @@ test("impressora deste computador: pedido impresso vira pedido do painel depois 
   await expect(banner).toHaveCount(0);
   expect(taken).toEqual(["job-1", "job-2", "job-3"]);
   expect(backend.commandCalls().filter(call => call.fn === "import_order")).toHaveLength(2);
+
+  // iFood hides the mobile: the form keeps its 0800 contact and the WhatsApp is optional.
+  inbox = [{ id: "job-4", receivedAt, externalId: "4821 · 22/11/2026", app: "iFood",
+    order: { customer: "João iFood", contact: "0800 718 2283 · ID 12345678", address: "Rua das Flores, 100", reference: "4821" },
+    found: [], payment: { method: "PAID" } } as unknown as typeof printed];
+  await banner.getByRole("button", { name: "Conferir e cadastrar" }).click();
+  await expect(form.getByRole("note")).toContainText("Contato do app: 0800 718 2283 · ID 12345678");
+  await expect(form.getByLabel("WhatsApp", { exact: true })).toHaveValue("");
+  await expect(form.getByRole("radio", { name: "Já pago" })).toBeChecked();
+  await form.getByRole("option", { name: /Rua das Flores/ }).click();
+  await form.getByLabel("Bairro").fill("Centro");
+  await form.getByRole("button", { name: "Cadastrar pedido" }).click();
+  await expect(form).toHaveCount(0);
+  expect(backend.commandCalls().filter(call => call.fn === "import_order").at(-1)!.body).toMatchObject({
+    p_external_id: "4821 · 22/11/2026", p_source_app: "iFood", p_customer_phone: null,
+    p_customer_contact: "0800 718 2283 · ID 12345678", p_payment_method: "PAID" });
+  await expect(page.locator(".ops-order").filter({ hasText: "#4821" })).toContainText("João iFood");
   expect(errors).toEqual([]);
 });
 

@@ -44,6 +44,13 @@ test("o que o cupom precisa ter para tentar sozinho", () => {
   assert.equal(receiptBlock(printed(maria)), null);
   assert.equal(receiptBlock(printed({ ...maria, customer: "" })), "o cupom não tem o nome do cliente");
   assert.equal(receiptBlock(printed({ ...maria, phone: "1133334444" })), "o cupom não tem um celular do cliente");
+  // iFood hides the mobile: its 0800 contact stands for it, and goes with the order.
+  const ifood = printed({ customer: "João", address: "Rua das Flores, 100", reference: "4821", contact: "0800 718 2283 · ID 12345678" });
+  assert.equal(receiptBlock(ifood), null);
+  const found = { address: "Rua das Flores, 100 - Centro", latitude: -23.55, longitude: -46.63, provider: "mapbox" as const,
+    providerId: "mb-1", neighborhood: "Centro" };
+  const saved = autoOrder(ifood, found, 45);
+  assert.ok("order" in saved && saved.order.phone === "" && saved.order.contact === "0800 718 2283 · ID 12345678");
   assert.equal(receiptBlock(printed({ customer: "Maria", phone: "11912345678" })), "o cupom não tem endereço");
   assert.equal(receiptBlock(printed({ ...maria, address: "Rua das Flores" })), "o endereço do cupom não tem número");
   // The courier must know whether to collect, and how much.

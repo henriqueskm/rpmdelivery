@@ -71,6 +71,13 @@ test("pedido impresso abre o formulário preenchido, com a origem impressora", (
     + " O cupom não diz o pagamento: marque se está pago ou quanto cobrar.");
   assert.equal(printedSummary(bare), "João");
 
+  // iFood hides the mobile: the form keeps its 0800 contact and does not ask for the WhatsApp.
+  const [ifood] = parsePrintedOrders({ orders: [{ id: "a5", receivedAt: received.toISOString(), externalId: "4821 · 22/11/2026",
+    app: "iFood", order: { customer: "João", contact: "0800 718 2283 · ID 12345678" } }] });
+  assert.equal(printedToIncoming(ifood).values.contact, "0800 718 2283 · ID 12345678");
+  assert.equal(printedToIncoming(ifood).values.phone, undefined);
+  assert.match(printedToIncoming(ifood).filled, /Lido do cupom: nome e contato do app\. .*O app esconde o celular: fica o contato dele, e o WhatsApp é opcional\./);
+
   // The payment the receipt says goes into the form; an incomplete one asks for the rest.
   const [paid] = parsePrintedOrders({ orders: [{ id: "a3", receivedAt: received.toISOString(), externalId: "2 · 22/11/2026",
     order: { customer: "Bia" }, payment: { method: "CASH", amountDueCents: 5290, changeForCents: 10000 } }] });

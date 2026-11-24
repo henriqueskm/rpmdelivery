@@ -119,11 +119,55 @@ select core_test.check('the board lists the payment of each order that has one',
    where p->>'method'='CASH' and (p->>'amountDueCents')::int=5290 and (p->>'changeForCents')::int=10000)
  and core_test.board(40,105) ? 'orderSources');
 
+-- ---------------------------------------------------------
+-- The app's contact in place of a hidden mobile (iFood: the same 0800 for every customer)
+-- ---------------------------------------------------------
+select set_config('core.pay_app',core_test.as_actor(40,format(
+ $s$select public.import_order(p_restaurant_id=>%L,p_source=>'PRINTER',p_external_id=>'4821 · 24/11/2026',
+   p_source_app=>'iFood',p_customer_name=>'Cliente iFood',p_customer_phone=>null,p_delivery_address=>'Rua do App 7',
+   p_customer_contact=>'0800 718 2283 · ID 12345678',p_payment_method=>'PAID')$s$,core_test.id(105)))->>'orderId',false);
+select core_test.check('a printed order with only the app''s contact is saved, with no mobile',
+ (select customer_phone is null and customer_contact='0800 718 2283 · ID 12345678' and source='PRINTER'
+   from public.orders where id=core_test.s('pay_app')));
+select core_test.check('the 0800 is never taken as the mobile, and the panel still needs the mobile',
+ core_test.try_as(40,format($s$select public.import_order(p_restaurant_id=>%L,p_source=>'PRINTER',p_external_id=>'4822',
+   p_customer_name=>'X',p_customer_phone=>'0800 718 2283',p_delivery_address=>'Rua X',
+   p_customer_contact=>'0800 718 2283 · ID 1')$s$,core_test.id(105)))='22023'
+ and core_test.try_as(40,format($s$select public.import_order(p_restaurant_id=>%L,p_source=>'PRINTER',p_external_id=>'4823',
+   p_customer_name=>'X',p_customer_phone=>null,p_delivery_address=>'Rua X')$s$,core_test.id(105)))='22023'
+ and core_test.try_as(40,format($s$select public.import_order(p_restaurant_id=>%L,p_source=>'PRINTER',p_external_id=>'4824',
+   p_customer_name=>'X',p_customer_phone=>null,p_delivery_address=>'Rua X',p_customer_contact=>%L)$s$,
+   core_test.id(105),repeat('9',81)))='22023'
+ and core_test.try_as(40,$s$select public.create_order(p_restaurant_id=>core_test.id(105),p_request_id=>core_test.id(8830),
+   p_customer_name=>'X',p_customer_phone=>null,p_delivery_address=>'Rua X',p_payment_method=>'PAID')$s$)='22023'
+ and not exists (select 1 from public.orders where external_id in ('4822','4823','4824') or client_request_id=core_test.id(8830)));
+select core_test.as_actor(40,format($s$select public.update_order(p_restaurant_id=>core_test.id(105),p_order_id=>%L,
+  p_customer_name=>'Cliente iFood Editado',p_customer_phone=>null,p_delivery_address=>'Rua do App 7',
+  p_payment_method=>'PAID')$s$,core_test.s('pay_app')));
+select core_test.check('editing it keeps the contact, and a mobile may be added later',
+ (select customer_name='Cliente iFood Editado' and customer_phone is null and customer_contact is not null
+   from public.orders where id=core_test.s('pay_app'))
+ and core_test.try_as(40,format($s$select public.update_order(p_restaurant_id=>core_test.id(105),p_order_id=>%L,
+  p_customer_name=>'Sem contato',p_customer_phone=>null,p_delivery_address=>'Rua Paga 3')$s$,core_test.s('pay_card')))='22023');
+select core_test.check('the board says the app''s contact; the order has no phone there',
+ exists (select 1 from jsonb_array_elements(core_test.board(40,105)->'customerContacts') c
+   where c->>'contact'='0800 718 2283 · ID 12345678')
+ and (select o->'phone' from jsonb_array_elements(core_test.board(40,105)->'orders') o
+   where o->>'customer'='Cliente iFood Editado') = 'null'::jsonb);
+do $$ begin
+  begin
+    update public.orders set customer_contact = null where id = core_test.s('pay_app');
+    raise exception 'CORE CHECK FAILED: an order kept no way to reach the customer';
+  exception when check_violation then null;
+  end;
+end $$;
+
 select set_config('core.pay_shift',core_test.as_actor(41,$s$select public.request_shift(core_test.id(105))$s$)->>'shiftId',false);
 select core_test.as_actor(40,format($s$select to_jsonb(public.review_shift(core_test.id(105),%L,true))$s$,core_test.s('pay_shift')));
 select set_config('core.pay_stops',(select string_agg(d.id::text,',' order by o.client_request_id)
  from public.deliveries d join public.orders o on o.id=d.order_id
- where o.id in (core_test.s('pay_paid'),core_test.s('pay_cash'),core_test.s('pay_pix'),core_test.s('pay_none'))),false);
+ where o.id in (core_test.s('pay_paid'),core_test.s('pay_cash'),core_test.s('pay_pix'),core_test.s('pay_none')))
+ || ',' || (select d.id::text from public.deliveries d where d.order_id=core_test.s('pay_app')),false);
 select set_config('core.pay_route',core_test.as_actor(40,format(
  $s$select public.create_route(core_test.id(105),core_test.id(8820),%L,string_to_array(%L,',')::uuid[])$s$,
  core_test.s('pay_shift'),current_setting('core.pay_stops')))->>'routeId',false);
@@ -132,15 +176,25 @@ select core_test.check('the courier reads what to collect at each stop',
  (select array_agg(coalesce(s->'payment'->>'method','none') || ':' || coalesce(s->'payment'->>'amountDueCents','-')
      || ':' || coalesce(s->'payment'->>'changeForCents','-') order by (s->>'sequence')::int)
    from jsonb_array_elements(current_setting('core.pay_courier')::jsonb->'stops') s)
- = array['PAID:-:-','CASH:5290:10000','PIX:3000:-','none:-:-']);
-select core_test.check('and still never the customer phone',
- position('9555520' in current_setting('core.pay_courier'))=0);
+ = array['PAID:-:-','CASH:5290:10000','PIX:3000:-','none:-:-','PAID:-:-']);
+select core_test.check('and never the customer phone nor the app''s contact',
+ position('9555520' in current_setting('core.pay_courier'))=0
+ and position('0800' in current_setting('core.pay_courier'))=0);
 
-select core_test.check('payment helpers and cores are not callable from the API',
+-- Starting the route queues WhatsApp to the customers with a mobile only, and never fails for the others.
+select core_test.as_actor(40,format($s$select public.release_route_pickup(core_test.id(105),%L,1)$s$,core_test.s('pay_route')));
+select core_test.as_actor(41,format($s$select public.start_route(%L,1)$s$,core_test.s('pay_route')));
+select core_test.check('the route starts with the app''s contact order on it; no WhatsApp for it',
+ (select status='ON_ROUTE' from public.routes where id=core_test.s('pay_route'))
+ and (select count(*)=4 from public.delivery_notifications n join public.deliveries d on d.id=n.delivery_id
+   join public.orders o on o.id=d.order_id where o.restaurant_id=core_test.id(105) and n.type='TRACKING_LINK')
+ and not exists (select 1 from public.delivery_notifications n join public.deliveries d on d.id=n.delivery_id
+   where d.order_id=core_test.s('pay_app')));
+
+select core_test.check('payment and contact helpers are not callable from the API',
  not exists (select 1 from (values ('private.check_order_payment(text,integer,integer)'),
-  ('private.create_order_core(uuid,uuid,text,text,text,text,text,text,text,double precision,double precision,text,text,timestamptz,integer)'),
-  ('private.import_order_core(uuid,text,text,text,text,text,text,text,text,text,text,double precision,double precision,text,text,timestamptz,integer)'),
-  ('private.update_order_core(uuid,uuid,text,text,text,text,text,text,text,double precision,double precision,text,text,timestamptz,integer,boolean)'),
+  ('private.order_phone(text,text)'),
+  ('private.create_order_core(uuid,uuid,text,text,text,text,text,text,text,double precision,double precision,text,text,timestamptz,integer,text,integer,integer,text)'),
   ('private.operations_board_sources(uuid)')) f(sig), (values ('anon'),('authenticated')) r(role)
   where has_function_privilege(r.role,f.sig,'EXECUTE'))
  and not exists (select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
