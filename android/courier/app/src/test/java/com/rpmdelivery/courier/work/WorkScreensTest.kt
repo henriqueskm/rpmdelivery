@@ -170,6 +170,18 @@ class WorkScreensTest {
         node("Pronto para começar?").assertIsDisplayed()
     }
 
+    @Test fun storeClosingTheDayTellsTheCourierWhyTheShiftIsGone() {
+        show()
+        node("Cheguei · pedir turno").performClick()
+        fake.approve(); reload()
+        node("Você é o próximo da fila").assertIsDisplayed()
+        fake.closeDay(); reload()
+        node("Pronto para começar?").assertIsDisplayed()
+        compose.onNode(hasTestTag("shift-ended-by-store")).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Cozinha da Vila encerrou seu turno às", substring = true)).assertIsDisplayed()
+        captureEvidence(compose, "work-12-shift-ended-by-store-390")
+    }
+
     @Test fun storeRefusalIsReadableAndNoStoreExplainsTheInvite() {
         fake.home = fake.home.copy(stores = listOf(Store("r-2", "Pizzaria Sintética", "PENDING")))
         show()

@@ -142,6 +142,7 @@ import com.rpmdelivery.courier.work.kitLines
 import com.rpmdelivery.courier.work.paymentDetail
 import com.rpmdelivery.courier.work.paymentTitle
 import com.rpmdelivery.courier.work.routeKit
+import com.rpmdelivery.courier.work.shiftEndedText
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Checkbox
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -469,7 +470,13 @@ fun WorkContent(state: WorkState, actions: WorkActions) {
             }
             // With an invite open, its card is the one action: no second reader or code field below it.
             state.invite != null -> if (home.stores.isNotEmpty()) StoresContent(home.stores, state.busy, actions, inviting = true)
-            else -> StoresContent(home.stores, state.busy, actions)
+            else -> {
+                // The store closed the day: the courier learns why the shift is gone.
+                home.shiftEndedByStore?.let {
+                    Box(Modifier.testTag("shift-ended-by-store")) { Banner(shiftEndedText(it), SoftCoral) }
+                }
+                StoresContent(home.stores, state.busy, actions)
+            }
         }
         StationaryNotice()
     }

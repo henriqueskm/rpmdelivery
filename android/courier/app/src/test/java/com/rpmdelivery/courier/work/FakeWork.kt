@@ -29,6 +29,11 @@ internal class FakeWork : CourierWorkRepository {
             )))
     }
     fun release() { home = home.copy(route = home.route!!.copy(pickupReleased = true)) }
+    /** "Fechar o dia" in the panel: the store ends the courier's shift. */
+    fun closeDay() {
+        val shift = home.shift!!
+        home = home.copy(shift = null, shiftEndedByStore = ShiftEnded(shift.shiftId, shift.restaurantName, "2026-11-25T02:40:00+00:00"))
+    }
 
     private fun stop(id: String, sequence: Int, name: String, address: String, notes: String? = null, reference: String? = null,
         payment: StopPayment? = null) =

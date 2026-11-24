@@ -166,7 +166,16 @@ data class CourierHome(
     val route: CourierRoute?,
     val today: Today? = null,
     val refusedStores: List<RefusedStore> = emptyList(),
+    /** The courier's last shift, when the store ended it (in the last 12 hours, no newer shift). */
+    val shiftEndedByStore: ShiftEnded? = null,
 )
+
+/** A shift the store ended ("Fechar o dia"), not the courier. */
+data class ShiftEnded(val shiftId: String, val restaurantName: String, val endedAt: String?)
+
+/** "Cozinha da Vila encerrou seu turno às 23:40." */
+fun shiftEndedText(ended: ShiftEnded, zone: ZoneId = ZoneId.systemDefault()): String =
+    "${ended.restaurantName.ifBlank { "A loja" }} encerrou seu turno" + (clockTime(ended.endedAt, zone)?.let { " às $it" } ?: "") + "."
 
 /** 3700 → "R$ 37,00". */
 fun reais(cents: Int): String = "R$ " + java.text.NumberFormat.getNumberInstance(java.util.Locale.forLanguageTag("pt-BR")).apply {
@@ -238,6 +247,10 @@ fun parseHome(element: JsonElement): CourierHome {
         route = root.child("route")?.let(::parseRoute),
         today = root.child("today")?.let {
             Today(it.cents("deliveries"), it.cents("shiftFeeCents"), it.cents("deliveryFeesCents"), it.cents("totalCents"))
+        },
+        // Older servers do not send it: nothing to tell.
+        shiftEndedByStore = root.child("shiftEndedByStore")?.let {
+            ShiftEnded(it.required("shiftId"), it.text("restaurantName").orEmpty(), it.text("endedAt"))
         },
     )
 }
