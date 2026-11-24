@@ -44,6 +44,13 @@ test("cupom ESC/POS em CP850: tira os comandos e lê o pedido", () => {
   assert.equal(reading.pickup, false);
   assert.equal(readReceipt(job("*** MODALIDADE: RETIRADA NA LOJA ***\nCLIENTE: Maria Oliveira\n")).pickup, true,
     "a pickup never goes to the panel's delivery queue");
+  // The kitchen's copy (Cardápio Web, Anota AI): the items and the name, no address. Never to the panel.
+  assert.equal(reading.kitchen, false);
+  const kitchen = readReceipt(job("*** VIA COZINHA ***\nPEDIDO #0148\nCliente: Lucas Oliveira\n1x X-Bacon\n   Obs.: Sem picles\n"));
+  assert.equal(kitchen.kitchen, true);
+  assert.equal(readReceipt(job("VIA PRODUÇÃO\nPedido #12\n2x Pizza\n")).kitchen, true);
+  // A courier's copy that names the kitchen ("Tempo de preparo") still has its address: it goes.
+  assert.equal(readReceipt(job("Pedido #12\nCliente: Ana\nEndereço: Rua A, 10\nTempo de preparo: 30 min\n")).kitchen, false);
   assert.equal(reading.format, "escpos");
   assert.equal(reading.encoding, "cp850");
   assert.equal(reading.verdict, "text");

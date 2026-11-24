@@ -93,6 +93,11 @@ function offerToPanel(reading: ReceiptReading, receivedAt: Date) {
     console.log("  → Retirada na loja: não vai para o painel (o cupom sai no papel normalmente).");
     return;
   }
+  // The kitchen's copy (items, no address) of an order whose courier copy comes apart.
+  if (reading.kitchen) {
+    console.log("  → Via da cozinha: não vai para o painel (o cupom sai no papel normalmente).");
+    return;
+  }
   const fingerprint = createHash("sha256").update(reading.text.replace(/\s+/g, " ").trim()).digest("hex");
   const placed = placeReceipt(queue, { id: randomUUID(), receivedAt, fingerprint, app: systemName,
     order: reading.order, found: reading.found, payment: reading.payment });

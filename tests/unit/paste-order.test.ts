@@ -209,6 +209,10 @@ test("modelo de cupom do Anota AI: o WhatsApp da loja no topo não é o do clien
   assert.equal(isPickup(ANOTA_AI), false);
   assert.ok(isPickup(ANOTA_AI.replace("[ PARA ENTREGA ]", "[ RETIRADA NO LOCAL ]")));
   assert.ok(isPickup(ANOTA_AI.replace("[ PARA ENTREGA ]", "[ CONSUMO NO LOCAL ]")));
+  // "VIA COZINHA" / "Via do entregador" name the copy; "Via Anhanguera" is a street.
+  assert.equal(parsePastedOrder("*** VIA COZINHA ***\nPedido #12\nCliente: Ana").order.address, undefined);
+  assert.equal(parsePastedOrder("Via do entregador\nCliente: Ana\n11 98765-4321").order.address, undefined);
+  assert.equal(parsePastedOrder("Cliente: Ana\nVia Anhanguera, 1200").order.address, "Via Anhanguera, 1200");
   // An address that wraps into an indented "- Apto" before the items is still the address's.
   assert.equal(parsePastedOrder("Cliente: Ana\nEndereço: Rua A, 10\n   - Apto 3\n1x Coca").order.complement, "Apto 3");
 });

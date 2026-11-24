@@ -34,7 +34,9 @@ const LABELS: { field: Field; pattern: RegExp }[] = [
   { field: "reference", pattern: /^(?:pedido|n[ºo°]\.? do pedido|n[uú]mero do pedido|c[oó]digo(?!\s+de\b))\s*[:\-–#nº°]*\s*#?\s*([A-Za-z0-9-]{1,40})\b/i },
 ];
 
-const STREET = /^(?:rua|r\.|av\.?|avenida|alameda|al\.|travessa|tv\.|estrada|est\.|rodovia|rod\.|pra[cç]a|p[cç]a\.?|largo|via|viela)\s+\S/i;
+/** "Via" is a street ("Via Anhanguera") but also a receipt's copy: "VIA COZINHA", "Via do entregador". */
+const COPY_NAME = String.raw`\s+(?:(?:d[aoe]s?|para)\s+)?(?:cozinha|produ[cç][aã]o|preparo|cliente|entregador|entrega|motoboy|loja|estabelecimento|caixa|balc[aã]o|delivery|expedi[cç][aã]o)\b`;
+const STREET = new RegExp(String.raw`^(?:rua|r\.|av\.?|avenida|alameda|al\.|travessa|tv\.|estrada|est\.|rodovia|rod\.|pra[cç]a|p[cç]a\.?|largo|via(?!${COPY_NAME})|viela)\s+\S`, "i");
 const COMPLEMENT = /\b(?:apto?\.?|apartamento|bloco|bl\.?|casa|fundos|sala|lote|qd\.?|quadra|torre)\b/i;
 
 /**

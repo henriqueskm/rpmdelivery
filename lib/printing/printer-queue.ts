@@ -5,7 +5,7 @@
 //   and the 7 from the store's site, both printed today, are two orders ("7 · 23/11/2026" and "… · 2").
 // - Nothing is dropped quietly: the queue holds QUEUE_LIMIT orders and says when it is getting full.
 
-import { sameText, type PastedOrder } from "../../features/operations/paste-order.ts";
+import { ORDER_FIELDS, sameText, type PastedOrder } from "../../features/operations/paste-order.ts";
 import type { PaymentDraft } from "../../features/operations/payment.ts";
 import { parsePrintedOrders, printedExternalId, QUEUE_LIMIT, type PrintedOrder } from "./printer-inbox.ts";
 
@@ -61,11 +61,16 @@ export function placeReceipt(state: QueueState, receipt: { id: string; receivedA
       ...(receipt.order.phone ? { phone: receipt.order.phone } : {}),
       ...(receipt.order.customer ? { customer: receipt.order.customer } : {}) });
   }
-  // A reprint replaces the copy still waiting: one card per order on the panel.
-  const previous = state.inbox.findIndex(item => item.externalId === externalId);
-  if (previous >= 0) state.inbox.splice(previous, 1);
+  // A reprint replaces the copy still waiting: one card per order on the panel. What the new copy
+  // lacks comes from the waiting one: a kitchen copy printed after the courier's has no address,
+  // phone nor payment, and must not wipe them.
+  const at = state.inbox.findIndex(item => item.externalId === externalId);
+  const waiting = at >= 0 ? state.inbox.splice(at, 1)[0] : null;
+  const order: PastedOrder = { ...waiting?.order, ...receipt.order };
+  const found = ORDER_FIELDS.filter(key => !!order[key]);
+  const payment = receipt.payment ?? waiting?.payment;
   state.inbox.push({ id: receipt.id, receivedAt: receipt.receivedAt.toISOString(), externalId, app: receipt.app,
-    order: receipt.order, found: receipt.found, ...(receipt.payment ? { payment: receipt.payment } : {}) });
+    order, found, ...(payment ? { payment } : {}) });
   const dropped = state.inbox.length > QUEUE_LIMIT ? state.inbox.splice(0, state.inbox.length - QUEUE_LIMIT) : [];
   return { externalId, reprint: !!same, dropped };
 }

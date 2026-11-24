@@ -200,7 +200,18 @@ export type ReceiptReading = DecodedReceipt & {
   payment: PaymentDraft | null;
   /** Picked up at the store ("RETIRADA NA LOJA"): no courier, so it never goes to the panel. */
   pickup: boolean;
+  /**
+   * The kitchen's copy ("VIA COZINHA", "PRODUÇÃO"): the items, with no address. Cardápio Web and Anota AI
+   * print it next to the courier's; it never goes to the panel.
+   */
+  kitchen: boolean;
 };
+
+/** A copy for the kitchen: it says so and carries no address. */
+export function isKitchenCopy(text: string, order: PastedOrder): boolean {
+  const plain = text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  return !order.address && /\b(?:cozinha|producao|preparo)\b/.test(plain);
+}
 
 /** Decodes a print job and reads the order in it, as "Colar pedido" would. */
 export function readReceipt(bytes: Uint8Array): ReceiptReading {
@@ -214,5 +225,5 @@ export function readReceipt(bytes: Uint8Array): ReceiptReading {
   const { order, found } = verdict === "text" ? parsePastedOrder(decoded.text) : { order: {}, found: [] };
   const text = verdict === "text";
   return { ...decoded, verdict, order, found, payment: text ? readPayment(decoded.text) : null,
-    pickup: text && isPickup(decoded.text) };
+    pickup: text && isPickup(decoded.text), kitchen: text && isKitchenCopy(decoded.text, order) };
 }

@@ -27,10 +27,16 @@ test("pico: o 7 do iFood e o 7 do site no mesmo dia são dois pedidos; a segunda
   const site = placeReceipt(queue, receipt({ reference: "7", customer: "Outra Pessoa", phone: "11912340002" }));
   assert.deepEqual([ifood.externalId, site.externalId], ["7 · 23/11/2026", "7 · 23/11/2026 · 2"]);
   assert.equal(site.reprint, false);
-  // The kitchen copy of iFood's 7 (no phone on it) is a reprint: it replaces the copy still waiting.
-  const copy = placeReceipt(queue, receipt({ reference: "7", customer: "Ana" }));
+  // The kitchen copy of iFood's 7 (no phone on it) is a reprint: it replaces the copy still waiting,
+  // and what it lacks (the phone, the address, the payment) still comes from that copy.
+  queue.inbox[0].order.address = "Rua A, 10";
+  queue.inbox[0].payment = { method: "PAID" };
+  const copy = placeReceipt(queue, receipt({ reference: "7", customer: "Ana", notes: "sem cebola" }));
   assert.deepEqual([copy.externalId, copy.reprint], ["7 · 23/11/2026", true]);
   assert.deepEqual(queue.inbox.map(item => item.order.customer), ["Outra Pessoa", "Ana"]);
+  assert.deepEqual(queue.inbox[1].order, { reference: "7", customer: "Ana", phone: "11912340001", address: "Rua A, 10", notes: "sem cebola" });
+  assert.deepEqual(queue.inbox[1].found, ["customer", "phone", "address", "reference", "notes"]);
+  assert.deepEqual(queue.inbox[1].payment, { method: "PAID" });
   // After the panel took it, a reprint keeps its code: import_order answers with the order already saved.
   takeOrder(queue, queue.inbox[1].id);
   assert.equal(placeReceipt(queue, receipt({ reference: "7", phone: "11912340001" })).externalId, "7 · 23/11/2026");
