@@ -59,8 +59,8 @@ select core_test.check('another store and outsiders are refused',
  and core_test.try_as(8, format('select public.import_order(%L, %L, %L, %L, %L, %L)',
    core_test.id(101), 'PRINTER', 'y1', 'Ana', '11955554477', 'Rua A, 1')) = '42501');
 select core_test.check('signed-in users only',
- not has_function_privilege('anon', 'public.import_order(uuid, text, text, text, text, text, text, text, text, text, text, double precision, double precision, text, text, timestamptz, integer)', 'EXECUTE')
- and has_function_privilege('authenticated', 'public.import_order(uuid, text, text, text, text, text, text, text, text, text, text, double precision, double precision, text, text, timestamptz, integer)', 'EXECUTE'));
+ not has_function_privilege('anon', 'public.import_order(uuid, text, text, text, text, text, text, text, text, text, text, double precision, double precision, text, text, timestamptz, integer, text, integer, integer, text)', 'EXECUTE')
+ and has_function_privilege('authenticated', 'public.import_order(uuid, text, text, text, text, text, text, text, text, text, text, double precision, double precision, text, text, timestamptz, integer, text, integer, integer, text)', 'EXECUTE'));
 
 do $$ begin
   begin

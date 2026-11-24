@@ -3,6 +3,7 @@
 import type { PrintedOrder } from "../../../lib/printing/printer-inbox.ts";
 import { formatBrazilianMobilePhone } from "../../../lib/brazilian-mobile-phone.ts";
 import { foundText } from "../paste-order.ts";
+import { draftText, validPayment } from "../payment.ts";
 import type { OrderOrigin } from "../order-origin.ts";
 import type { OrderPrefill } from "../dialogs.tsx";
 
@@ -16,10 +17,16 @@ export function printedToIncoming(item: PrintedOrder, review?: string): Incoming
   for (const key of ["customer", "address", "neighborhood", "complement", "reference", "notes"] as const)
     if (order[key]) values[key] = order[key];
   if (order.phone) values.phone = formatBrazilianMobilePhone(order.phone);
+  else if (order.contact) values.contact = order.contact;
   if (order.address) values.searchAddress = true;
+  if (item.payment) values.payment = item.payment;
   const hints = [
     order.address ? "Escolha o endereço na lista para confirmar no mapa." : "O cupom não tem endereço: digite o do cliente.",
-    ...(order.phone ? [] : ["O cupom não tem celular: peça o WhatsApp do cliente."]),
+    ...(order.phone ? [] : order.contact ? ["O app esconde o celular: fica o contato dele, e o WhatsApp é opcional."]
+      : ["O cupom não tem celular: peça o WhatsApp do cliente."]),
+    validPayment(item.payment) ? `Pagamento: ${draftText(item.payment)}.`
+      : item.payment ? `Complete o pagamento (lido: ${draftText(item.payment)}).`
+      : "O cupom não diz o pagamento: marque se está pago ou quanto cobrar.",
   ];
   const why = review ? `Não cadastrei sozinho: ${review}. ` : "";
   return { id: item.id, values, filled: `${why}Lido do cupom: ${foundText(item.found)}. ${hints.join(" ")}`,

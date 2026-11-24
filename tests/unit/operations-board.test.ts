@@ -95,18 +95,20 @@ test("cada comando do painel vira a RPC certa, com a versão e a idempotência",
   const live = boardToState(parseBoard(board)!, { now });
   const restaurant = "rest-1";
   assert.deepEqual(rpcFor({ type: "add", now, order: { reference: " ", customer: " Eva ", phone: "(11) 91111-2222",
-    address: "Rua C, 5", neighborhood: "Vila", complement: "", notes: "", orderedAt: now, promisedMinutes: 30 } },
+    address: "Rua C, 5", neighborhood: "Vila", complement: "", notes: "", orderedAt: now, promisedMinutes: 30,
+    payment: { method: "CASH", amountDueCents: 5290, changeForCents: 10000 } } },
   restaurant, live, "req-1"), { fn: "create_order", args: { p_restaurant_id: restaurant, p_request_id: "req-1",
     p_customer_name: "Eva", p_customer_phone: "+5511911112222", p_delivery_address: "Rua C, 5", p_neighborhood: "Vila",
-    p_complement: null, p_reference: null, p_notes: null, p_ordered_at: "2026-11-13T22:00:00.000Z", p_promised_minutes: 30 } });
+    p_complement: null, p_reference: null, p_notes: null, p_ordered_at: "2026-11-13T22:00:00.000Z", p_promised_minutes: 30,
+    p_payment_method: "CASH", p_amount_due_cents: 5290, p_change_for_cents: 10000 } });
   // A printed order goes by its code in the store's system, not by a request id.
   assert.deepEqual(rpcFor({ type: "add", now, order: { reference: "5127", customer: "Eva", phone: "(11) 91111-2222",
     address: "Rua C, 5", neighborhood: "Vila", complement: "", notes: "", orderedAt: now, promisedMinutes: 30,
     origin: { source: "PRINTER", app: null, externalId: "5127 · 13/11/2026" } } }, restaurant, live, "req-1"),
   { fn: "import_order", args: { p_restaurant_id: restaurant, p_source: "PRINTER", p_external_id: "5127 · 13/11/2026",
-    p_source_app: null, p_customer_name: "Eva", p_customer_phone: "+5511911112222", p_delivery_address: "Rua C, 5",
+    p_source_app: null, p_customer_contact: null, p_customer_name: "Eva", p_customer_phone: "+5511911112222", p_delivery_address: "Rua C, 5",
     p_neighborhood: "Vila", p_complement: null, p_reference: "5127", p_notes: null, p_ordered_at: "2026-11-13T22:00:00.000Z",
-    p_promised_minutes: 30 } });
+    p_promised_minutes: 30, p_payment_method: null, p_amount_due_cents: null, p_change_for_cents: null } });
   assert.deepEqual(rpcFor({ type: "assign", ids: ["d3"], courierId: "s1" }, restaurant, live, "req-2"),
     { fn: "create_route", args: { p_restaurant_id: restaurant, p_request_id: "req-2", p_shift_id: "s1", p_delivery_ids: ["d3"] } });
   assert.deepEqual(rpcFor({ type: "assign", ids: ["d2", "d1"], courierId: "s1", editingId: "r1" }, restaurant, live, "x"),
@@ -131,4 +133,37 @@ test("erros do banco viram frases para o balcão", () => {
   assert.match(errorMessage({ message: "RPM_ISSUE_CLOSED" }), /já foi resolvida/);
   assert.match(errorMessage({ message: "something else" }), /Confira a conexão/);
   assert.match(errorMessage(null), /Confira a conexão/);
+});
+
+test("o pagamento de cada pedido chega do quadro; o ilegível fica como não informado", () => {
+  const withPayments = parseBoard({ ...board, orderPayments: [
+    { deliveryId: "d1", method: "CARD", amountDueCents: 4500, changeForCents: null },
+    { deliveryId: "d2", method: "CARD", amountDueCents: null, changeForCents: null },
+  ] });
+  assert.ok(withPayments);
+  const state = boardToState(withPayments, { now });
+  assert.deepEqual(state.state.orders.find(o => o.id === "d1")?.payment, { method: "CARD", amountDueCents: 4500 });
+  assert.equal(state.state.orders.find(o => o.id === "d2")?.payment, undefined, "a card without the amount is never guessed");
+  assert.equal(boardToState(parseBoard(board)!, { now }).state.orders[0].payment, undefined, "older server: none");
+  assert.match(errorMessage({ message: "RPM_ORDER_FIELDS" }), /pagamento/);
+});
+
+test("pedido do iFood: sem celular no quadro, com o contato do app; só a importação manda o contato", () => {
+  const withContact = parseBoard({ ...board,
+    orders: board.orders.map((o, index) => index === 0 ? { ...o, phone: null } : o),
+    customerContacts: [{ deliveryId: "d1", contact: "0800 718 2283 · ID 12345678" }] });
+  assert.ok(withContact, "an order without a mobile is still a valid board");
+  const order = boardToState(withContact, { now }).state.orders.find(o => o.id === "d1")!;
+  assert.equal(order.phone, "");
+  assert.equal(order.contact, "0800 718 2283 · ID 12345678");
+  const live = boardToState(parseBoard(board)!, { now });
+  const base = { reference: "4821", customer: "João", phone: "", address: "Rua C, 5", neighborhood: "Centro", complement: "",
+    notes: "", orderedAt: now, promisedMinutes: 30, contact: "0800 718 2283 · ID 12345678", payment: { method: "PAID" as const } };
+  const imported = rpcFor({ type: "add", now, order: { ...base, origin: { source: "PRINTER", app: "iFood", externalId: "4821 · 13/11/2026" } } },
+    "rest-1", live, "req-9");
+  assert.equal(imported?.fn, "import_order");
+  assert.equal(imported?.args.p_customer_phone, null);
+  assert.equal(imported?.args.p_customer_contact, "0800 718 2283 · ID 12345678");
+  assert.equal(rpcFor({ type: "add", now, order: base }, "rest-1", live, "req-9")?.args.p_customer_contact, undefined,
+    "an order typed in the panel never goes without the mobile");
 });

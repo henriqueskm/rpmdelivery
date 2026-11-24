@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { findMobile, foundText, parsePastedOrder } from "../../features/operations/paste-order.ts";
+import { findAppContact, findMobile, foundText, isPickup, parsePastedOrder } from "../../features/operations/paste-order.ts";
 
 test("cupom com rótulos: preenche cada campo", () => {
   const { order, found } = parsePastedOrder(`
@@ -110,6 +110,42 @@ test("cupom do iFood: cidade do bairro, CEP fora do endereço e Ref na referênc
     complement: "Apto 42, Bloco B · Próximo à praça central",
   });
   assert.equal(foundText(found), "nome, WhatsApp, endereço, bairro, cidade, complemento e nº do pedido");
+});
+
+test("modelo de cupom do iFood: 'Entrega: Delivery' não é endereço, e o que é do item fica na cozinha", () => {
+  // Shape of an iFood receipt model the user brought (fictional data).
+  const { order } = parsePastedOrder([
+    "PEDIDO #4821                       14/05 20:15", "LOCALIZADOR: 8842 9104", "----------",
+    "CLIENTE: João da Silva", "TELEFONE: 0800 718 2283 ID: 12345678", "(Pediu 12 vezes na loja)", "----------",
+    "ENTREGA: Delivery (Parceiro iFood)", "ENDERECO: Rua das Flores, 123 - Apto 42", "BAIRRO: Centro - Itatiba/SP",
+    "COMPLEMENTO: Bloco B - Interfone 42", "REF: Próximo à praça central", "PREVISAO DE ENTREGA: 20:55 - 21:05",
+    "----------", "ITENS DO PEDIDO", "1x X-Bacon Artesanal                   R$ 34,90",
+    "   + Ponto da carne: Ao ponto", "   * OBS: Tirar o tomate, por favor.", "----------",
+    "Codigo de Entrega (Cliente): 4821 (4 ult. dig. tel)",
+  ].join("\n"));
+  assert.equal(order.phone, undefined, "the 0800 number is not the customer's mobile");
+  assert.deepEqual(order, {
+    reference: "4821", customer: "João da Silva", address: "Rua das Flores, 123, Itatiba", neighborhood: "Centro",
+    city: "Itatiba", complement: "Apto 42 · Bloco B - Interfone 42 · Próximo à praça central",
+    contact: "0800 718 2283 · ID 12345678",
+  });
+  // A note of the whole order, at the margin, still counts.
+  assert.equal(parsePastedOrder("Cliente: Ana\nOBS: tocar o interfone").order.notes, "tocar o interfone");
+});
+
+test("contato 0800 do app e pedido de retirada na loja", () => {
+  assert.equal(findAppContact("TELEFONE: 0800 718 2283 ID: 12345678"), "0800 718 2283 · ID 12345678");
+  assert.equal(findAppContact("Tel: 0800-718-2283 código 9921"), "0800 718 2283 · código 9921");
+  assert.equal(findAppContact("0800 718 2283"), "0800 718 2283");
+  assert.equal(findAppContact("(11) 98765-4321"), null);
+  // A real mobile wins: the contact is only for a hidden one.
+  assert.equal(parsePastedOrder("Cliente: Ana\nTelefone: (11) 98765-4321\nSuporte 0800 718 2283").order.contact, undefined);
+  assert.ok(isPickup("*** MODALIDADE: RETIRADA NA LOJA ***"));
+  assert.ok(isPickup("PREVISAO DE RETIRADA: 20:45 - 20:55"));
+  assert.ok(isPickup("Tipo: Retirada"));
+  assert.ok(isPickup("Cliente vai retirar no balcão"));
+  assert.equal(isPickup("ENTREGA: Delivery\nENDERECO: Rua A, 10\nPREVISAO DE ENTREGA: 20:55"), false);
+  assert.equal(isPickup("Codigo de Coleta (Entregador): 9921"), false);
 });
 
 test("onde a cidade aparece no cupom", () => {

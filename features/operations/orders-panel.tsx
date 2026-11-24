@@ -4,6 +4,7 @@ import { editableOrders, normalized, plural, type DemoState } from "./model";
 import { Badge, Empty, Icon } from "./ui";
 import { DeadlineText } from "./deadline-view";
 import { originLabel, originTitle } from "./order-origin";
+import { formatMoney, paymentText } from "./payment";
 
 export function OrdersPanel({
   state,
@@ -171,6 +172,14 @@ export function OrdersPanel({
                     <span className="ops-customer" dir="auto">
                       {o.customer}
                     </span>
+                    {o.payment && (
+                      <span className={`ops-order-payment ${o.payment.method === "PAID" ? "is-paid" : ""}`}
+                        title={paymentText(o.payment)}>
+                        <span className="ops-visually-hidden">{paymentText(o.payment)}</span>
+                        <span aria-hidden="true">{o.payment.method === "PAID" ? "Pago"
+                          : `Cobrar ${formatMoney(o.payment.amountDueCents ?? 0)} · ${o.payment.method === "CASH" ? "dinheiro" : o.payment.method === "CARD" ? "cartão" : "Pix"}`}</span>
+                      </span>
+                    )}
                   </span>
                 </span>
               </label>

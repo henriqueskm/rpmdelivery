@@ -11,6 +11,11 @@ export type PastedOrder = {
    * an address found there.
    */
   city?: string;
+  /**
+   * The delivery app's contact when it hides the customer's mobile: iFood prints the same 0800 for
+   * every customer, with the order's ID ("0800 718 2283 · ID 12345678"). Never taken as the mobile.
+   */
+  contact?: string;
 };
 
 type Field = keyof PastedOrder | "landmark";
@@ -42,6 +47,10 @@ const WRAPPED_LINES: Partial<Record<Field, number>> = {
 /** A line that never continues a field: a separator, money, items, totals, a CEP, a date or a time. */
 const ENDS_FIELD = /^[-=_*.·•\s]{3,}$|r\$|^\d+\s*x\b|\b\d+\s*x\s|\b(?:sub)?total\b|pagamento|troco|taxa|\bcep\b|\b\d{5}-\d{3}\b|\d{1,2}\/\d{1,2}\/\d{2,4}|\b\d{1,2}:\d{2}\b/i;
 const LETTERS = /^[\p{L}][\p{L}' .-]*$/u;
+/** An item's add-on or note, indented under it on a receipt. */
+const ITEM_DETAIL = /^\s+[+*]\s/;
+/** How the order is delivered, written where an address label could be. */
+const NOT_A_PLACE = /^(?:delivery|retirada|balc[aã]o|parceir[oa]|entrega (?:pr[oó]pria|parceira)|pr[oó]pria|motoboy|ifood)\b/i;
 
 const STATES = "AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO";
 /**
@@ -87,6 +96,28 @@ export function findMobile(text: string): string | null {
   return null;
 }
 
+/**
+ * A delivery app's 0800 with the order's ID, as it stands for the customer's hidden mobile:
+ * "0800 718 2283 ID: 12345678" → "0800 718 2283 · ID 12345678". Null when there is none.
+ */
+export function findAppContact(text: string): string | null {
+  const match = text.match(/\b0800[\s.-]*(\d{3})[\s.-]*(\d{4})\b(?:\D{0,12}?\b(id|c[oó]d(?:igo)?|localizador|ramal)\b\s*[:.]?\s*(\d[\d ]{1,18}\d))?/i);
+  if (!match) return null;
+  const number = `0800 ${match[1]} ${match[2]}`;
+  if (!match[4]) return number;
+  const label = match[3].toLowerCase() === "id" ? "ID" : match[3].toLowerCase();
+  return `${number} · ${label} ${match[4].replace(/\s+/g, " ")}`;
+}
+
+/**
+ * Whether the order is picked up at the store ("MODALIDADE: RETIRADA NA LOJA", "Retirar no balcão"):
+ * no courier, so it never goes to the panel's delivery queue.
+ */
+export function isPickup(text: string): boolean {
+  const plain = text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  return /retirada (?:na loja|no balcao|no local|pelo cliente)|retirar (?:na loja|no balcao|no local)|(?:modalidade|tipo(?: de (?:entrega|pedido))?|entrega)\s*:\s*(?:retirada|retirar|balcao|para viagem|take ?away)\b|previsao de retirada/.test(plain);
+}
+
 /** "Rua X, 120 - Apto 3" → address "Rua X, 120", complement "Apto 3". */
 function splitComplement(address: string): { address: string; complement?: string } {
   const parts = address.split(/\s+[-–]\s+|\s*;\s*/);
@@ -105,7 +136,8 @@ export function parsePastedOrder(text: string): { order: PastedOrder; found: (ke
   const order: PastedOrder = {};
   const extra: string[] = [];
   let landmark = "";
-  const lines = text.split(/\r?\n/).map(clean).filter(Boolean);
+  // "   + Ponto da carne" / "   * OBS: tirar o tomate": an item's details, for the kitchen, not the courier.
+  const lines = text.split(/\r?\n/).filter(line => !ITEM_DETAIL.test(line)).map(clean).filter(Boolean);
   const leftovers: string[] = [];
   // Each labeled value, with the wrapped lines that carry it on joined back.
   const entries: { field: Field; value: string }[] = [];
@@ -126,8 +158,15 @@ export function parsePastedOrder(text: string): { order: PastedOrder; found: (ke
     const value = clean(raw);
     if (!value) continue;
     if (field === "landmark") { landmark = value; continue; }
-    if (field === "phone") { const phone = findMobile(value); if (phone) order.phone = phone; continue; }
+    if (field === "phone") {
+      const phone = findMobile(value);
+      const contact = phone ? null : findAppContact(value);
+      if (phone) order.phone = phone; else if (contact && !order.contact) order.contact = contact;
+      continue;
+    }
     if (field === "notes" && order.notes) { extra.push(value); continue; }
+    // "ENTREGA: Delivery (Parceiro iFood)" says how it is delivered, not where.
+    if (field === "address" && NOT_A_PLACE.test(value)) continue;
     if (!order[field]) order[field] = value;
   }
 
@@ -139,6 +178,10 @@ export function parsePastedOrder(text: string): { order: PastedOrder; found: (ke
   if (!order.phone) {
     const phone = findMobile(text);
     if (phone) order.phone = phone;
+    else if (!order.contact) {
+      const contact = lines.map(findAppContact).find(Boolean);
+      if (contact) order.contact = contact;
+    }
   }
   if (!order.reference) {
     const reference = text.match(/#\s?([A-Za-z0-9-]{2,40})\b/);
@@ -168,7 +211,9 @@ export function parsePastedOrder(text: string): { order: PastedOrder; found: (ke
   if (order.address) {
     const split = splitComplement(order.address);
     order.address = split.address;
-    if (split.complement && !order.complement) order.complement = split.complement;
+    // "Rua X, 123 - Apto 42" with "Complemento: Bloco B" too: the courier needs both.
+    if (split.complement && !sameText(order.complement ?? "").includes(sameText(split.complement)))
+      order.complement = order.complement ? `${split.complement} · ${order.complement}` : split.complement;
     // "Rua das Flores, 123, Itatiba": the search looks in the receipt's city, not in the first one it finds.
     if (order.city && !sameText(order.address).includes(sameText(order.city)))
       order.address = `${order.address}, ${order.city}`;
@@ -178,7 +223,7 @@ export function parsePastedOrder(text: string): { order: PastedOrder; found: (ke
 
   // Field limits of the form.
   const limits: Record<keyof PastedOrder, number> = {
-    customer: 120, phone: 24, address: 200, neighborhood: 120, complement: 240, reference: 40, notes: 500, city: 80,
+    customer: 120, phone: 24, address: 200, neighborhood: 120, complement: 240, reference: 40, notes: 500, city: 80, contact: 80,
   };
   for (const key of Object.keys(order) as (keyof PastedOrder)[]) order[key] = order[key]!.slice(0, limits[key]);
   const found = ORDER_FIELDS.filter(key => !!order[key]);
@@ -186,10 +231,10 @@ export function parsePastedOrder(text: string): { order: PastedOrder; found: (ke
 }
 
 /** Every field the reader fills, in the order it reports them. */
-export const ORDER_FIELDS = ["customer", "phone", "address", "neighborhood", "city", "complement", "reference", "notes"] as const;
+export const ORDER_FIELDS = ["customer", "phone", "contact", "address", "neighborhood", "city", "complement", "reference", "notes"] as const;
 
 const NAMES: Record<keyof PastedOrder, string> = {
-  customer: "nome", phone: "WhatsApp", address: "endereço", neighborhood: "bairro",
+  customer: "nome", phone: "WhatsApp", contact: "contato do app", address: "endereço", neighborhood: "bairro",
   complement: "complemento", reference: "nº do pedido", notes: "observações", city: "cidade",
 };
 /** "nome, WhatsApp e endereço". */

@@ -84,9 +84,19 @@ class WorkScreensTest {
         node("Rota em preparação").assertIsDisplayed()
         node("A loja está separando os pedidos. Aguarde a liberação da retirada.").assertIsDisplayed()
         compose.onNodeWithText("Deslize para iniciar a rota").assertDoesNotExist()
+        // What the route needs is said early, while the store prepares it.
+        node("Leve com você").assertIsDisplayed()
+        node("Maquininha: 1 entrega no cartão ou Pix").assertIsDisplayed()
+        node("Troco: R$ 47,10 para 1 entrega em dinheiro").assertIsDisplayed()
+        compose.onNodeWithText("Peguei a maquininha").assertDoesNotExist()
 
         fake.release(); reload()
+        // A card on the route: the courier says they took the card machine before the swipe shows up.
+        compose.onNodeWithText("Deslize para iniciar a rota").assertDoesNotExist()
+        node("Marque que pegou a maquininha para iniciar a rota.").assertIsDisplayed()
         captureEvidence(compose, "work-03-released-390")
+        node("Peguei a maquininha").assertHeightIsAtLeast(48.dp).performClick()
+        compose.waitForIdle()
         // Starting cannot be undone: a tap does nothing, the swipe starts.
         node("Deslize para iniciar a rota").assertHeightIsAtLeast(64.dp).performClick()
         assertFalse(fake.calls.any { it.startsWith("start_route") })
@@ -96,6 +106,9 @@ class WorkScreensTest {
         compose.onNode(hasText("Helena Prado") and hasAnyAncestor(hasTestTag("next-stop"))).performScrollTo().assertIsDisplayed()
         node("Pedido #1048").assertIsDisplayed()
         node("Observação: Portão azul, tocar duas vezes").assertIsDisplayed()
+        // At the door: how much to collect, and how.
+        compose.onNode(hasText("Cobrar R$ 45,90 no cartão") and hasAnyAncestor(hasTestTag("next-stop"))).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Na maquininha") and hasAnyAncestor(hasTestTag("next-stop"))).assertIsDisplayed()
         assertTrue(fake.calls.contains("start_route:2"))
         assertEquals(1, fake.notified)
         captureEvidence(compose, "work-04-next-stop-390")
@@ -110,6 +123,8 @@ class WorkScreensTest {
         assertTrue(fake.calls.contains("complete_delivery:d-1"))
         node("Entrega 2 de 2").assertIsDisplayed()
         compose.onNode(hasText("Igor Nunes") and hasAnyAncestor(hasTestTag("next-stop"))).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Cobrar R$ 52,90 em dinheiro") and hasAnyAncestor(hasTestTag("next-stop"))).performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Troco para R$ 100,00: devolva R$ 47,10") and hasAnyAncestor(hasTestTag("next-stop"))).assertIsDisplayed()
 
         // A failure needs a reason, and a written report for "Outro motivo".
         node("Não consegui entregar").performClick()

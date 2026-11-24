@@ -65,7 +65,71 @@ data class Stop(
     val longitude: Double?,
     val deadlineAt: String?,
     val attempts: Int,
+    /** How the customer pays here; null when the store did not say (older orders). */
+    val payment: StopPayment? = null,
 )
+
+/**
+ * PAID: nothing to collect. CASH, CARD, PIX: collect [amountDueCents] at the door; cash may come
+ * with a bill to change ([changeForCents], "troco para R$ 100").
+ */
+data class StopPayment(val method: String, val amountDueCents: Int?, val changeForCents: Int?) {
+    val collects: Boolean get() = method != "PAID"
+    /** Card, or Pix by the card machine's QR. */
+    val needsMachine: Boolean get() = method == "CARD" || method == "PIX"
+    /** The change the courier hands back. */
+    val changeCents: Int? get() = if (method == "CASH" && changeForCents != null && amountDueCents != null)
+        (changeForCents - amountDueCents).takeIf { it > 0 } else null
+}
+
+/** The line the courier reads first at the door. */
+fun paymentTitle(payment: StopPayment?): String = when {
+    payment == null -> "Pagamento não informado"
+    !payment.collects -> "Já pago · não cobrar"
+    else -> "Cobrar ${reais(payment.amountDueCents ?: 0)} " + when (payment.method) {
+        "CASH" -> "em dinheiro"
+        "CARD" -> "no cartão"
+        else -> "no Pix"
+    }
+}
+
+/** What else the courier needs for it, or null. */
+fun paymentDetail(payment: StopPayment?): String? {
+    val change = payment?.changeCents
+    return when {
+        payment == null -> "Confirme com a loja se está pago antes de entregar."
+        change != null -> "Troco para ${reais(payment.changeForCents ?: 0)}: devolva ${reais(change)}"
+        payment.method == "CARD" -> "Na maquininha"
+        payment.method == "PIX" -> "Pelo QR da maquininha ou pela chave Pix da loja"
+        else -> null
+    }
+}
+
+/** What to take from the store for the stops still to deliver: the card machine, change, questions. */
+data class RouteKit(val machineStops: Int, val changeCents: Int, val changeStops: Int, val unknownStops: Int) {
+    val needsMachine: Boolean get() = machineStops > 0
+    val isEmpty: Boolean get() = machineStops == 0 && changeStops == 0 && unknownStops == 0
+}
+
+fun routeKit(route: CourierRoute): RouteKit {
+    val open = route.stops.filter { it.status !in setOf("DELIVERED", "CANCELLED", "RETURN_TO_STORE") }
+    val change = open.mapNotNull { it.payment?.changeCents }
+    return RouteKit(
+        machineStops = open.count { it.payment?.needsMachine == true },
+        changeCents = change.sum(),
+        changeStops = change.size,
+        unknownStops = open.count { it.payment == null },
+    )
+}
+
+private fun entregasCount(count: Int) = if (count == 1) "1 entrega" else "$count entregas"
+
+/** "Leve com você", one line each. */
+fun kitLines(kit: RouteKit): List<String> = buildList {
+    if (kit.needsMachine) add("Maquininha: ${entregasCount(kit.machineStops)} no cartão ou Pix")
+    if (kit.changeStops > 0) add("Troco: ${reais(kit.changeCents)} para ${entregasCount(kit.changeStops)} em dinheiro")
+    if (kit.unknownStops > 0) add("${entregasCount(kit.unknownStops)} sem pagamento informado: pergunte na loja")
+}
 
 data class CourierRoute(
     val routeId: String,
@@ -178,6 +242,15 @@ fun parseHome(element: JsonElement): CourierHome {
     )
 }
 
+/** A payment the app cannot read is shown as not informed, never guessed. */
+private fun parsePayment(payment: JsonObject): StopPayment? {
+    val method = payment.text("method")?.takeIf { it in setOf("PAID", "CASH", "CARD", "PIX") } ?: return null
+    val due = payment.text("amountDueCents")?.toIntOrNull()?.takeIf { it > 0 }
+    val change = payment.text("changeForCents")?.toIntOrNull()?.takeIf { it > 0 }
+    if (method != "PAID" && due == null) return null
+    return StopPayment(method, if (method == "PAID") null else due, if (method == "CASH") change else null)
+}
+
 fun parseRoute(route: JsonObject): CourierRoute {
     val store = route.child("restaurant")
     return CourierRoute(
@@ -204,6 +277,7 @@ fun parseRoute(route: JsonObject): CourierRoute {
                 longitude = stop.text("longitude")?.toDoubleOrNull(),
                 deadlineAt = stop.text("deadlineAt"),
                 attempts = stop.text("attempts")?.toIntOrNull() ?: 0,
+                payment = stop.child("payment")?.let(::parsePayment),
             )
         },
     )

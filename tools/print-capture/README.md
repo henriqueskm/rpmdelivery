@@ -85,7 +85,12 @@ Com o programa aberto, cada cupom em texto que tem nome, WhatsApp ou endereço f
 - o cupom tem nome, celular e endereço com número;
 - o mapa acha a **mesma rua e o mesmo número** do cupom e, quando o cupom traz a cidade ("Centro - Itatiba/SP"), nessa cidade;
 - o endereço encontrado fica a até 30 km da loja (se a loja tem endereço no mapa);
-- há bairro (o do cupom, ou o que o mapa achou).
+- há bairro (o do cupom, ou o que o mapa achou);
+- o cupom diz o pagamento: já pago, ou a forma (dinheiro, cartão, Pix) e o valor a cobrar. A janela mostra o que leu na linha "Pagamento".
+
+No cupom do iFood, o celular do cliente vem escondido ("0800 718 2283 ID: 12345678"). Esse contato vale no lugar do celular e fica guardado no pedido, para a loja ligar se precisar.
+
+**Retirada na loja** ("MODALIDADE: RETIRADA NA LOJA") não vai para o painel: não precisa de motoboy. O cupom sai no papel normalmente, e a janela avisa.
 
 Faltando qualquer um, o pedido fica no aviso **"Pedido da impressora para conferir"**, com o motivo ("não achei esse endereço no mapa com certeza", por exemplo), e você confere no formulário como antes.
 

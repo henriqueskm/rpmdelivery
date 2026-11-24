@@ -54,5 +54,5 @@ select core_test.check('an order in a route cannot be edited',
 update public.deliveries set status='WAITING' where order_id=current_setting('core.edit_order')::uuid;
 
 select core_test.check('only signed-in users reach the edit command',
- has_function_privilege('authenticated','public.update_order(uuid,uuid,text,text,text,text,text,text,text,double precision,double precision,text,text,timestamptz,integer,boolean)','EXECUTE')
- and not has_function_privilege('anon','public.update_order(uuid,uuid,text,text,text,text,text,text,text,double precision,double precision,text,text,timestamptz,integer,boolean)','EXECUTE'));
+ has_function_privilege('authenticated','public.update_order(uuid,uuid,text,text,text,text,text,text,text,double precision,double precision,text,text,timestamptz,integer,boolean,text,integer,integer)','EXECUTE')
+ and not has_function_privilege('anon','public.update_order(uuid,uuid,text,text,text,text,text,text,text,double precision,double precision,text,text,timestamptz,integer,boolean,text,integer,integer)','EXECUTE'));

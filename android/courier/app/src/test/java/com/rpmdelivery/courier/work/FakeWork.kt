@@ -23,15 +23,17 @@ internal class FakeWork : CourierWorkRepository {
             routeId = "route-1", status = "PREPARING", version = 2, nextDeliveryId = null, pickupReleased = false,
             store = StoreContact("Cozinha da Vila", "+551130000000", "Rua da Loja, 10", -23.55, -46.63),
             stops = listOf(
-                stop("d-1", 1, "Helena Prado", "Rua das Acácias, 55", notes = "Portão azul, tocar duas vezes", reference = "1048"),
-                stop("d-2", 2, "Igor Nunes", "Avenida Paulista, 900"),
+                stop("d-1", 1, "Helena Prado", "Rua das Acácias, 55", notes = "Portão azul, tocar duas vezes", reference = "1048",
+                    payment = StopPayment("CARD", 4590, null)),
+                stop("d-2", 2, "Igor Nunes", "Avenida Paulista, 900", payment = StopPayment("CASH", 5290, 10000)),
             )))
     }
     fun release() { home = home.copy(route = home.route!!.copy(pickupReleased = true)) }
 
-    private fun stop(id: String, sequence: Int, name: String, address: String, notes: String? = null, reference: String? = null) =
+    private fun stop(id: String, sequence: Int, name: String, address: String, notes: String? = null, reference: String? = null,
+        payment: StopPayment? = null) =
         Stop(id, sequence, "ASSIGNED", false, name, address, "Apto 12", "Vila Mariana", reference, notes,
-            -23.58, -46.64, "2026-11-14T15:30:00+00:00", 0)
+            -23.58, -46.64, "2026-11-14T15:30:00+00:00", 0, payment)
 
     private fun advance(route: CourierRoute, stops: List<Stop>): CourierRoute {
         val next = stops.firstOrNull { it.status == "ON_ROUTE" }

@@ -4,6 +4,7 @@
 import type { Command, NewOrder } from "../model.ts";
 import type { LiveBoard } from "./board.ts";
 import { parseBrazilianMobilePhone } from "../../../lib/brazilian-mobile-phone.ts";
+import { paymentArgs } from "../payment.ts";
 
 /** Panel commands that only exist with real data. */
 export type StoreCommand =
@@ -28,13 +29,15 @@ export function rpcFor(command: Command | StoreCommand, restaurantId: string, bo
     case "add": {
       const { order } = command;
       // An order from another system goes by its code there: the same code again is the same order.
+      // Only an imported order may come with the app's contact in place of the mobile.
       const imported = order.origin ? { fn: "import_order", ids: { p_source: order.origin.source,
-        p_external_id: order.origin.externalId, p_source_app: order.origin.app } } : null;
+        p_external_id: order.origin.externalId, p_source_app: order.origin.app, p_customer_contact: order.contact ?? null } } : null;
       return { fn: imported?.fn ?? "create_order", args: { ...restaurant, ...(imported ? imported.ids : { p_request_id: requestId }),
         p_customer_name: order.customer.trim(), p_customer_phone: parseBrazilianMobilePhone(order.phone),
         p_delivery_address: order.address.trim(), p_neighborhood: blank(order.neighborhood),
         p_complement: blank(order.complement), p_reference: blank(order.reference), p_notes: blank(order.notes),
         p_ordered_at: new Date(order.orderedAt).toISOString(), p_promised_minutes: order.promisedMinutes,
+        ...paymentArgs(order.payment),
         // Coordinates only from a picked address; typed text alone is saved without them.
         ...(order.geocode ? { p_latitude: order.geocode.latitude, p_longitude: order.geocode.longitude,
           p_address_provider: "mapbox", p_address_provider_id: order.geocode.providerId } : {}) } };
@@ -74,7 +77,7 @@ export function rpcFor(command: Command | StoreCommand, restaurantId: string, bo
         p_delivery_address: order.address.trim(), p_neighborhood: blank(order.neighborhood),
         p_complement: blank(order.complement), p_reference: blank(order.reference), p_notes: blank(order.notes),
         p_ordered_at: new Date(order.orderedAt).toISOString(), p_promised_minutes: order.promisedMinutes,
-        p_keep_location: command.keepLocation,
+        p_keep_location: command.keepLocation, ...paymentArgs(order.payment),
         ...(order.geocode ? { p_latitude: order.geocode.latitude, p_longitude: order.geocode.longitude,
           p_address_provider: "mapbox", p_address_provider_id: order.geocode.providerId } : {}) } } : null;
     }
@@ -114,7 +117,7 @@ const MESSAGES: Record<string, string> = {
   RPM_COURIER_BUSY: "Esse motoboy já tem outra rota. O painel foi atualizado.",
   RPM_COURIER_LINK_REQUIRED: "O vínculo desse motoboy com a loja não está ativo.",
   RPM_ROUTE_FIELDS: "Uma rota leva de 1 a 30 pedidos, sem repetir.",
-  RPM_ORDER_FIELDS: "Confira os dados do pedido: nome, celular, endereço, horário e prazo.",
+  RPM_ORDER_FIELDS: "Confira os dados do pedido: nome, celular, endereço, horário, prazo e pagamento.",
   RPM_PROMISE_INVALID: "O prazo padrão vai de 1 a 240 minutos.",
   RPM_MEMBER_REQUIRED: "Sua conta não tem mais acesso a esta loja.",
   RPM_AUTH_REQUIRED: "Sua sessão terminou. Entre de novo para continuar.",

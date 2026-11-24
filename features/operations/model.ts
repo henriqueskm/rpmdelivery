@@ -1,6 +1,7 @@
 import { validOrderTime, validPromise } from "./deadlines.ts";
 import type { ConfirmedCoordinate } from "../route-optimization/types.ts";
 import type { OrderOrigin } from "./order-origin.ts";
+import type { OrderPayment } from "./payment.ts";
 import { validAutomaticAssignment, type AssignmentProposal } from "./automatic-assignment.ts";
 import type { PlannedGroup, PlanningParameters } from "../route-planning/types.ts";
 import type { AlertReceipt, DeliveryStatus, DemoEvent, DemoIssue, IssueCommand } from "./issue-types.ts";
@@ -32,6 +33,10 @@ export type DemoOrder = {
   trackingToken?: string;
   /** Real data: the order came from another system (printer capture, delivery app). */
   origin?: OrderOrigin;
+  /** Whether it is paid, or what the courier collects at the door. None on orders saved before it existed. */
+  payment?: OrderPayment;
+  /** Real data: the delivery app's contact when it hides the mobile ("0800 718 2283 · ID 12345678"); phone is then "". */
+  contact?: string;
 };
 export type DemoCourier = {
   id: string;
@@ -89,6 +94,8 @@ export type NewOrder = Pick<
   | "notes"
   | "orderedAt"
   | "promisedMinutes"
+  | "payment"
+  | "contact"
 > & {
   /** Real data: the address picked from the search, so the customer's map shows the house. */
   geocode?: { latitude: number; longitude: number; providerId: string };
@@ -194,7 +201,8 @@ export function operationsReducer(
     const order = command.order;
     if (
       !validOrderTime(order.orderedAt, command.now) || !validPromise(order.promisedMinutes) ||
-      ![order.customer, order.phone, order.address, order.neighborhood].every(
+      // A printed order whose app hides the mobile goes with the app's contact instead.
+      ![order.customer, order.phone || order.contact || "", order.address, order.neighborhood].every(
         (v) => v.trim(),
       )
     )

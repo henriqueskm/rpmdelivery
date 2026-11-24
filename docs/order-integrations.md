@@ -21,13 +21,14 @@ O banco está pronto para os dois. A impressora já funciona de ponta a ponta co
 
 `import_order(p_restaurant_id, p_source, p_external_id, p_customer_name, p_customer_phone, p_delivery_address, p_source_app?, …)`
 
-- Recebe os mesmos campos opcionais de `create_order` (complemento, bairro, nº, observações, localização, horário do pedido, prazo).
+- Recebe os mesmos campos opcionais de `create_order` (complemento, bairro, nº, observações, localização, horário do pedido, prazo, pagamento).
 - Faz as mesmas validações e dá a mesma resposta: `{ orderId, deliveryId, created }`.
 - **Membros da loja apenas**, como `create_order`. Por enquanto quem chama é o painel ou uma ferramenta com a sessão de um membro. O webhook do Open Delivery vai precisar de outro caminho de autenticação, numa etapa própria.
 - **Mesmo código de novo** (cupom reimpresso, webhook entregue duas vezes): responde o pedido que já existe, com `created: false`, e não muda nada nele.
 - **Duas importações ao mesmo tempo:** o id da requisição é derivado do código externo (`md5(loja|origem|app|código)`). As duas caem na mesma chave de idempotência de `create_order`, e só um pedido é criado.
 - **O mesmo código vindo de outro app, de outra origem ou de outra loja** é outro pedido.
-- **Limite conhecido:** o telefone continua obrigatório, como em `create_order`. Apps que escondem o número (0800 com ramal) vão precisar de uma regra própria antes do Open Delivery.
+- **App que esconde o celular** (o iFood imprime o mesmo 0800 com o ID do pedido): `p_customer_contact` guarda esse contato, e o celular pode ficar vazio. Só a importação aceita isso. Veja `docs/payment-on-delivery.md`.
+- **Retirada na loja:** o programa da impressora não manda o pedido para o painel.
 
 ### Quadro e painel
 
@@ -54,7 +55,8 @@ O programa fica em `tools/print-capture/`; o passo a passo está no [README](../
 - **Cadastrar sozinho** (opção por computador, abaixo da impressora; `features/operations/live/auto-printed.ts` e `use-auto-printed.ts`):
   - cada cupom é tentado uma vez, um de cada vez, sem atrapalhar uma ação da loja em andamento;
   - só cadastra sozinho quando o cupom tem nome, celular e endereço com número, o mapa acha a mesma rua e o mesmo número (abreviações e acentos à parte, nos dois sentidos: "Rua das Flores" não é "Rua das Flores Novas"), na cidade do cupom quando ele traz uma, o ponto fica a até 30 km da loja e há bairro;
-  - o pedido entra com o endereço e o ponto do mapa, o prazo padrão da loja e o horário da impressão;
+  - e só quando o cupom diz o pagamento completo: já pago, ou a forma e o valor a cobrar (veja `docs/payment-on-delivery.md`);
+  - o pedido entra com o endereço e o ponto do mapa, o prazo padrão da loja, o horário da impressão e o pagamento lido;
   - o resto fica no aviso "Pedido da impressora para conferir", com o motivo, também mostrado no formulário.
 - **Código do pedido impresso** (`external_id`): o número do cupom com o dia ("5127 · 22/11/2026"), porque muitos sistemas recomeçam a numeração todo dia. Sem número, a impressão digital do texto ("cupom 0123456789ab").
 - **Mesmo número, outro cliente:** dois sistemas na mesma impressora podem imprimir o mesmo número no mesmo dia (o 7 do iFood e o 7 do site). O programa lembra, por dois dias, o celular e o nome de cada código que deu:

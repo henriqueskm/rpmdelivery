@@ -60,12 +60,30 @@ test("pedido impresso abre o formulário preenchido, com a origem impressora", (
   assert.deepEqual(incoming.values, { orderedAt: received.getTime(), customer: "Maria Souza", address: "Rua das Flores, 100",
     reference: "1", phone: "(11) 91234-5678", searchAddress: true });
   assert.equal(incoming.filled,
-    "Lido do cupom: nome, WhatsApp, endereço e nº do pedido. Escolha o endereço na lista para confirmar no mapa.");
+    "Lido do cupom: nome, WhatsApp, endereço e nº do pedido. Escolha o endereço na lista para confirmar no mapa."
+    + " O cupom não diz o pagamento: marque se está pago ou quanto cobrar.");
   assert.equal(printedSummary(item), "Maria Souza · #1");
 
   const [bare] = parsePrintedOrders({ orders: [{ id: "a2", receivedAt: received.toISOString(), externalId: "cupom 1",
     order: { customer: "João" } }] });
   assert.equal(printedToIncoming(bare).filled,
-    "Lido do cupom: nome. O cupom não tem endereço: digite o do cliente. O cupom não tem celular: peça o WhatsApp do cliente.");
+    "Lido do cupom: nome. O cupom não tem endereço: digite o do cliente. O cupom não tem celular: peça o WhatsApp do cliente."
+    + " O cupom não diz o pagamento: marque se está pago ou quanto cobrar.");
   assert.equal(printedSummary(bare), "João");
+
+  // iFood hides the mobile: the form keeps its 0800 contact and does not ask for the WhatsApp.
+  const [ifood] = parsePrintedOrders({ orders: [{ id: "a5", receivedAt: received.toISOString(), externalId: "4821 · 22/11/2026",
+    app: "iFood", order: { customer: "João", contact: "0800 718 2283 · ID 12345678" } }] });
+  assert.equal(printedToIncoming(ifood).values.contact, "0800 718 2283 · ID 12345678");
+  assert.equal(printedToIncoming(ifood).values.phone, undefined);
+  assert.match(printedToIncoming(ifood).filled, /Lido do cupom: nome e contato do app\. .*O app esconde o celular: fica o contato dele, e o WhatsApp é opcional\./);
+
+  // The payment the receipt says goes into the form; an incomplete one asks for the rest.
+  const [paid] = parsePrintedOrders({ orders: [{ id: "a3", receivedAt: received.toISOString(), externalId: "2 · 22/11/2026",
+    order: { customer: "Bia" }, payment: { method: "CASH", amountDueCents: 5290, changeForCents: 10000 } }] });
+  assert.deepEqual(printedToIncoming(paid).values.payment, { method: "CASH", amountDueCents: 5290, changeForCents: 10000 });
+  assert.match(printedToIncoming(paid).filled, /Pagamento: Cobrar R\$ 52,90 em dinheiro · troco para R\$ 100,00\.$/);
+  const [half] = parsePrintedOrders({ orders: [{ id: "a4", receivedAt: received.toISOString(), externalId: "3 · 22/11/2026",
+    order: { customer: "Rui" }, payment: { method: "CARD", amountDueCents: "45" } }] });
+  assert.match(printedToIncoming(half).filled, /Complete o pagamento \(lido: Cartão · valor não reconhecido\)\.$/);
 });

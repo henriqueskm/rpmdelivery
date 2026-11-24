@@ -1802,3 +1802,28 @@
   width: 14px;
   height: 14px;
 }
+
+.ops-app-contact { margin: 0; font-size: 13px; color: #385578; background: #e9eef6; padding: 8px 10px; border-radius: 6px; overflow-wrap: anywhere; }
+
+/* Pagamento: how the customer pays and what the courier collects. */
+.ops-payment { margin: 0; padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: 8px; display: grid; gap: 10px; min-width: 0; }
+.ops-payment legend { padding: 0 4px; font-size: 12px; font-weight: 600; }
+.ops-payment-methods { display: flex; flex-wrap: wrap; gap: 8px; }
+.ops-order-form .ops-payment-methods label {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px;
+  border: 1px solid var(--line); border-radius: 8px; background: #fff; font-size: 13px; cursor: pointer; white-space: nowrap;
+}
+.ops-order-form .ops-payment-methods label.is-checked { border-color: #c2410c; background: #fdf1ea; color: #8a3a16; }
+/* The form's text-input rules must not stretch the radio. */
+.ops-order-form .ops-payment-methods input {
+  flex: none; width: 18px; height: 18px; min-height: 0; margin: 0; padding: 0; accent-color: #c2410c;
+}
+.ops-payment-amounts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ops-payment-help { margin: 0; font-size: 12px; color: #647068; }
+@media (max-width: 600px) { .ops-payment-amounts { grid-template-columns: minmax(0, 1fr); } }
+
+.ops-order-payment {
+  align-self: center; white-space: nowrap; border-radius: 4px; padding: 1px 6px;
+  font-size: 11px; font-weight: 600; line-height: 1.5; background: #fdf1ea; color: #8a3a16;
+}
+.ops-order-payment.is-paid { background: #e5efe9; color: #2f5d4b; }

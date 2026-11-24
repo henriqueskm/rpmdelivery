@@ -3,13 +3,15 @@
 // save are done by the caller (use-auto-printed).
 //
 // Conservative on purpose: a wrong address sends a courier to the wrong house, so the order is saved
-// alone only when the map finds the same street and house number the receipt has, near the store.
+// alone only when the map finds the same street and house number the receipt has, near the store,
+// and the receipt says how the customer pays (the courier must know whether to collect, and how much).
 
 import type { PrintedOrder } from "../../../lib/printing/printer-inbox.ts";
 import type { AddressSuggestion, GeoPoint, ResolvedAddress } from "../../../services/geocoding/types.ts";
 import { formatBrazilianMobilePhone, isValidBrazilianMobilePhone } from "../../../lib/brazilian-mobile-phone.ts";
 import type { NewOrder } from "../model.ts";
 import { sameText } from "../paste-order.ts";
+import { validPayment } from "../payment.ts";
 
 /** Farther than this from the store, the address found is probably another city's street of the same name. */
 export const AUTO_MAX_KM = 30;
@@ -72,10 +74,18 @@ export function matchSuggestion(address: string, suggestions: AddressSuggestion[
 export function receiptBlock(item: PrintedOrder): string | null {
   const { order } = item;
   if (!order.customer) return "o cupom não tem o nome do cliente";
-  if (!order.phone || !isValidBrazilianMobilePhone(order.phone)) return "o cupom não tem um celular do cliente";
+  // The app's contact (iFood's 0800) stands for a hidden mobile.
+  if (!(order.phone ? isValidBrazilianMobilePhone(order.phone) : order.contact)) return "o cupom não tem um celular do cliente";
   if (!order.address) return "o cupom não tem endereço";
   if (!houseNumber(order.address)) return "o endereço do cupom não tem número";
-  return null;
+  return paymentBlock(item);
+}
+
+/** Why the payment read from the receipt is not enough to save it alone, or null. */
+function paymentBlock(item: PrintedOrder): string | null {
+  if (validPayment(item.payment)) return null;
+  if (!item.payment?.method) return "o cupom não diz se está pago ou como o cliente paga";
+  return "o cupom não diz quanto cobrar";
 }
 
 export function distanceKm(a: GeoPoint, b: GeoPoint): number {
@@ -89,6 +99,8 @@ export function distanceKm(a: GeoPoint, b: GeoPoint): number {
 /** The order to save alone, or why the store must check it. */
 export function autoOrder(item: PrintedOrder, found: ResolvedAddress, defaultPromiseMinutes: number, store?: GeoPoint):
   { order: NewOrder } | { reason: string } {
+  const unpaid = paymentBlock(item);
+  if (unpaid || !validPayment(item.payment)) return { reason: unpaid ?? "o cupom não diz quanto cobrar" };
   const neighborhood = item.order.neighborhood?.trim() || found.neighborhood?.trim();
   if (!neighborhood) return { reason: "não achei o bairro" };
   if (store) {
@@ -99,12 +111,14 @@ export function autoOrder(item: PrintedOrder, found: ResolvedAddress, defaultPro
     reference: item.order.reference ?? "",
     customer: item.order.customer ?? "",
     phone: formatBrazilianMobilePhone(item.order.phone ?? ""),
+    ...(item.order.phone || !item.order.contact ? {} : { contact: item.order.contact }),
     address: found.address,
     neighborhood,
     complement: item.order.complement ?? "",
     notes: item.order.notes ?? "",
     orderedAt: Date.parse(item.receivedAt),
     promisedMinutes: defaultPromiseMinutes,
+    payment: item.payment,
     geocode: { latitude: found.latitude, longitude: found.longitude, providerId: found.providerId },
     origin: { source: "PRINTER", app: item.app, externalId: item.externalId },
   } };

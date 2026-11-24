@@ -74,14 +74,30 @@ test("painel real: aprova turno, cadastra pedido, monta e libera rota pelo banco
   await form.locator('input[name="address"]').fill("Rua das Acácias, 55");
   await form.locator('input[name="neighborhood"]').fill("Vila Mariana");
   await form.locator('input[name="reference"]').fill("2001");
+  // The courier must know whether to collect: the payment is required, and a card needs the amount.
+  await form.getByRole("button", { name: "Cadastrar pedido" }).click();
+  await expect(form).toBeVisible();
+  expect(await form.getByRole("radio", { name: "Já pago" }).evaluate(input => (input as HTMLInputElement).validity.valueMissing)).toBe(true);
+  expect(backend.commandCalls().filter(call => call.fn === "create_order")).toHaveLength(0);
+  await form.getByRole("radio", { name: "Cartão" }).check();
+  await expect(form.getByText("O motoboy é avisado para levar a maquininha.")).toBeVisible();
+  await expect(form.getByLabel("Troco para (R$, opcional)"), "change only for cash").toHaveCount(0);
+  await form.getByLabel("Valor a cobrar (R$)").fill("45,9x");
+  await form.getByRole("button", { name: "Cadastrar pedido" }).click();
+  await expect(form).toBeVisible();
+  expect(await form.getByLabel("Valor a cobrar (R$)").evaluate(input => (input as HTMLInputElement).validationMessage))
+    .toBe("Informe o valor a cobrar do cliente, como 52,90.");
+  await form.getByLabel("Valor a cobrar (R$)").fill("45,90");
   await form.getByRole("button", { name: "Cadastrar pedido" }).click();
   await expect(form).toHaveCount(0);
   await showArea(page, /^Pedidos/);
   await expect(page.getByRole("checkbox", { name: "Selecionar pedido 2001", exact: true })).toBeVisible();
+  await expect(page.locator(".ops-order").filter({ hasText: "#2001" }).locator(".ops-order-payment"))
+    .toContainText("Cobrar R$ 45,90 · cartão");
   const created = backend.commandCalls().find(call => call.fn === "create_order")!.body;
   expect(created).toMatchObject({ p_restaurant_id: testRestaurant.id, p_customer_name: "Marina Teixeira",
     p_customer_phone: "+5511912345678", p_delivery_address: "Rua das Acácias, 55", p_neighborhood: "Vila Mariana",
-    p_reference: "2001", p_promised_minutes: 60 });
+    p_reference: "2001", p_promised_minutes: 60, p_payment_method: "CARD", p_amount_due_cents: 4590, p_change_for_cents: null });
   expect(created.p_request_id).toMatch(UUID);
   // Typed text only (the search was not used): saved without coordinates.
   expect(created.p_latitude).toBeUndefined();
@@ -252,12 +268,15 @@ test("novo pedido: endereço escolhido na busca vai com a localização para o m
   // The bairro comes with the address; the order number is its own, optional field.
   await expect(form.locator('input[name="neighborhood"]')).toHaveValue("Vila Mariana");
   await form.getByLabel("Nº do pedido (opcional)").fill("329");
+  await form.getByRole("radio", { name: "Já pago" }).check();
+  await expect(form.getByLabel("Valor a cobrar (R$)"), "nothing to collect").toHaveCount(0);
   await form.getByRole("button", { name: "Cadastrar pedido" }).click();
   await expect(form).toHaveCount(0);
   expect(geocoding.resolve).toEqual([resolvedAddress.providerId]);
   expect(backend.commandCalls().find(call => call.fn === "create_order")!.body).toMatchObject({
     p_delivery_address: resolvedAddress.address, p_latitude: resolvedAddress.latitude, p_longitude: resolvedAddress.longitude,
-    p_address_provider: "mapbox", p_address_provider_id: resolvedAddress.providerId, p_neighborhood: "Vila Mariana" });
+    p_address_provider: "mapbox", p_address_provider_id: resolvedAddress.providerId, p_neighborhood: "Vila Mariana",
+    p_payment_method: "PAID", p_amount_due_cents: null, p_change_for_cents: null });
 
   // The next order starts with an empty address search.
   await page.getByRole("button", { name: "Novo pedido" }).click();
@@ -335,12 +354,19 @@ test("pedido rápido: cliente que já pediu é reconhecido pelo WhatsApp e preen
   await expect(form.getByLabel("Bairro")).toHaveValue("Bela Vista");
   await expect(form.getByLabel("Complemento / referência")).toHaveValue("Apto 12");
   await expect(form.locator('input[name="reference"]'), "what was typed stays").toHaveValue("3001");
+  await form.getByRole("radio", { name: "Dinheiro" }).check();
+  await form.getByLabel("Valor a cobrar (R$)").fill("38");
+  await form.getByLabel("Troco para (R$, opcional)").fill("30");
+  await form.getByRole("button", { name: "Cadastrar pedido" }).click();
+  await expect(form, "change for a smaller bill is refused").toBeVisible();
+  await form.getByLabel("Troco para (R$, opcional)").fill("50,00");
   await form.getByRole("button", { name: "Cadastrar pedido" }).click();
   await expect(form).toHaveCount(0);
   expect(backend.commandCalls().find(call => call.fn === "create_order")!.body).toMatchObject({
     p_customer_name: "Helena Prado", p_customer_phone: "+5511977776666", p_delivery_address: "Rua das Acácias, 55",
     p_neighborhood: "Bela Vista", p_complement: "Apto 12", p_reference: "3001",
-    p_latitude: -23.58, p_longitude: -46.64, p_address_provider: "mapbox", p_address_provider_id: "mapbox_helena" });
+    p_latitude: -23.58, p_longitude: -46.64, p_address_provider: "mapbox", p_address_provider_id: "mapbox_helena",
+    p_payment_method: "CASH", p_amount_due_cents: 3800, p_change_for_cents: 5000 });
 
   // A number nobody used: no suggestion.
   await page.getByRole("button", { name: "Novo pedido" }).first().click();
@@ -368,10 +394,15 @@ Cliente: Maria da Silva
 Telefone: (11) 98765-4321
 Endereço: Rua das Flores, 120 - Apto 3
 Bairro: Jardim Paulista
-Total: R$ 52,90`);
+Total: R$ 52,90
+Pagamento: Dinheiro
+Troco para: R$ 100,00`);
   await form.getByRole("button", { name: "Preencher com o texto" }).click();
   await expect(form.getByRole("status").filter({ hasText: "Preenchido: nome, WhatsApp, endereço, bairro, complemento e nº do pedido." }))
-    .toContainText("Escolha o endereço na lista para confirmar no mapa.");
+    .toContainText("Pagamento lido do texto: confira abaixo. Escolha o endereço na lista para confirmar no mapa.");
+  await expect(form.getByRole("radio", { name: "Dinheiro" })).toBeChecked();
+  await expect(form.getByLabel("Valor a cobrar (R$)")).toHaveValue("52,90");
+  await expect(form.getByLabel("Troco para (R$, opcional)")).toHaveValue("100,00");
   await expect(form.getByLabel("WhatsApp", { exact: true })).toHaveValue("(11) 98765-4321");
   await expect(form.getByLabel("Nome do cliente")).toHaveValue("Maria da Silva");
   await expect(form.getByLabel("Bairro")).toHaveValue("Jardim Paulista");
@@ -388,7 +419,7 @@ Total: R$ 52,90`);
   expect(backend.commandCalls().find(call => call.fn === "create_order")!.body).toMatchObject({
     p_customer_name: "Maria da Silva", p_customer_phone: "+5511987654321", p_delivery_address: resolvedAddress.address,
     p_neighborhood: "Jardim Paulista", p_complement: "Apto 3", p_reference: "4567", p_notes: "Troco para 100",
-    p_address_provider_id: resolvedAddress.providerId });
+    p_address_provider_id: resolvedAddress.providerId, p_payment_method: "CASH", p_amount_due_cents: 5290, p_change_for_cents: 10000 });
 });
 
 test("sugerir rotas: junta pela rua e pelo caminho, explica o motivo e preenche a montagem", async ({ page }) => {
@@ -717,6 +748,9 @@ test("editar pedido aguardando despacho: formulário preenchido, salva e mantém
   const form = page.getByRole("dialog", { name: "Editar pedido #1049" });
   await expect(form.getByLabel("Nome do cliente")).toHaveValue("Igor Nunes");
   await expect(form.getByLabel("Endereço")).toHaveValue("Rua Sintética, 1049");
+  await expect(form.getByRole("radio", { name: "Cartão" })).toBeChecked();
+  await expect(form.getByLabel("Valor a cobrar (R$)")).toHaveValue("39,90");
+  await form.getByRole("radio", { name: "Pix na entrega" }).check();
   await form.getByLabel("Nome do cliente").fill("Igor Nunes Filho");
   await form.getByLabel("Observações").fill("Interfone 12");
   await form.getByRole("button", { name: "Salvar alterações" }).click();
@@ -725,7 +759,9 @@ test("editar pedido aguardando despacho: formulário preenchido, salva e mantém
   await expect(page.locator(".ops-order").filter({ hasText: "#1049" })).toContainText("Igor Nunes Filho");
   const call = backend.commandCalls().find(item => item.fn === "update_order")!.body;
   expect(call).toMatchObject({ p_restaurant_id: testRestaurant.id, p_order_id: "o-1049", p_customer_name: "Igor Nunes Filho",
-    p_notes: "Interfone 12", p_delivery_address: "Rua Sintética, 1049", p_keep_location: true });
+    p_notes: "Interfone 12", p_delivery_address: "Rua Sintética, 1049", p_keep_location: true,
+    p_payment_method: "PIX", p_amount_due_cents: 3990, p_change_for_cents: null });
+  await expect(page.locator(".ops-order").filter({ hasText: "#1049" }).locator(".ops-order-payment")).toContainText("Cobrar R$ 39,90 · Pix");
   expect(call).not.toHaveProperty("p_latitude");
   // Orders already in a route have no edit or cancel, only the customer's link.
   await expect(page.getByRole("button", { name: /^Editar pedido 1047/ })).toHaveCount(0);
@@ -780,7 +816,7 @@ test("impressora deste computador: pedido impresso vira pedido do painel depois 
   await expect(form.locator(".ops-kicker")).toHaveText("PEDIDO DA IMPRESSORA");
   await expect(form.getByText("Confira o que foi lido do cupom.", { exact: false })).toBeVisible();
   await expect(form.getByRole("status").filter({ hasText: "Lido do cupom: nome, WhatsApp, endereço e nº do pedido." }))
-    .toContainText("Escolha o endereço na lista para confirmar no mapa.");
+    .toContainText("Escolha o endereço na lista para confirmar no mapa. O cupom não diz o pagamento: marque se está pago ou quanto cobrar.");
   await expect(form.getByLabel("WhatsApp", { exact: true })).toHaveValue("(11) 91234-5678");
   await expect(form.getByLabel("Nome do cliente")).toHaveValue("Maria Souza teste 01");
   await expect(form.locator('input[name="reference"]')).toHaveValue("77");
@@ -789,6 +825,7 @@ test("impressora deste computador: pedido impresso vira pedido do painel depois 
   await form.getByRole("option", { name: /Rua das Flores/ }).click();
   await expect(form.getByText("Localização confirmada", { exact: false })).toBeVisible();
   await form.getByLabel("Bairro").fill("Centro");
+  await form.getByRole("radio", { name: "Já pago" }).check();
   await form.getByRole("button", { name: "Cadastrar pedido" }).click();
   await expect(form).toHaveCount(0);
 
@@ -811,6 +848,7 @@ test("impressora deste computador: pedido impresso vira pedido do painel depois 
   await banner.getByRole("button", { name: "Conferir e cadastrar" }).click();
   await expect(form.getByLabel("Nome do cliente")).toHaveValue("Maria Souza teste 01");
   await form.getByLabel("Bairro").fill("Centro");
+  await form.getByRole("radio", { name: "Já pago" }).check();
   await form.getByRole("button", { name: "Cadastrar pedido" }).click();
   await expect(form).toHaveCount(0);
   await expect(page.getByRole("status").filter({ hasText: "Esse pedido já estava no painel (código 77 · 22/11/2026). Nada foi alterado." }))
@@ -824,6 +862,23 @@ test("impressora deste computador: pedido impresso vira pedido do painel depois 
   await expect(banner).toHaveCount(0);
   expect(taken).toEqual(["job-1", "job-2", "job-3"]);
   expect(backend.commandCalls().filter(call => call.fn === "import_order")).toHaveLength(2);
+
+  // iFood hides the mobile: the form keeps its 0800 contact and the WhatsApp is optional.
+  inbox = [{ id: "job-4", receivedAt, externalId: "4821 · 22/11/2026", app: "iFood",
+    order: { customer: "João iFood", contact: "0800 718 2283 · ID 12345678", address: "Rua das Flores, 100", reference: "4821" },
+    found: [], payment: { method: "PAID" } } as unknown as typeof printed];
+  await banner.getByRole("button", { name: "Conferir e cadastrar" }).click();
+  await expect(form.getByRole("note")).toContainText("Contato do app: 0800 718 2283 · ID 12345678");
+  await expect(form.getByLabel("WhatsApp", { exact: true })).toHaveValue("");
+  await expect(form.getByRole("radio", { name: "Já pago" })).toBeChecked();
+  await form.getByRole("option", { name: /Rua das Flores/ }).click();
+  await form.getByLabel("Bairro").fill("Centro");
+  await form.getByRole("button", { name: "Cadastrar pedido" }).click();
+  await expect(form).toHaveCount(0);
+  expect(backend.commandCalls().filter(call => call.fn === "import_order").at(-1)!.body).toMatchObject({
+    p_external_id: "4821 · 22/11/2026", p_source_app: "iFood", p_customer_phone: null,
+    p_customer_contact: "0800 718 2283 · ID 12345678", p_payment_method: "PAID" });
+  await expect(page.locator(".ops-order").filter({ hasText: "#4821" })).toContainText("João iFood");
   expect(errors).toEqual([]);
 });
 
@@ -836,14 +891,19 @@ test("impressora em modo automático: endereço certo vai direto para a fila; o 
   const receivedAt = new Date(Math.floor((Date.now() - 2 * 60_000) / 60_000) * 60_000).toISOString();
   const good = { id: "job-ok", receivedAt, externalId: "81 · 22/11/2026", app: null,
     order: { customer: "Rita Alves", phone: "11912340081", address: "R. das Flores, 120", complement: "Apto 4",
-      notes: "Sem cebola", reference: "81" }, found: [] };
+      notes: "Sem cebola", reference: "81" }, found: [], payment: { method: "CASH", amountDueCents: 6190, changeForCents: 10000 } };
   const unknown = { id: "job-check", receivedAt, externalId: "82 · 22/11/2026", app: null,
-    order: { customer: "Caio Lima", phone: "11912340082", address: "Rua Inventada, 9", reference: "82" }, found: [] };
+    order: { customer: "Caio Lima", phone: "11912340082", address: "Rua Inventada, 9", reference: "82" }, found: [],
+    payment: { method: "PAID" } };
   // Same street and number, but the receipt says Itatiba and the map only finds it in São Paulo.
   const elsewhere = { id: "job-city", receivedAt, externalId: "83 · 22/11/2026", app: null,
     order: { customer: "Lia Prado", phone: "11912340083", address: "Rua das Flores, 120, Itatiba", city: "Itatiba",
-      reference: "83" }, found: [] };
-  let inbox = [good, unknown, elsewhere];
+      reference: "83" }, found: [], payment: { method: "PAID" } };
+  // Everything else checks out, but the receipt does not say how much to collect: the courier must know.
+  const unpaid = { id: "job-pay", receivedAt, externalId: "84 · 22/11/2026", app: null,
+    order: { customer: "Davi Rocha", phone: "11912340084", address: "Rua das Flores, 120", reference: "84" }, found: [],
+    payment: { method: "CARD" } };
+  let inbox = [good, unknown, elsewhere, unpaid];
   const taken: string[] = [];
   const cors = { "Access-Control-Allow-Origin": "*" };
   await page.route("http://127.0.0.1:9180/pedidos", route => route.fulfill({ json: { orders: inbox }, headers: cors }));
@@ -873,13 +933,14 @@ test("impressora em modo automático: endereço certo vai direto para a fila; o 
   expect(imported[0].body).toMatchObject({ p_source: "PRINTER", p_external_id: "81 · 22/11/2026", p_customer_name: "Rita Alves",
     p_customer_phone: "+5511912340081", p_delivery_address: resolvedAddress.address, p_neighborhood: "Jardim Paulista",
     p_complement: "Apto 4", p_notes: "Sem cebola", p_reference: "81", p_promised_minutes: 60, p_ordered_at: receivedAt,
-    p_latitude: resolvedAddress.latitude, p_address_provider_id: resolvedAddress.providerId });
+    p_latitude: resolvedAddress.latitude, p_address_provider_id: resolvedAddress.providerId,
+    p_payment_method: "CASH", p_amount_due_cents: 6190, p_change_for_cents: 10000 });
   await expect(page.getByRole("status").filter({ hasText: "Pedido #81 da impressora cadastrado sozinho: Rita Alves" })).toBeVisible();
   await expect(page.locator(".ops-order").filter({ hasText: "#81" }).locator(".ops-order-origin svg")).toBeVisible();
 
   // The other one waits, saying why.
   const banner = page.getByRole("region", { name: "Pedidos da impressora" });
-  await expect(banner).toContainText("2 pedidos da impressora para conferir");
+  await expect(banner).toContainText("3 pedidos da impressora para conferir");
   await expect(banner).toContainText("Caio Lima · #82");
   await expect(banner).toContainText("Não cadastrei sozinho: não achei esse endereço no mapa com certeza.");
   // The receipt's city goes with the search, and an address found only in another city waits too.
@@ -892,10 +953,15 @@ test("impressora em modo automático: endereço certo vai direto para a fila; o 
   await form.getByRole("button", { name: "Fechar novo pedido" }).click();
   expect(taken).toEqual(["job-ok"]);
   await banner.getByRole("button", { name: "Descartar" }).click();
-  await expect(banner).toContainText("Pedido da impressora para conferir");
+  await expect(banner).toContainText("2 pedidos da impressora para conferir");
   await expect(banner).toContainText("Lia Prado · #83");
   await expect(banner).toContainText("Não cadastrei sozinho: o mapa só achou esse endereço fora de Itatiba.");
   expect(taken).toEqual(["job-ok", "job-check"]);
+  await banner.getByRole("button", { name: "Descartar" }).click();
+  await expect(banner).toContainText("Pedido da impressora para conferir");
+  await expect(banner).toContainText("Davi Rocha · #84");
+  await expect(banner).toContainText("Não cadastrei sozinho: o cupom não diz quanto cobrar.");
+  expect(geocoding.suggest, "the payment is checked before searching the map").not.toContain("Rua das Flores, 120");
   expect(backend.commandCalls().filter(call => call.fn === "import_order")).toHaveLength(1);
   expect(errors).toEqual([]);
 });

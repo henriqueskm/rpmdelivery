@@ -7,7 +7,7 @@ const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).
 const minutesAhead = (minutes: number) => new Date(Date.now() + minutes * 60_000).toISOString();
 
 type Order = {
-  deliveryId: string; orderId: string; reference: string; customer: string; phone: string; address: string;
+  deliveryId: string; orderId: string; reference: string; customer: string; phone: string | null; address: string;
   neighborhood: string | null; complement: string | null; notes: string | null; orderedAt: string; createdAt: string;
   promisedMinutes: number; orderStatus: string; deliveryStatus: string; failedAttempts: number;
 };
@@ -53,6 +53,16 @@ export function storeBackend() {
         decision: null as string | null, decidedAt: null as string | null, decidedBy: null as string | null },
     ],
     orderSources: [] as { deliveryId: string; source: string; app: string | null; externalId: string }[],
+    // How each order is paid (orders saved before the payment existed have none).
+    // The delivery app's contact of orders without a mobile (iFood's 0800).
+    customerContacts: [] as { deliveryId: string; contact: string }[],
+    orderPayments: [{ deliveryId: "d-1049", method: "CARD", amountDueCents: 3990 as number | null, changeForCents: null as number | null }],
+  };
+  /** Keeps the payment a command sent, as the database does. */
+  const keepPayment = (deliveryId: string, body: Record<string, unknown>) => {
+    board.orderPayments = board.orderPayments.filter(item => item.deliveryId !== deliveryId);
+    if (body.p_payment_method) board.orderPayments.push({ deliveryId, method: String(body.p_payment_method),
+      amountDueCents: (body.p_amount_due_cents as number | null) ?? null, changeForCents: (body.p_change_for_cents as number | null) ?? null });
   };
   const calls: { fn: string; body: Record<string, unknown> }[] = [];
   const failures = new Map<string, RpcReply>();
@@ -73,9 +83,10 @@ export function storeBackend() {
     create_order(body) {
       const reference = String(body.p_reference ?? 2000 + board.orders.length);
       const created = { ...order(reference, String(body.p_customer_name), String(body.p_neighborhood ?? "")),
-        phone: String(body.p_customer_phone), address: String(body.p_delivery_address),
+        phone: body.p_customer_phone ? String(body.p_customer_phone) : null, address: String(body.p_delivery_address),
         orderedAt: String(body.p_ordered_at), createdAt: new Date().toISOString(), promisedMinutes: Number(body.p_promised_minutes) };
       board.orders.unshift(created);
+      keepPayment(created.deliveryId, body);
       return ok({ orderId: created.orderId, deliveryId: created.deliveryId, created: true });
     },
     // Same code from the same system answers the order already there (created: false), unchanged.
@@ -84,6 +95,7 @@ export function storeBackend() {
         && (source.app ?? "") === String(body.p_source_app ?? "") && source.externalId === body.p_external_id);
       if (same) return ok({ orderId: find(board.orders, "deliveryId", same.deliveryId)?.orderId, deliveryId: same.deliveryId, created: false });
       const reply = commands.create_order(body) as { json: { deliveryId: string } };
+      if (body.p_customer_contact) board.customerContacts.push({ deliveryId: reply.json.deliveryId, contact: String(body.p_customer_contact) });
       board.orderSources.push({ deliveryId: reply.json.deliveryId, source: String(body.p_source),
         app: (body.p_source_app as string | null) ?? null, externalId: String(body.p_external_id) });
       return reply;
@@ -151,6 +163,7 @@ export function storeBackend() {
       Object.assign(target, { customer: body.p_customer_name, phone: body.p_customer_phone, address: body.p_delivery_address,
         neighborhood: body.p_neighborhood ?? null, complement: body.p_complement ?? null, notes: body.p_notes ?? null,
         reference: body.p_reference ?? target.reference, promisedMinutes: body.p_promised_minutes });
+      keepPayment(target.deliveryId, body);
       return ok({ orderId: target.orderId, updated: true });
     },
     requeue_delivery(body) {
