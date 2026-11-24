@@ -5,12 +5,14 @@ enum class ShiftAlert(val id: Int, val title: String) {
     APPROVED(2001, "Turno aprovado"),
     NEXT_IN_LINE(2002, "Você é o próximo da fila"),
     PICKUP_RELEASED(2003, "Rota pronta para retirada"),
+    SHIFT_ENDED_BY_STORE(2004, "Turno encerrado pela loja"),
 }
 
 fun alertText(alert: ShiftAlert, home: CourierHome): String = when (alert) {
     ShiftAlert.APPROVED -> "${home.shift?.restaurantName.orEmpty()} aprovou seu turno. Você está na fila.".trim()
     ShiftAlert.NEXT_IN_LINE -> "A próxima rota de ${home.shift?.restaurantName.orEmpty()} é sua. Fique por perto."
     ShiftAlert.PICKUP_RELEASED -> pickupText(home.route)
+    ShiftAlert.SHIFT_ENDED_BY_STORE -> home.shiftEndedByStore?.let(::shiftEndedText) ?: "A loja encerrou seu turno."
 }
 
 /** "Pegue os pedidos no balcão e a maquininha. Leve R$ 48,00 de troco. Deslize para iniciar a rota." */
@@ -33,7 +35,12 @@ fun alertsBetween(before: CourierHome?, after: CourierHome): List<ShiftAlert> {
     if (before == null) return emptyList()
     val alerts = mutableListOf<ShiftAlert>()
     val was = before.shift
-    val now = after.shift ?: return emptyList()
+    // The shift was there and is gone because the store ended it ("Fechar o dia"): say so.
+    if (after.shift == null) {
+        return if (was != null && after.shiftEndedByStore?.shiftId == was.shiftId) listOf(ShiftAlert.SHIFT_ENDED_BY_STORE)
+        else emptyList()
+    }
+    val now = after.shift
     if (was?.shiftId == now.shiftId && was.status == "PENDING" && now.status == "AVAILABLE") alerts += ShiftAlert.APPROVED
     val firstNow = now.status == "AVAILABLE" && now.queuePosition == 1 && after.route == null
     val firstBefore = was?.shiftId == now.shiftId && was.status == "AVAILABLE" && was.queuePosition == 1 && before.route == null

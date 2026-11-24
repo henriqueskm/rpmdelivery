@@ -42,8 +42,17 @@ Migration: `supabase/migrations/20261205120000_store_day_close.sql`.
 - **Concorrência:** os turnos são travados primeiro e conferidos num comando seguinte, que já enxerga uma rota criada nesse meio-tempo. O motoboy que acabou de receber uma rota fica com o turno. A corrida 11 de `tests/sql/run-delivery-core.sh` cobre isso no PostgreSQL 17.
 - **Testes:** `tests/sql/delivery-core/day-close-contracts.sql`.
 
+## Aviso ao motoboy
+
+Migration `20261206120000_shift_ended_by_store.sql`.
+
+- **No app:** quando a loja encerra o turno, o app mostra "Cozinha da Vila encerrou seu turno às 23:40." na tela inicial.
+- **Com o celular no bolso:** o serviço do turno dispara a notificação **"Turno encerrado pela loja"** antes de parar.
+- **De onde vem:** `get_courier_home` traz `shiftEndedByStore` (turno, loja e hora). Vale só para o último turno do motoboy, nas últimas 12 horas, e some quando ele pede um turno novo.
+- **Turno encerrado pelo próprio motoboy** não gera aviso.
+- **Testes:** `tests/sql/delivery-core/shift-ended-contracts.sql`.
+
 ## Fora desta etapa
 
-- Avisar o motoboy no app que a loja encerrou o turno dele (hoje o app só volta à tela inicial).
 - Marcar o acerto como pago.
 - Exportar o relatório em planilha.

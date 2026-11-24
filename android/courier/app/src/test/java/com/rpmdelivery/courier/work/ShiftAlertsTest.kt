@@ -20,6 +20,28 @@ class ShiftAlertsTest {
         assertFalse("no shift", awaitingPickup(CourierHome(listOf(store), null, null)))
     }
 
+    @Test fun shiftEndedByTheStoreRingsOnceAndSaysWhoAndWhen() {
+        val ended = ShiftEnded("s-1", "Cozinha da Vila", "2026-11-25T02:40:00+00:00")
+        val after = CourierHome(listOf(store), null, null, shiftEndedByStore = ended)
+        assertEquals(listOf(ShiftAlert.SHIFT_ENDED_BY_STORE), alertsBetween(home("AVAILABLE", 2), after))
+        assertEquals("Cozinha da Vila encerrou seu turno às 23:40.", shiftEndedText(ended, java.time.ZoneId.of("America/Sao_Paulo")))
+        // The courier ended it, or it is an older shift's notice: nothing to say.
+        assertEquals(emptyList<ShiftAlert>(), alertsBetween(home("AVAILABLE", 2), CourierHome(listOf(store), null, null)))
+        assertEquals(emptyList<ShiftAlert>(), alertsBetween(home("AVAILABLE", 2, shiftId = "s-2"), after))
+        // Already told: no shift before either.
+        assertEquals(emptyList<ShiftAlert>(), alertsBetween(after, after))
+        assertEquals("A loja encerrou seu turno.", shiftEndedText(ShiftEnded("s-1", "", null)))
+    }
+
+    @Test fun homeSaysWhenTheStoreEndedTheShift() {
+        fun parse(json: String) = parseHome(kotlinx.serialization.json.Json.parseToJsonElement(json))
+        val home = parse("""{"stores":[],"shift":null,"route":null,
+            "shiftEndedByStore":{"shiftId":"s-1","restaurantName":"Cozinha da Vila","endedAt":"2026-11-25T02:40:00+00:00"}}""")
+        assertEquals(ShiftEnded("s-1", "Cozinha da Vila", "2026-11-25T02:40:00+00:00"), home.shiftEndedByStore)
+        assertNull(parse("""{"stores":[],"shift":null,"route":null,"shiftEndedByStore":null}""").shiftEndedByStore)
+        assertNull("older servers do not send it", parse("""{"stores":[],"shift":null,"route":null}""").shiftEndedByStore)
+    }
+
     @Test fun firstReadNeverRings() {
         assertEquals(emptyList<ShiftAlert>(), alertsBetween(null, home("AVAILABLE", 1)))
         assertEquals(emptyList<ShiftAlert>(), alertsBetween(null, home("AVAILABLE", route = route(true))))
