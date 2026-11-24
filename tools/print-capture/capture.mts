@@ -14,21 +14,24 @@
 //   node tools/print-capture/capture.mts --sem-painel          não entrega os pedidos ao painel
 //
 // Cada cupom com pedido fica disponível para o painel aberto neste computador (127.0.0.1:9180), que o
-// mostra em "Pedidos" quando a opção "Pedidos da impressora" está ligada no menu da loja. Os pedidos ficam
-// só na memória deste programa: fechar o programa os descarta.
+// mostra em "Pedidos" quando a opção "Pedidos da impressora" está ligada no menu da loja. A fila fica
+// também no arquivo fila.json da pasta das impressões: fechar o programa ou reiniciar o computador não
+// perde os pedidos que o painel ainda não pegou (os das últimas 24 horas voltam ao abrir).
 //
 // Passo a passo para instalar a impressora no Windows: tools/print-capture/README.md
 
 import { createServer, type Socket } from "node:net";
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { readReceipt, type ReceiptReading } from "../../lib/printing/receipt-text.ts";
 import { foundText } from "../../features/operations/paste-order.ts";
-import { allowedRequest, isOrderLike, PANEL_HEADER, PANEL_ORIGINS, PRINTER_INBOX_PORT, printedExternalId,
-  type PrintedOrder } from "../../lib/printing/printer-inbox.ts";
+import { allowedRequest, isOrderLike, PANEL_HEADER, PANEL_ORIGINS, PRINTER_INBOX_PORT, QUEUE_LIMIT }
+  from "../../lib/printing/printer-inbox.ts";
+import { emptyQueue, placeReceipt, QUEUE_WARNING, queueToSave, restoreQueue, takeOrder }
+  from "../../lib/printing/printer-queue.ts";
 import { deliver, inOrder, parseTarget, pointsToSelf, sendNetwork, targetText, type Delivery, type ForwardTarget } from "./forward.mts";
 import { findPrinter, listPrinters, rawPrint } from "./windows.mts";
 import { loadConfig, runSetup, type AppConfig } from "./setup.mts";
@@ -53,20 +56,48 @@ const panelPort = Number(option("porta-painel") ?? PRINTER_INBOX_PORT);
 const panelOrigins = [...PANEL_ORIGINS, ...(option("origem") ? [option("origem")!.replace(/\/+$/, "")] : [])];
 let systemName = option("sistema")?.trim().slice(0, 40) || null;
 
-/** Printed orders the panel has not taken yet (newest last), in memory only. */
-const inbox: PrintedOrder[] = [];
+/** Printed orders the panel has not taken yet (newest last) and the codes given out, also in queueFile. */
+const queue = emptyQueue();
+const queueFile = join(folder, "fila.json");
+let queueSaving: Promise<void> = Promise.resolve();
+
+/** One save at a time, each with the latest queue; a half-written file never replaces the good one. */
+function saveQueue() {
+  const text = JSON.stringify(queueToSave(queue, new Date()));
+  queueSaving = queueSaving.then(async () => {
+    try {
+      await mkdir(folder, { recursive: true });
+      await writeFile(`${queueFile}.tmp`, text, "utf8");
+      await rename(`${queueFile}.tmp`, queueFile);
+    } catch (error) {
+      console.log(`  ! Não consegui gravar a fila em ${queueFile}: ${(error as Error).message}`);
+    }
+  });
+}
+
+async function loadQueue() {
+  let saved: unknown;
+  try { saved = JSON.parse(await readFile(queueFile, "utf8")); } catch { return; }
+  const restored = restoreQueue(saved, new Date());
+  queue.inbox.push(...restored.inbox);
+  queue.seen.push(...restored.seen);
+  if (restored.inbox.length)
+    console.log(`${restored.inbox.length} pedido(s) da impressora ainda esperando o painel desde a última vez.`);
+}
 
 function offerToPanel(reading: ReceiptReading, receivedAt: Date) {
   if (!panel || reading.verdict !== "text" || !isOrderLike(reading.found)) return;
   const fingerprint = createHash("sha256").update(reading.text.replace(/\s+/g, " ").trim()).digest("hex");
-  const externalId = printedExternalId(reading.order.reference, receivedAt, fingerprint);
-  // A reprint replaces the copy still waiting: one card per order on the panel.
-  const previous = inbox.findIndex(item => item.externalId === externalId);
-  if (previous >= 0) inbox.splice(previous, 1);
-  inbox.push({ id: randomUUID(), receivedAt: receivedAt.toISOString(), externalId, app: systemName,
+  const placed = placeReceipt(queue, { id: randomUUID(), receivedAt, fingerprint, app: systemName,
     order: reading.order, found: reading.found });
-  if (inbox.length > 50) inbox.shift();
-  console.log(`  → Pronto para o painel (código ${externalId}). Abra "Pedidos" no painel deste computador.`);
+  saveQueue();
+  console.log(placed.reprint
+    ? `  → Segunda via do pedido ${placed.externalId}: no painel continua um só.`
+    : `  → Pronto para o painel (código ${placed.externalId}). Abra "Pedidos" no painel deste computador.`);
+  for (const item of placed.dropped)
+    console.log(`  ! Fila cheia (${QUEUE_LIMIT}): o pedido ${item.externalId} saiu da fila sem ir ao painel. Confira no papel.`);
+  if (queue.inbox.length >= QUEUE_WARNING)
+    console.log(`  ! ${queue.inbox.length} pedidos esperando: o painel deste computador está aberto, com "Pedidos da impressora" ligado?`);
 }
 
 function answer(response: ServerResponse, status: number, origin: string | undefined, body?: unknown) {
@@ -100,12 +131,12 @@ function servePanel(request: IncomingMessage, response: ServerResponse) {
     answer(response, 403, undefined); return;
   }
   const path = (request.url ?? "/").split("?")[0];
-  if (request.method === "GET" && path === "/pedidos") { answer(response, 200, origin, { orders: inbox }); return; }
+  if (request.method === "GET" && path === "/pedidos") { answer(response, 200, origin, { orders: queue.inbox }); return; }
   const taken = path.match(/^\/pedidos\/([\w-]{1,64})\/concluido$/);
   if (request.method === "POST" && taken) {
-    const at = inbox.findIndex(item => item.id === taken[1]);
-    if (at >= 0) {
-      const [item] = inbox.splice(at, 1);
+    const item = takeOrder(queue, taken[1]);
+    if (item) {
+      saveQueue();
       console.log(`\n[${new Date().toLocaleTimeString("pt-BR")}] O painel tirou da lista o pedido da impressora (código ${item.externalId}).`);
     }
     answer(response, 204, origin);
@@ -307,6 +338,7 @@ async function main() {
     await preparePaper(option("repassar"));
   }
 
+  if (panel) await loadQueue();
   const server = createServer(socket => { void handle(socket); });
   server.on("error", error => {
     const code = (error as NodeJS.ErrnoException).code;

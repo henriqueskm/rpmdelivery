@@ -1,5 +1,5 @@
 // Printed orders handed from the virtual printer (tools/print-capture) to the panel open on the same
-// computer. The program keeps them in memory and serves them on 127.0.0.1 only; the panel asks for
+// computer. The program keeps them (in a file too, see printer-queue.ts) and serves them on 127.0.0.1 only; the panel asks for
 // them, the store checks the address on the map and saves through import_order (source PRINTER).
 // Pure: shared by the program (Node) and the panel (browser).
 
@@ -7,6 +7,8 @@ import { ORDER_FIELDS, type PastedOrder } from "../../features/operations/paste-
 
 export const PRINTER_INBOX_PORT = 9180;
 export const PRINTER_INBOX_URL = `http://127.0.0.1:${PRINTER_INBOX_PORT}`;
+/** Orders waiting for the panel at most: far more than a peak hour with the panel closed. */
+export const QUEUE_LIMIT = 500;
 /** Sent on every request of the panel. A custom header makes browsers ask first (CORS preflight). */
 export const PANEL_HEADER = "x-rpm-painel";
 /** The pages allowed to read printed orders, besides those given with --origem. */
@@ -48,7 +50,7 @@ export function parsePrintedOrders(value: unknown): PrintedOrder[] {
   const list = (value as { orders?: unknown } | null)?.orders;
   if (!Array.isArray(list)) return [];
   const orders: PrintedOrder[] = [];
-  for (const item of list.slice(0, 50)) {
+  for (const item of list.slice(0, QUEUE_LIMIT)) {
     const candidate = item as Partial<PrintedOrder> | null;
     if (!candidate || typeof candidate.id !== "string" || !/^[\w-]{1,64}$/.test(candidate.id)) continue;
     if (typeof candidate.externalId !== "string" || !candidate.externalId.trim() || candidate.externalId.length > 80) continue;
