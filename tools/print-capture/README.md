@@ -91,7 +91,7 @@ Faltando qualquer um, o pedido fica no aviso **"Pedido da impressora para confer
 
 **Cupom impresso de novo:** o mesmo número no mesmo dia é o mesmo pedido. Cadastrar de novo não cria outro; o painel avisa que ele já estava lá. Sem número no cupom, vale o texto inteiro: um cupom idêntico é o mesmo pedido.
 
-**Os pedidos ficam só na memória do programa.** Fechar o programa descarta os que ainda não foram conferidos. O painel só consegue ler esses pedidos se a opção estiver ligada e o programa responde apenas ao painel do RpmDelivery (`localhost:3000` ou o endereço oficial). Outros sites são recusados. Para o painel em outro endereço, use `--origem https://endereco-do-painel`.
+**A fila de pedidos fica gravada** no arquivo `fila.json` da pasta das impressões. Fechar o programa ou reiniciar o computador não perde os pedidos que o painel ainda não pegou: ao abrir de novo, os das últimas 24 horas voltam. Cabem 500 pedidos esperando, e a janela avisa a partir de 400. O mesmo número de pedido no mesmo dia só é tratado como segunda via quando o cliente também é o mesmo. O painel só consegue ler esses pedidos se a opção estiver ligada e o programa responde apenas ao painel do RpmDelivery (`localhost:3000` ou o endereço oficial). Outros sites são recusados. Para o painel em outro endereço, use `--origem https://endereco-do-painel`.
 
 ### Ver o que o driver da sua impressora térmica manda
 
@@ -177,5 +177,5 @@ Cada impressão gera dois arquivos: o `.bin` (os bytes exatos que chegaram) e o 
 - Impressoras térmicas recebem **ESC/POS**: letras misturadas com comandos (negrito, corte do papel, gaveta, figuras, código de barras).
 - O leitor (`lib/printing/receipt-text.ts`) tira os comandos e conta as figuras. Depois decodifica as letras na página de código que o sistema escolheu (comando `ESC t`) ou, quando o sistema não escolhe, na página que faz mais sentido em português: CP850, CP860, Windows-1252 ou UTF-8.
 - O texto passa pelo mesmo leitor do "Colar pedido" (`features/operations/paste-order.ts`).
-- O programa guarda na memória os cupons que parecem pedido e os oferece em `127.0.0.1:9180`, só para o painel. O painel com a opção ligada pergunta a cada 3 segundos (`lib/printing/printer-inbox.ts`, `features/operations/live/use-printer-inbox.ts`).
+- O programa guarda os cupons que parecem pedido, também em `fila.json` (`lib/printing/printer-queue.ts`), e os oferece em `127.0.0.1:9180`, só para o painel. O painel com a opção ligada pergunta a cada 3 segundos (`lib/printing/printer-inbox.ts`, `features/operations/live/use-printer-inbox.ts`).
 - O pedido conferido é salvo por `import_order`, com origem `PRINTER` e o código do cupom: número e dia, ou a impressão digital do texto. O banco não deixa o mesmo código entrar duas vezes.

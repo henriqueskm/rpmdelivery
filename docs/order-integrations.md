@@ -45,7 +45,10 @@ O programa fica em `tools/print-capture/`; o passo a passo está no [README](../
 - O leitor (`lib/printing/receipt-text.ts`) entende ESC/POS: tira comandos, figuras, códigos de barras, QR e gaveta. Decodifica as letras em CP850, CP860, CP437, Windows-1252 ou UTF-8. Também reconhece PDF, PostScript e PCL, que indicam driver errado.
 ### Do cupom ao painel
 
-- O programa guarda na memória os cupons em texto que têm nome, WhatsApp ou endereço. Ele os oferece em `127.0.0.1:9180`, só para este computador.
+- O programa guarda os cupons em texto que têm nome, WhatsApp ou endereço. Ele os oferece em `127.0.0.1:9180`, só para este computador.
+- **Fila segura no horário de pico** (`lib/printing/printer-queue.ts`):
+  - a fila fica também no arquivo `fila.json` da pasta das impressões, gravada a cada mudança. Fechar a janela ou reiniciar o computador não perde os pedidos que o painel ainda não pegou: ao abrir, os das últimas 24 horas voltam;
+  - cabem 500 pedidos esperando. A partir de 400, a janela do programa avisa que o painel não está pegando os pedidos. Só depois de 500 o mais antigo sai da fila, e a janela diz qual, para conferir no papel.
 - No painel, a opção **"Pedidos da impressora neste computador"** fica no menu da loja. Vem desligada e vale por computador (`localStorage`). Ligada, o painel pergunta ao programa a cada 3 segundos, ou a cada 10 enquanto ele estiver fechado.
 - Cada cupom vira o aviso **"Pedido chegou pela impressora"**. **Conferir e cadastrar** abre o formulário de novo pedido preenchido. A loja confirma o endereço no mapa e salva por `import_order`, com origem `PRINTER`. **Descartar** tira o aviso.
 - **Cadastrar sozinho** (opção por computador, abaixo da impressora; `features/operations/live/auto-printed.ts` e `use-auto-printed.ts`):
@@ -54,6 +57,10 @@ O programa fica em `tools/print-capture/`; o passo a passo está no [README](../
   - o pedido entra com o endereço e o ponto do mapa, o prazo padrão da loja e o horário da impressão;
   - o resto fica no aviso "Pedido da impressora para conferir", com o motivo, também mostrado no formulário.
 - **Código do pedido impresso** (`external_id`): o número do cupom com o dia ("5127 · 22/11/2026"), porque muitos sistemas recomeçam a numeração todo dia. Sem número, a impressão digital do texto ("cupom 0123456789ab").
+- **Mesmo número, outro cliente:** dois sistemas na mesma impressora podem imprimir o mesmo número no mesmo dia (o 7 do iFood e o 7 do site). O programa lembra, por dois dias, o celular e o nome de cada código que deu:
+  - celulares diferentes, ou nomes que não cabem um no outro, fazem outro pedido, com o código "7 · 23/11/2026 · 2";
+  - "Lucas" cabe em "Lucas Mendes", porque uma linha quebrada pode faltar;
+  - sem celular nem nome para comparar, é segunda via.
 - **Cupom reimpresso:**
   - o programa troca a cópia que ainda está esperando, para não aparecer em dobro;
   - se o pedido já foi cadastrado, `import_order` responde o que já existe e o painel avisa "Esse pedido já estava no painel".
