@@ -4,6 +4,18 @@ import {
   formatMoney, parseMoney, paymentArgs, paymentText, readPayment, readPaymentJson, validPayment,
 } from "../../features/operations/payment.ts";
 
+test("pagamento nos modelos de cupom do Cardápio Web e do Anota AI", () => {
+  // The discount line ("-R$ 10,00") is not what to collect; the total to collect is.
+  assert.deepEqual(readPayment([
+    "Desconto (Cupom PRIMEIRA10):      -R$  10,00", "TOTAL A COBRAR:                    R$ 105,00", "PAGAMENTO",
+    "Forma: Cartão de Crédito (Maquininha)", "Status: Pagar na entrega",
+  ].join("\n")), { method: "CARD", amountDueCents: 10500 });
+  assert.deepEqual(readPayment([
+    "Desconto (Cupom ANOTA10):         -R$ 10,00", "TOTAL:                             R$ 77,00", "FORMA DE PAGAMENTO",
+    "Pix (Pago Online)", "* Não cobrar do cliente na entrega *",
+  ].join("\n")), { method: "PAID" });
+});
+
 test("valores em reais", () => {
   assert.equal(parseMoney("52,90"), 5290);
   assert.equal(parseMoney("R$ 1.234,50"), 123450);

@@ -48,8 +48,14 @@ const WRAPPED_LINES: Partial<Record<Field, number>> = {
 /** A line that never continues a field: a separator, money, items, totals, a CEP, a date or a time. */
 const ENDS_FIELD = /^[-=_*.·•\s]{3,}$|r\$|^\d+\s*x\b|\b\d+\s*x\s|\b(?:sub)?total\b|pagamento|troco|taxa|\bcep\b|\b\d{5}-\d{3}\b|\d{1,2}\/\d{1,2}\/\d{2,4}|\b\d{1,2}:\d{2}\b/i;
 const LETTERS = /^[\p{L}][\p{L}' .-]*$/u;
-/** An item's add-on or note, indented under it on a receipt. */
-const ITEM_DETAIL = /^\s+[+*]\s/;
+/**
+ * An item's add-on, flavor or note, indented under it on a receipt: "   + Borda: Catupiry",
+ * "   - 1/2 Calabresa", "       Obs.: Sem picles" (Cardápio Web, Anota AI). The order's own note is at the margin.
+ */
+const ITEM_DETAIL = /^\s+(?:[+*-]\s|obs\b)/i;
+const ITEM_ADDON = /^\s+[+*]\s/;
+/** An item of the order: "1x X-Bacon", "#1  2x X-Bacon", "2 x Coca". */
+const ITEM_LINE = /^\s*(?:#\d+\s+)?\d+\s*x\s/i;
 /** How the order is delivered, written where an address label could be. */
 const NOT_A_PLACE = /^(?:delivery|retirada|balc[aã]o|parceir[oa]|entrega (?:pr[oó]pria|parceira)|pr[oó]pria|motoboy|ifood)\b/i;
 
@@ -137,7 +143,8 @@ export function findAppContact(text: string, codes = text, landline = false): st
  */
 export function isPickup(text: string): boolean {
   const plain = text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  return /retirada (?:na loja|no balcao|no local|pelo cliente)|retirar (?:na loja|no balcao|no local)|(?:modalidade|tipo(?: de (?:entrega|pedido))?|entrega)\s*:\s*(?:retirada|retirar|balcao|para viagem|take ?away)\b|previsao de retirada/.test(plain);
+  // "PEDIDO #0148 [ RETIRADA ]" / "[ CONSUMO NO LOCAL ]": Cardápio Web and Anota AI tag the type in brackets.
+  return /retirada (?:na loja|no balcao|no local|pelo cliente)|retirar (?:na loja|no balcao|no local)|(?:modalidade|tipo(?: de (?:entrega|pedido))?|entrega)\s*:\s*(?:retirada|retirar|balcao|para viagem|take ?away)\b|previsao de retirada|consumo no local|\[\s*(?:retirada|retirar|balcao|no local|mesa|comanda)\b/.test(plain);
 }
 
 /** "Rua X, 120 - Apto 3" → address "Rua X, 120", complement "Apto 3". */
@@ -159,7 +166,13 @@ export function parsePastedOrder(text: string): { order: PastedOrder; found: (ke
   const extra: string[] = [];
   let landmark = "";
   // "   + Ponto da carne" / "   * OBS: tirar o tomate": an item's details, for the kitchen, not the courier.
-  const lines = text.split(/\r?\n/).filter(line => !ITEM_DETAIL.test(line)).map(clean).filter(Boolean);
+  // "+ " and "* " always are; "- " and "Obs." only once the items began ("1x …", "#1  2x …"), as an
+  // address may wrap into an indented "- Apto 32".
+  let items = false;
+  const lines = text.split(/\r?\n/).filter(line => {
+    items ||= ITEM_LINE.test(line);
+    return !(items ? ITEM_DETAIL : ITEM_ADDON).test(line);
+  }).map(clean).filter(Boolean);
   const leftovers: string[] = [];
   // Each labeled value, with the wrapped lines that carry it on joined back.
   const entries: { field: Field; value: string }[] = [];
@@ -199,7 +212,10 @@ export function parsePastedOrder(text: string): { order: PastedOrder; found: (ke
     if (street) { order.address = street; leftovers.splice(leftovers.indexOf(street), 1); }
   }
   if (!order.phone) {
-    const phone = findMobile(text);
+    // The store's own WhatsApp heads some receipts ("Tel/WhatsApp: (11) 99999-0000", Anota AI): a mobile
+    // is only looked for from the order's or the customer's first line on, when the receipt has one.
+    const start = lines.findIndex(line => /^(?:pedido\b|(?:dados do )?cliente\b)/i.test(line));
+    const phone = findMobile(start > 0 ? lines.slice(start).join("\n") : text);
     if (phone) order.phone = phone;
     else if (!order.contact) {
       const contact = lines.map(line => findAppContact(line, text)).find(Boolean);
