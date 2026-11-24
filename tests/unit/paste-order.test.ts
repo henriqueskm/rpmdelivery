@@ -153,6 +153,70 @@ test("modelo de cupom da 99Food: o 4003 com o código de acesso é o contato do 
   assert.deepEqual(parsePastedOrder(narrow.join("\n")).order, expected);
 });
 
+// Shapes of Cardápio Web and Anota AI receipt models the user brought (fictional data).
+const CARDAPIO_WEB = [
+  "==========================================", "            [LOGO DA EMPRESA]", "          NOME DO ESTABELECIMENTO",
+  "==========================================", "PEDIDO #0148                  [ DELIVERY ]", "Data: 24/11/2026 - 19:50",
+  "Previsão: 20:30 - 20:45", "Origem: Cardápio Digital (Site/WhatsApp)", "------------------------------------------",
+  "CLIENTE", "Nome: Lucas Oliveira", "Telefone: (11) 99876-5432", "Endereço: Av. Senador Lacerda Franco, 310",
+  "Bairro: Centro - Itatiba/SP", "Complemento: Casa 2 - Fundos", "Referência: Próximo à praça",
+  "------------------------------------------", "ITENS DO PEDIDO", "#1  2x X-Bacon Artesanal           R$ 64,00",
+  "       + Ponto: Ao ponto", "       + Adicional: Cheddar cremoso R$ 8,00", "       Obs.: Sem picles em um dos lanches.", "",
+  "#2  1x Porção Batata Rústica       R$ 22,00", "       + Molho: Maionese verde", "",
+  "#3  1x Guaraná Antarctica 2L       R$ 14,00", "------------------------------------------", "RESUMO DE VALORES",
+  "Subtotal:                          R$ 108,00", "Taxa de entrega:                   R$   7,00",
+  "Desconto (Cupom PRIMEIRA10):      -R$  10,00", "------------------------------------------",
+  "TOTAL A COBRAR:                    R$ 105,00", "------------------------------------------", "PAGAMENTO",
+  "Forma: Cartão de Crédito (Maquininha)", "Status: Pagar na entrega", "==========================================",
+  "        [ QR CODE DE AVALIAÇÃO ]", "   Avalie seu pedido apontando a câmera!", "        Obrigado pela preferência!",
+].join("\n");
+const ANOTA_AI = [
+  "==========================================", "        NOME DO ESTABELECIMENTO", "      CNPJ: 00.000.000/0001-00",
+  "       Tel/WhatsApp: (11) 99999-0000", "==========================================",
+  "PEDIDO #1024               [ PARA ENTREGA ]", "Data/Hora: 24/11/2026 - 17:23", "Origem: Cardápio Digital (WhatsApp)",
+  "------------------------------------------", "DADOS DO CLIENTE", "Nome: Fernanda Costa", "Telefone: (11) 98765-4321",
+  "Endereço: Rua Quintino Bocaiúva, 220", "Bairro: Vila Nova - Itatiba/SP", "Complemento: Bloco B, Apto 14",
+  "Referência: Portão preto", "------------------------------------------", "ITENS DO PEDIDO",
+  "1x Pizza Grande (2 Sabores)        R$ 58,00", "   - 1/2 Calabresa Acebolada", "   - 1/2 Portuguesa",
+  "   + Borda Recheada: Catupiry      R$  8,00", "   Obs.: Caprichar no orégano.", "",
+  "1x Coca-Cola 2L                    R$ 15,00", "------------------------------------------", "VALORES E PAGAMENTO",
+  "Subtotal:                          R$ 81,00", "Taxa de entrega:                   R$  6,00",
+  "Desconto (Cupom ANOTA10):         -R$ 10,00", "------------------------------------------",
+  "TOTAL:                             R$ 77,00", "------------------------------------------", "FORMA DE PAGAMENTO",
+  "Pix (Pago Online)", "* Não cobrar do cliente na entrega *", "==========================================",
+  "        Obrigado pela preferência!", "           Sistema Anota AI",
+].join("\n");
+
+test("modelo de cupom do Cardápio Web: a observação do item fica na cozinha", () => {
+  assert.deepEqual(parsePastedOrder(CARDAPIO_WEB).order, {
+    reference: "0148", customer: "Lucas Oliveira", phone: "11998765432",
+    address: "Av. Senador Lacerda Franco, 310, Itatiba", neighborhood: "Centro", city: "Itatiba",
+    complement: "Casa 2 - Fundos · Próximo à praça",
+  });
+  assert.equal(isPickup(CARDAPIO_WEB), false);
+  assert.ok(isPickup(CARDAPIO_WEB.replace("[ DELIVERY ]", "[ RETIRADA ]")));
+  assert.ok(isPickup(CARDAPIO_WEB.replace("[ DELIVERY ]", "[ NO LOCAL ]")));
+});
+
+test("modelo de cupom do Anota AI: o WhatsApp da loja no topo não é o do cliente", () => {
+  assert.deepEqual(parsePastedOrder(ANOTA_AI).order, {
+    reference: "1024", customer: "Fernanda Costa", phone: "11987654321",
+    address: "Rua Quintino Bocaiúva, 220, Itatiba", neighborhood: "Vila Nova", city: "Itatiba",
+    complement: "Bloco B, Apto 14 · Portão preto",
+  });
+  // Without the customer's phone, the store's number at the top is not taken in its place.
+  assert.equal(parsePastedOrder(ANOTA_AI.replace("Telefone: (11) 98765-4321\n", "")).order.phone, undefined);
+  assert.equal(isPickup(ANOTA_AI), false);
+  assert.ok(isPickup(ANOTA_AI.replace("[ PARA ENTREGA ]", "[ RETIRADA NO LOCAL ]")));
+  assert.ok(isPickup(ANOTA_AI.replace("[ PARA ENTREGA ]", "[ CONSUMO NO LOCAL ]")));
+  // "VIA COZINHA" / "Via do entregador" name the copy; "Via Anhanguera" is a street.
+  assert.equal(parsePastedOrder("*** VIA COZINHA ***\nPedido #12\nCliente: Ana").order.address, undefined);
+  assert.equal(parsePastedOrder("Via do entregador\nCliente: Ana\n11 98765-4321").order.address, undefined);
+  assert.equal(parsePastedOrder("Cliente: Ana\nVia Anhanguera, 1200").order.address, "Via Anhanguera, 1200");
+  // An address that wraps into an indented "- Apto" before the items is still the address's.
+  assert.equal(parsePastedOrder("Cliente: Ana\nEndereço: Rua A, 10\n   - Apto 3\n1x Coca").order.complement, "Apto 3");
+});
+
 test("número fixo só vira contato do app com o código impresso", () => {
   assert.equal(findAppContact("(11) 4003-9900", "Código de Acesso: 83920145", true), "(11) 4003-9900 · código 83920145");
   assert.equal(findAppContact("4003 9900", "", true), "4003-9900");
