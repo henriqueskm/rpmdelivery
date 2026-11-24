@@ -112,6 +112,26 @@ test("cupom do iFood: cidade do bairro, CEP fora do endereço e Ref na referênc
   assert.equal(foundText(found), "nome, WhatsApp, endereço, bairro, cidade, complemento e nº do pedido");
 });
 
+test("modelo de cupom do iFood: 'Entrega: Delivery' não é endereço, e o que é do item fica na cozinha", () => {
+  // Shape of an iFood receipt model the user brought (fictional data).
+  const { order } = parsePastedOrder([
+    "PEDIDO #4821                       14/05 20:15", "LOCALIZADOR: 8842 9104", "----------",
+    "CLIENTE: João da Silva", "TELEFONE: 0800 718 2283 ID: 12345678", "(Pediu 12 vezes na loja)", "----------",
+    "ENTREGA: Delivery (Parceiro iFood)", "ENDERECO: Rua das Flores, 123 - Apto 42", "BAIRRO: Centro - Itatiba/SP",
+    "COMPLEMENTO: Bloco B - Interfone 42", "REF: Próximo à praça central", "PREVISAO DE ENTREGA: 20:55 - 21:05",
+    "----------", "ITENS DO PEDIDO", "1x X-Bacon Artesanal                   R$ 34,90",
+    "   + Ponto da carne: Ao ponto", "   * OBS: Tirar o tomate, por favor.", "----------",
+    "Codigo de Entrega (Cliente): 4821 (4 ult. dig. tel)",
+  ].join("\n"));
+  assert.equal(order.phone, undefined, "the 0800 number is not the customer's mobile");
+  assert.deepEqual(order, {
+    reference: "4821", customer: "João da Silva", address: "Rua das Flores, 123, Itatiba", neighborhood: "Centro",
+    city: "Itatiba", complement: "Apto 42 · Bloco B - Interfone 42 · Próximo à praça central",
+  });
+  // A note of the whole order, at the margin, still counts.
+  assert.equal(parsePastedOrder("Cliente: Ana\nOBS: tocar o interfone").order.notes, "tocar o interfone");
+});
+
 test("onde a cidade aparece no cupom", () => {
   const city = (text: string) => parsePastedOrder(text).order;
   assert.deepEqual(city("Endereço: Rua A, 10 - Itatiba/SP"), { address: "Rua A, 10, Itatiba", city: "Itatiba" });

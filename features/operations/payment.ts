@@ -113,13 +113,35 @@ const CARD = /cart[ao]|credito|debito|maquin|vale[ -]?(?:refeicao|alimentacao)|\
 const PIX = /\bpix\b/;
 const PAYMENT_LINE = /pagamento|\bpago\b|cobrar|forma|dinheiro|especie|cartao|credito|debito|maquin|\bpix\b|troco|online|receber/;
 
+/** "[ ]", "( )": an option the receipt left unticked. "[X]", "(x)", "[✓]": the one that holds. */
+const UNTICKED = /^\s*[[(]\s?[\])]/;
+const TICKED = /^\s*[[(]\s?[x✓✔*]\s?[\])]/i;
+
+/**
+ * Some receipts print every payment option with a box and tick one ("[X] PAGO ONLINE" /
+ * "[ ] COBRAR NA ENTREGA: Dinheiro" with its indented "Troco para" below). An unticked option, with
+ * the indented lines under it, says nothing about this order and is left out.
+ */
+function optionsTicked(lines: string[]): string[] {
+  const kept: string[] = [];
+  let skipping = false;
+  for (const line of lines) {
+    if (UNTICKED.test(line) && !TICKED.test(line)) { skipping = true; continue; }
+    // The option's own lines are indented under it; the next line at the margin ends it.
+    if (skipping && /^\s+\S/.test(line)) continue;
+    skipping = false;
+    kept.push(line);
+  }
+  return kept;
+}
+
 /**
  * What a receipt or a message says about the payment, or null when it says nothing. It reads the
  * payment lines and the total; the store still confirms it in the form, and the automatic mode only
  * saves it alone when it is complete.
  */
 export function readPayment(text: string): PaymentDraft | null {
-  const lines = text.split(/\r?\n/).map(line => plain(line).replace(/\s+/g, " ").trim()).filter(Boolean);
+  const lines = optionsTicked(text.split(/\r?\n/)).map(line => plain(line).replace(/\s+/g, " ").trim()).filter(Boolean);
   let method: PaymentMethod | undefined;
   let total: number | undefined;
   let due: number | undefined;

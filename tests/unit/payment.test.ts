@@ -65,6 +65,21 @@ test("cupons: pago, cartão, Pix e dinheiro com troco", () => {
     { method: "CARD", amountDueCents: 6190 });
 });
 
+test("cupom com as opções marcadas: vale só a marcada [X]", () => {
+  // The iFood receipt model prints every option and ticks one (fictional data).
+  const receipt = (paid: boolean) => [
+    "TOTAL A COBRAR / PAGO:                 R$ 63,88", "------", "FORMA DE PAGAMENTO", "------",
+    `[${paid ? "X" : " "}] PAGO ONLINE (Cartão de Crédito / Pix)`, "    (Não cobrar do cliente na entrega)", "",
+    "-- OU (Caso seja pagamento na entrega) --", "",
+    `[${paid ? " " : "X"}] COBRAR NA ENTREGA: Dinheiro`, "    Troco para: R$ 100,00", "    Levar de troco: R$ 36,12", "------",
+  ].join("\n");
+  assert.deepEqual(readPayment(receipt(true)), { method: "PAID" });
+  assert.deepEqual(readPayment(receipt(false)), { method: "CASH", amountDueCents: 6388, changeForCents: 10000 },
+    "an unticked 'pago online' must never make the courier skip collecting");
+  assert.deepEqual(readPayment("[X] PAGO ONLINE (Pix)\n    (Pedido ja pago pelo app)"), { method: "PAID" });
+  assert.deepEqual(readPayment("Total: R$ 40,00\n( ) Dinheiro\n(x) Cartão na entrega"), { method: "CARD", amountDueCents: 4000 });
+});
+
 test("mensagem do WhatsApp e o que não diz nada", () => {
   assert.deepEqual(readPayment("Joana Reis\nAv. Brasil, 455\nmanda troco pra 100"), { method: "CASH", changeForCents: 10000 });
   assert.deepEqual(readPayment("vou pagar no pix"), { method: "PIX" });

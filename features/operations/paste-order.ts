@@ -42,6 +42,10 @@ const WRAPPED_LINES: Partial<Record<Field, number>> = {
 /** A line that never continues a field: a separator, money, items, totals, a CEP, a date or a time. */
 const ENDS_FIELD = /^[-=_*.·•\s]{3,}$|r\$|^\d+\s*x\b|\b\d+\s*x\s|\b(?:sub)?total\b|pagamento|troco|taxa|\bcep\b|\b\d{5}-\d{3}\b|\d{1,2}\/\d{1,2}\/\d{2,4}|\b\d{1,2}:\d{2}\b/i;
 const LETTERS = /^[\p{L}][\p{L}' .-]*$/u;
+/** An item's add-on or note, indented under it on a receipt. */
+const ITEM_DETAIL = /^\s+[+*]\s/;
+/** How the order is delivered, written where an address label could be. */
+const NOT_A_PLACE = /^(?:delivery|retirada|balc[aã]o|parceir[oa]|entrega (?:pr[oó]pria|parceira)|pr[oó]pria|motoboy|ifood)\b/i;
 
 const STATES = "AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO";
 /**
@@ -105,7 +109,8 @@ export function parsePastedOrder(text: string): { order: PastedOrder; found: (ke
   const order: PastedOrder = {};
   const extra: string[] = [];
   let landmark = "";
-  const lines = text.split(/\r?\n/).map(clean).filter(Boolean);
+  // "   + Ponto da carne" / "   * OBS: tirar o tomate": an item's details, for the kitchen, not the courier.
+  const lines = text.split(/\r?\n/).filter(line => !ITEM_DETAIL.test(line)).map(clean).filter(Boolean);
   const leftovers: string[] = [];
   // Each labeled value, with the wrapped lines that carry it on joined back.
   const entries: { field: Field; value: string }[] = [];
@@ -128,6 +133,8 @@ export function parsePastedOrder(text: string): { order: PastedOrder; found: (ke
     if (field === "landmark") { landmark = value; continue; }
     if (field === "phone") { const phone = findMobile(value); if (phone) order.phone = phone; continue; }
     if (field === "notes" && order.notes) { extra.push(value); continue; }
+    // "ENTREGA: Delivery (Parceiro iFood)" says how it is delivered, not where.
+    if (field === "address" && NOT_A_PLACE.test(value)) continue;
     if (!order[field]) order[field] = value;
   }
 
@@ -168,7 +175,9 @@ export function parsePastedOrder(text: string): { order: PastedOrder; found: (ke
   if (order.address) {
     const split = splitComplement(order.address);
     order.address = split.address;
-    if (split.complement && !order.complement) order.complement = split.complement;
+    // "Rua X, 123 - Apto 42" with "Complemento: Bloco B" too: the courier needs both.
+    if (split.complement && !sameText(order.complement ?? "").includes(sameText(split.complement)))
+      order.complement = order.complement ? `${split.complement} · ${order.complement}` : split.complement;
     // "Rua das Flores, 123, Itatiba": the search looks in the receipt's city, not in the first one it finds.
     if (order.city && !sameText(order.address).includes(sameText(order.city)))
       order.address = `${order.address}, ${order.city}`;
