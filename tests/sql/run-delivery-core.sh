@@ -215,4 +215,26 @@ grep -qx ON_ROUTE /tmp/core-decide-a.txt || { echo 'FAIL: finishing the last sto
 "${psql[@]}" -f tests/sql/delivery-core/default-promise-contracts.sql
 "${psql[@]}" -f tests/sql/delivery-core/auto-arrival-contracts.sql
 "${psql[@]}" -f tests/sql/delivery-core/payment-contracts.sql
+"${psql[@]}" -f tests/sql/delivery-core/day-close-contracts.sql
+
+# Race 11: the store closes the day while another counter puts a route together for a courier in
+# line (store F from day-close-contracts.sql: owner 46, courier 47 = couriers.id 251). create_route
+# holds the shift; the close waits, then takes a fresh look, sees the route and keeps that shift.
+as_actor 47 "select public.request_shift(core_test.id(106))" >/dev/null
+shift_f=$("${psql[@]}" -tA -c "select id from public.courier_shifts where courier_id=core_test.id(251) and status='PENDING'")
+as_actor 46 "select public.review_shift(core_test.id(106),'$shift_f',true)" >/dev/null
+as_actor 46 "select public.create_order(core_test.id(106),core_test.id(8940),'Corrida F','11955553099','Rua F 9')" >/dev/null
+order_f=$("${psql[@]}" -tA -c "select d.id from public.deliveries d join public.orders o on o.id=d.order_id where o.client_request_id=core_test.id(8940)")
+as_actor 46 "begin; select public.create_route(core_test.id(106),core_test.id(8941),'$shift_f',array['$order_f']::uuid[])->>'routeId'; select pg_sleep(2); commit;" \
+ >/tmp/core-close-a.txt 2>&1 &
+first=$!
+sleep 0.5
+as_actor 46 "select public.close_store_day(core_test.id(106),core_test.id(8942))->>'created'" >/tmp/core-close-b.txt 2>&1 \
+ || { echo 'FAIL: the day close was refused'; cat /tmp/core-close-*.txt; exit 1; }
+wait "$first"
+grep -qx true /tmp/core-close-b.txt || { echo 'FAIL: the day close did not save'; cat /tmp/core-close-*.txt; exit 1; }
+"${psql[@]}" -c "select core_test.check('day close racing a new route: the courier with the route keeps the shift',
+ (select status='AVAILABLE' from public.courier_shifts where id='$shift_f')
+ and exists (select 1 from public.routes where courier_shift_id='$shift_f' and status='PREPARING')
+ and not (select report->'endedShifts' ? 'Synthetic 47' from private.store_day_closes where client_request_id=core_test.id(8942)));"
 echo 'PASS: PostgreSQL 17 delivery core contracts and concurrency'

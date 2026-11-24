@@ -64,6 +64,20 @@ export function storeBackend() {
     if (body.p_payment_method) board.orderPayments.push({ deliveryId, method: String(body.p_payment_method),
       amountDueCents: (body.p_amount_due_cents as number | null) ?? null, changeForCents: (body.p_change_for_cents as number | null) ?? null });
   };
+  // The period's report as the server would build it (fictional numbers).
+  const dayReport = () => ({
+    periodStart: minutesAgo(600), periodEnd: new Date().toISOString(),
+    couriers: [
+      { name: "Ana Souza", deliveries: 3, shiftFeeCents: 3000, deliveryFeesCents: 2100, totalCents: 5100,
+        cashCents: 5290, cardCents: 4590, pixCents: 0 },
+      { name: "Bruno Alves", deliveries: 2, shiftFeeCents: 3000, deliveryFeesCents: 1400, totalCents: 4400,
+        cashCents: 0, cardCents: 0, pixCents: 3000 },
+    ],
+    orders: { received: 7, delivered: 5, cancelled: 1, waiting: 1, onTheWay: 0 },
+    payments: { paid: 2, cashCents: 5290, cardCents: 4590, pixCents: 3000, notInformed: 0 },
+  });
+  const dayCloses: { id: string; requestId: string; periodStart: string; closedAt: string; closedBy: string;
+    report: ReturnType<typeof dayReport> & { endedShifts: string[]; stillOut: string[] } }[] = [];
   const calls: { fn: string; body: Record<string, unknown> }[] = [];
   const failures = new Map<string, RpcReply>();
   let offline = false;
@@ -190,6 +204,34 @@ export function storeBackend() {
     },
     get_courier_pay(body) {
       return ok({ day: body.p_day ?? new Date().toISOString().slice(0, 10), ...structuredClone(pay) });
+    },
+    // "Fechar o dia": open shifts from the board, a fixed report, the closes saved so far.
+    get_day_close() {
+      return ok({
+        openShifts: board.couriers.filter(c => ["PENDING", "AVAILABLE", "ON_ROUTE", "RETURNING"].includes(c.status)).map(c => ({
+          shiftId: c.shiftId, name: c.name, status: c.status,
+          onRoute: c.status === "ON_ROUTE" || c.status === "RETURNING" || board.routes.some(r => r.shiftId === c.shiftId && r.status !== "COMPLETED"),
+        })),
+        preview: dayReport(),
+        closes: dayCloses.map(({ id, periodStart, closedAt, closedBy }) => ({ id, periodStart, closedAt, closedBy })),
+      });
+    },
+    close_store_day(body) {
+      const same = dayCloses.find(close => close.requestId === body.p_request_id);
+      if (same) return ok({ closeId: same.id, created: false, report: same.report });
+      const out = board.couriers.filter(c => c.status === "ON_ROUTE" || c.status === "RETURNING"
+        || board.routes.some(r => r.shiftId === c.shiftId && r.status !== "COMPLETED"));
+      const ended = board.couriers.filter(c => !out.includes(c));
+      board.couriers.splice(0, board.couriers.length, ...out);
+      const report = { ...dayReport(), endedShifts: ended.map(c => c.name).sort(), stillOut: out.map(c => c.name).sort() };
+      const close = { id: `close-${dayCloses.length + 1}`, requestId: String(body.p_request_id), periodStart: report.periodStart,
+        closedAt: report.periodEnd, closedBy: "Operador Teste", report };
+      dayCloses.unshift(close);
+      return ok({ closeId: close.id, created: true, report });
+    },
+    get_day_close_report(body) {
+      const close = dayCloses.find(item => item.id === body.p_close_id);
+      return close ? ok(close.report) : { status: 404, json: { code: "P0002", message: "RPM_DAY_CLOSE_NOT_FOUND" } };
     },
     set_courier_pay(body) {
       if (!pay.canEdit) return { status: 403, json: { code: "42501", message: "RPM_MANAGER_REQUIRED" } };
