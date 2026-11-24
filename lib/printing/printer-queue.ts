@@ -67,6 +67,9 @@ export function placeReceipt(state: QueueState, receipt: { id: string; receivedA
   const at = state.inbox.findIndex(item => item.externalId === externalId);
   const waiting = at >= 0 ? state.inbox.splice(at, 1)[0] : null;
   const order: PastedOrder = { ...waiting?.order, ...receipt.order };
+  // A reprint with a corrected address replaces it; a copy with a stray, numberless "address" does not.
+  if (waiting?.order.address && /\d/.test(waiting.order.address) && !/\d/.test(receipt.order.address ?? "0"))
+    order.address = waiting.order.address;
   const found = ORDER_FIELDS.filter(key => !!order[key]);
   const payment = receipt.payment ?? waiting?.payment;
   state.inbox.push({ id: receipt.id, receivedAt: receipt.receivedAt.toISOString(), externalId, app: receipt.app,

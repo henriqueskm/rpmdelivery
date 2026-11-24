@@ -37,6 +37,12 @@ test("pico: o 7 do iFood e o 7 do site no mesmo dia são dois pedidos; a segunda
   assert.deepEqual(queue.inbox[1].order, { reference: "7", customer: "Ana", phone: "11912340001", address: "Rua A, 10", notes: "sem cebola" });
   assert.deepEqual(queue.inbox[1].found, ["customer", "phone", "address", "reference", "notes"]);
   assert.deepEqual(queue.inbox[1].payment, { method: "PAID" });
+  // A later copy whose address has no house number never replaces one that has it.
+  placeReceipt(queue, receipt({ reference: "7", customer: "Ana", address: "Entrega rápida" }));
+  assert.equal(queue.inbox[1].order.address, "Rua A, 10");
+  // A reprint with a corrected address (the store fixed it in its system) does replace it.
+  placeReceipt(queue, receipt({ reference: "7", customer: "Ana", address: "Rua B, 22" }));
+  assert.equal(queue.inbox[1].order.address, "Rua B, 22");
   // After the panel took it, a reprint keeps its code: import_order answers with the order already saved.
   takeOrder(queue, queue.inbox[1].id);
   assert.equal(placeReceipt(queue, receipt({ reference: "7", phone: "11912340001" })).externalId, "7 · 23/11/2026");

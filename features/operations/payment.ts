@@ -157,8 +157,11 @@ export function readPayment(text: string): PaymentDraft | null {
     if (/troco/.test(line)) {
       if (/sem troco|nao precisa(?: de)? troco|troco:? ?(?:nao|-)$/.test(line)) noChange = true;
       else {
-        const value = amounts(line).at(-1) ?? Number(line.match(/troco\s*(?:para|pra|p\/)?\s*:?\s*(\d{1,6})\b/)?.[1]) * 100;
-        if (value) change ??= /troco\s*(?:para|pra|p\/)/.test(line) ? value : -value;
+        // "Troco para: R$ 50,00 (Troco: R$ 12,00)": the bill is the amount right after "troco para".
+        const billFor = line.match(/troco\s*(?:para|pra|p\/)\s*:?\s*(.*)$/)?.[1];
+        const value = (billFor !== undefined ? amounts(billFor)[0] : amounts(line).at(-1))
+          ?? Number(line.match(/troco\s*(?:para|pra|p\/)?\s*:?\s*(\d{1,6})\b/)?.[1]) * 100;
+        if (value) change ??= billFor !== undefined ? value : -value;
       }
     }
     if (!PAYMENT_LINE.test(line)) continue;
