@@ -49,6 +49,13 @@ test("cupom ESC/POS em CP850: tira os comandos e lê o pedido", () => {
   const kitchen = readReceipt(job("*** VIA COZINHA ***\nPEDIDO #0148\nCliente: Lucas Oliveira\n1x X-Bacon\n   Obs.: Sem picles\n"));
   assert.equal(kitchen.kitchen, true);
   assert.equal(readReceipt(job("VIA PRODUÇÃO\nPedido #12\n2x Pizza\n")).kitchen, true);
+  // A kitchen copy headed "COZINHA" stays the kitchen's even when an item's note names a street.
+  assert.equal(readReceipt(job("======\n   COZINHA\n======\nPedido #12\nRua das Flores, 10\n2x Pizza\n")).kitchen, true);
+  assert.equal(readReceipt(job("SETOR: PRODUCAO\nPedido #12\nRua das Flores, 10\n2x Pizza\n")).kitchen, true);
+  // A store named "Cozinha da Vila" heads the courier's copy too: it is not the kitchen's.
+  assert.equal(readReceipt(job("Cozinha da Vila\nPedido #12\nCliente: Ana\nEndereço: Rua A, 10\n")).kitchen, false);
+  assert.equal(readReceipt(job("Cozinha da Vila\nPedido #12\nCliente: Ana\n11 98765-4321\n")).kitchen, false,
+    "a courier's copy whose address was not read goes to the panel to be checked, not away");
   // A courier's copy that names the kitchen ("Tempo de preparo") still has its address: it goes.
   assert.equal(readReceipt(job("Pedido #12\nCliente: Ana\nEndereço: Rua A, 10\nTempo de preparo: 30 min\n")).kitchen, false);
   assert.equal(reading.format, "escpos");

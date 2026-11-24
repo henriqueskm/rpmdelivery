@@ -207,10 +207,20 @@ export type ReceiptReading = DecodedReceipt & {
   kitchen: boolean;
 };
 
-/** A copy for the kitchen: it says so and carries no address. */
+/**
+ * A line that only names the kitchen: "COZINHA", "*** VIA COZINHA ***", "VIA DE PRODUÇÃO", "SETOR: PRODUCAO".
+ * Never "Cozinha da Vila" (a store's name) nor "Tempo de preparo: 30 min".
+ */
+const KITCHEN_LINE = /^[\s*=#_[\]-]*(?:(?:via|setor)\s*:?\s*(?:d[ae]\s+)?)?(?:cozinha|producao|preparo)[\s*=#_[\]-]*$/;
+
+/**
+ * A copy for the kitchen: a line of its own says so. Headed that way (first lines) it is the kitchen's
+ * even if an item's note names a street; further down, only when no address was read.
+ */
 export function isKitchenCopy(text: string, order: PastedOrder): boolean {
-  const plain = text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  return !order.address && /\b(?:cozinha|producao|preparo)\b/.test(plain);
+  const lines = text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().split(/\r?\n/).filter(line => line.trim());
+  const at = lines.findIndex(line => KITCHEN_LINE.test(line));
+  return at >= 0 && (at < 5 || !order.address);
 }
 
 /** Decodes a print job and reads the order in it, as "Colar pedido" would. */

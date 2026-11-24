@@ -88,14 +88,17 @@ function continues(field: Field, value: string, line: string): boolean {
     case "city": return /[-–]$/.test(value) && /^[\p{L}]{2}$/u.test(line);
     // Before the house number anything carries on the street; after it, only a number or one word
     // (the city). Two words after the number may be a name or the bairro without a label: left alone.
-    case "address": return !/\d/.test(value) || /\d/.test(line) || /^[\p{L}][\p{L}'.-]*$/u.test(line);
+    // "Bloco Azul" / "Casa 2 Fundos" wrapped on 58 mm paper: the complement, joined with " - " (split below).
+    case "address": return !/\d/.test(value) || /\d/.test(line) || /^[\p{L}][\p{L}'.-]*$/u.test(line) || COMPLEMENT.test(line);
     default: return true;
   }
 }
 
 /** "…santana, 329" + "itatiba" → "…santana, 329, itatiba"; otherwise a space. */
 const joinWrapped = (value: string, line: string) =>
-  !value ? line : /\d$/.test(value) && /^\p{L}/u.test(line) ? `${value}, ${line}` : `${value} ${line}`;
+  !value ? line
+    : /\d/.test(value) && COMPLEMENT.test(line) && !/^[-–]/.test(line) ? `${value} - ${line}`
+      : /\d$/.test(value) && /^\p{L}/u.test(line) ? `${value}, ${line}` : `${value} ${line}`;
 
 /** A Brazilian mobile number anywhere in [text], as typed digits "11987654321"; null when there is none. */
 export function findMobile(text: string): string | null {

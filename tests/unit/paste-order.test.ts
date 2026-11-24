@@ -217,6 +217,15 @@ test("modelo de cupom do Anota AI: o WhatsApp da loja no topo não é o do clien
   assert.equal(parsePastedOrder("Cliente: Ana\nEndereço: Rua A, 10\n   - Apto 3\n1x Coca").order.complement, "Apto 3");
 });
 
+test("papel de 58 mm: o complemento que quebra depois do número fica no complemento", () => {
+  const { order } = parsePastedOrder("Endereco: Rua Quintino Bocaiuva, 220\nBloco Azul\nBairro: Vila Nova\nCliente: Ana");
+  assert.equal(order.address, "Rua Quintino Bocaiuva, 220");
+  assert.equal(order.complement, "Bloco Azul");
+  assert.equal(order.customer, "Ana");
+  // Without the customer's label, the complement is never taken for the name.
+  assert.equal(parsePastedOrder("Endereco: Rua A, 12\nCasa 2 Fundos\nBairro: Centro").order.customer, undefined);
+});
+
 test("número fixo só vira contato do app com o código impresso", () => {
   assert.equal(findAppContact("(11) 4003-9900", "Código de Acesso: 83920145", true), "(11) 4003-9900 · código 83920145");
   assert.equal(findAppContact("4003 9900", "", true), "4003-9900");

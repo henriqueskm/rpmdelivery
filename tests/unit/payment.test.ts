@@ -16,6 +16,14 @@ test("pagamento nos modelos de cupom do Cardápio Web e do Anota AI", () => {
   ].join("\n")), { method: "PAID" });
 });
 
+test("troco para e troco na mesma linha: a nota é o valor depois de 'troco para'", () => {
+  assert.deepEqual(readPayment("Total: R$ 38,00\nForma de pagamento: Dinheiro\nTroco para: R$ 50,00 (Troco: R$ 12,00)"),
+    { method: "CASH", amountDueCents: 3800, changeForCents: 5000 });
+  // Only "troco para": cash, and the bill.
+  assert.deepEqual(readPayment("Total: R$ 38,00\nPAGAMENTO: Na entrega\nTroco para: R$ 100,00"),
+    { method: "CASH", amountDueCents: 3800, changeForCents: 10000 });
+});
+
 test("valores em reais", () => {
   assert.equal(parseMoney("52,90"), 5290);
   assert.equal(parseMoney("R$ 1.234,50"), 123450);
