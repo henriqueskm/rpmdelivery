@@ -286,8 +286,6 @@ function OperationsWorkspace({
               onDayClose={live ? () => dayCloseMenu.current?.open() : undefined}
               printer={live ? { enabled: printer.enabled, status: printer.status, onToggle: printer.setEnabled,
                 auto: printer.auto, onAuto: printer.setAuto } : undefined} />
-            {live && <CourierPay restaurantId={live.restaurantId} ref={payMenu} trigger={false} />}
-            {live && <DayClose restaurantId={live.restaurantId} ref={dayCloseMenu} trigger={false} onClosed={() => void live.refresh()} />}
           </> : <>
             <div>
               <strong>{restaurantName}</strong>
@@ -297,6 +295,9 @@ function OperationsWorkspace({
           </>}
           {preview && <span className="ops-preview-tag">PREVIEW</span>}
         </div>
+        {/* The dialogs live here, outside any menu: the store menu and the Motoboys "⋯" both open them. */}
+        {live && <CourierPay restaurantId={live.restaurantId} ref={payMenu} trigger={false} />}
+        {live && <DayClose restaurantId={live.restaurantId} ref={dayCloseMenu} trigger={false} onClosed={() => void live.refresh()} />}
       </header>
       <div className="ops-body">
         {/* The top line already says "Central de despacho": the page title stays for screen readers only. */}
@@ -467,8 +468,8 @@ function OperationsWorkspace({
           >
             <CouriersPanel state={state} managementHref={courierManagementHref}
               onReviewShift={live ? reviewShift : undefined} pending={saving}
-              pay={live ? <CourierPay restaurantId={live.restaurantId} /> : undefined}
-              dayClose={live ? <DayClose restaurantId={live.restaurantId} onClosed={() => void live.refresh()} /> : undefined}
+              onPay={live ? () => payMenu.current?.open() : undefined}
+              onDayClose={live ? () => dayCloseMenu.current?.open() : undefined}
               onOpenCourier={live ? (id, name) => setOpenCourier({ id, name }) : undefined} />
           </section>
         </div>

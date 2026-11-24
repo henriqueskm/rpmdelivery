@@ -6,7 +6,7 @@ Migration: `supabase/migrations/20261205120000_store_day_close.sql`.
 
 ## Onde fica
 
-- **Botão "Fechar o dia"** no rodapé da coluna Motoboys (no topo, ao lado de "Pagamentos", ele ocupava uma linha só para ele).
+- **Menu "⋯" no topo da coluna Motoboys** (ao lado de "1 disponível"), com as três opções: Convites e vínculos, Pagamentos e Fechar o dia. Assim a fila começa logo abaixo do título.
 - **Também no menu da loja** (☰), abaixo de "Pagamentos dos motoboys".
 
 ## O que a tela mostra
