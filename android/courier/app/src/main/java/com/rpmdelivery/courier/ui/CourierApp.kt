@@ -35,6 +35,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.rpmdelivery.courier.BuildConfig
 import com.rpmdelivery.courier.auth.AuthController
 import com.rpmdelivery.courier.auth.AuthCopy
 import com.rpmdelivery.courier.auth.AuthScreen
@@ -102,6 +103,7 @@ fun CourierApp(controller: AuthController, work: WorkController? = null) {
                             onRegister = { controller.navigate(AuthScreen.Account) },
                             onPreview = { controller.navigate(AuthScreen.Preview) },
                             realAccount = true,
+                            showPreview = BuildConfig.DEBUG,
                         )
                         AuthScreen.Login, AuthScreen.Account -> AccountScreen(state.screen == AuthScreen.Account, state.busy,
                             onSubmit = { name, email, password ->
@@ -128,7 +130,7 @@ fun CourierApp(controller: AuthController, work: WorkController? = null) {
                             }
                             if (!state.registration.complete) AuthAction("Completar cadastro", state.busy) { controller.navigate(AuthScreen.Profile) }
                             AuthAction("Recarregar dados", state.busy, controller::reload)
-                            TextButton(onClick = { controller.navigate(AuthScreen.Preview) }, enabled = !state.busy, modifier = Modifier.heightIn(min = 48.dp)) { Text("Conhecer Minha rota · demonstração") }
+                            if (BuildConfig.DEBUG) TextButton(onClick = { controller.navigate(AuthScreen.Preview) }, enabled = !state.busy, modifier = Modifier.heightIn(min = 48.dp)) { Text("Conhecer Minha rota · demonstração") }
                         }
                         AuthScreen.Preview -> {
                             DemoNotice()

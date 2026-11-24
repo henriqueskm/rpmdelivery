@@ -25,7 +25,9 @@ import com.rpmdelivery.courier.ui.components.ScreenHeading
 import com.rpmdelivery.courier.ui.components.StationaryNotice
 
 @Composable
-fun WelcomeScreen(onLogin: () -> Unit, onRegister: () -> Unit, onPreview: () -> Unit, realAccount: Boolean = false) {
+/** [showPreview]: the demo route with fictional data; the release build for real couriers leaves it out. */
+fun WelcomeScreen(onLogin: () -> Unit, onRegister: () -> Unit, onPreview: () -> Unit, realAccount: Boolean = false,
+                  showPreview: Boolean = true) {
     Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
         Brand()
         Column(Modifier.padding(top = 24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -43,12 +45,12 @@ fun WelcomeScreen(onLogin: () -> Unit, onRegister: () -> Unit, onPreview: () -> 
             OutlinedButton(onClick = onRegister, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
                 Text(stringResource(R.string.create_account), textAlign = TextAlign.Center)
             }
-            TextButton(onClick = onPreview, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+            if (showPreview) TextButton(onClick = onPreview, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Text(stringResource(R.string.preview_route), textAlign = TextAlign.Center)
             }
         }
         if (!realAccount) DemoNotice()
-        else Text("Use sua conta para completar o cadastro de motoboy. Minha rota é uma prévia separada, com dados fictícios.",
+        else if (showPreview) Text("Use sua conta para completar o cadastro de motoboy. Minha rota é uma prévia separada, com dados fictícios.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         StationaryNotice()
     }

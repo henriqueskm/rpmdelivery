@@ -186,3 +186,14 @@ fieldset:disabled { opacity: .72; }
 /* The exact position: a dot under the wheels, where the marker is anchored. */
 .courier-marker-point { box-sizing: border-box; width: 14px; height: 14px; margin-top: -4px; border-radius: 50%;
   background: #234f8c; border: 3px solid #fff; box-shadow: 0 1px 3px rgb(29 44 36 / 0.45); }
+
+/* /privacidade: a plain reading page, one column, phone first. */
+.legal-page { box-sizing: border-box; max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; line-height: 1.6; }
+.legal-header { margin-bottom: 32px; }
+.legal-page h1 { font-size: 28px; line-height: 1.2; font-weight: 700; }
+.legal-page h2 { font-size: 18px; margin-top: 32px; margin-bottom: 8px; font-weight: 650; }
+.legal-page p, .legal-page ul { margin: 0 0 12px; }
+.legal-page ul { padding-left: 20px; list-style: disc; }
+.legal-page li + li { margin-top: 8px; }
+.legal-page a { color: var(--accent); overflow-wrap: anywhere; }
+.legal-page .legal-updated { color: var(--muted); font-size: 14px; margin-bottom: 24px; }

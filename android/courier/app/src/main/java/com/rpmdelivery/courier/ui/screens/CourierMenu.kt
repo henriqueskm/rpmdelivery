@@ -38,6 +38,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -49,6 +50,9 @@ import com.rpmdelivery.courier.ui.theme.Green
 import com.rpmdelivery.courier.ui.theme.SoftGreen
 import com.rpmdelivery.courier.work.Section
 import com.rpmdelivery.courier.work.Shift
+
+/** The privacy policy page on the site, the same one given to Google's app registration. */
+const val PRIVACY_URL = "https://rpmdelivery.vercel.app/privacidade"
 
 /**
  * The signed-in courier's app: the fixed top line (☰ and today's earnings), the part chosen in the
@@ -126,6 +130,10 @@ fun CourierDrawer(
             NavigationDrawerItem(label = { Text("Sair") }, selected = false, onClick = { if (!busy) confirmSignOut = true },
                 modifier = Modifier.padding(horizontal = 12.dp).heightIn(min = 56.dp))
             Spacer(Modifier.heightIn(min = 16.dp))
+            val uriHandler = LocalUriHandler.current
+            TextButton(onClick = { uriHandler.openUri(PRIVACY_URL) }, modifier = Modifier.padding(horizontal = 16.dp).heightIn(min = 48.dp)) {
+                Text("Política de privacidade")
+            }
             Text("Versão ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 28.dp, vertical = 8.dp))
         }
