@@ -58,7 +58,8 @@ class ShiftAlertsTest {
         val waiting = home("AVAILABLE", 1)
         assertTrue(alertText(ShiftAlert.NEXT_IN_LINE, waiting).contains("Cozinha da Vila"))
         assertTrue(alertText(ShiftAlert.APPROVED, waiting).contains("Cozinha da Vila"))
-        assertEquals("Pegue os pedidos no balcão e deslize para iniciar a rota.", alertText(ShiftAlert.PICKUP_RELEASED, waiting))
+        // Without card, Pix or change on the route there is nothing else to take (PaymentTest covers the rest).
+        assertEquals("Pegue os pedidos no balcão. Deslize para iniciar a rota.", alertText(ShiftAlert.PICKUP_RELEASED, waiting))
     }
 
     @Test fun bufferSendsOldestFirstInBatchesOfAHundredAndKeepsTheNewest() {

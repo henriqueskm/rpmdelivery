@@ -5,6 +5,7 @@ import type { DemoCourier, DemoOrder, DemoRoute, DemoState, RouteOutcome, RouteS
 import type { AlertReceipt, DeliveryStatus, DemoIssue, IssueReason, IssueResolution } from "../issue-types.ts";
 import { formatBrazilianMobilePhone } from "../../../lib/brazilian-mobile-phone.ts";
 import type { OrderOrigin } from "../order-origin.ts";
+import { readPaymentJson, validPayment, type OrderPayment } from "../payment.ts";
 
 type BoardOrder = {
   deliveryId: string; orderId: string; reference: string; customer: string; phone: string;
@@ -43,6 +44,8 @@ export type Board = {
   trackingTokens?: { deliveryId: string; token: string }[];
   /** Imported orders only (printer capture, delivery apps); absent before the import migration. */
   orderSources?: ({ deliveryId: string } & OrderOrigin)[];
+  /** Orders that say how they are paid; absent before the payment migration. */
+  orderPayments?: { deliveryId: string; method: string; amountDueCents: number | null; changeForCents: number | null }[];
   storeLocation?: { latitude: number; longitude: number } | null;
 };
 
@@ -107,6 +110,7 @@ export function parseBoard(value: unknown): Board | null {
     && (value.trackingTokens === undefined || list(value.trackingTokens, t => isText(t.deliveryId) && isText(t.token)))
     && (value.orderSources === undefined || list(value.orderSources, s => isText(s.deliveryId)
       && oneOf(["PRINTER", "OPEN_DELIVERY"])(s.source) && isOptionalText(s.app) && isText(s.externalId)))
+    && (value.orderPayments === undefined || list(value.orderPayments, p => isText(p.deliveryId)))
     && (value.storeLocation === undefined || value.storeLocation === null
       || (isRecord(value.storeLocation) && isLatitude(value.storeLocation.latitude) && isLongitude(value.storeLocation.longitude)));
   return valid ? value as Board : null;
@@ -145,6 +149,11 @@ export function boardToState(board: Board, { now, receivedAt = now, alertReceipt
   const tokens = new Map((board.trackingTokens ?? []).map(t => [t.deliveryId, t.token]));
   const origins = new Map((board.orderSources ?? []).map(({ deliveryId, source, app, externalId }) =>
     [deliveryId, { source, app, externalId } satisfies OrderOrigin]));
+  // A payment the screens cannot read is shown as not informed, never guessed.
+  const payments = new Map((board.orderPayments ?? []).flatMap(item => {
+    const payment = readPaymentJson(item);
+    return validPayment(payment) ? [[item.deliveryId, payment] as [string, OrderPayment]] : [];
+  }));
 
   const orders: DemoOrder[] = board.orders.map(order => {
     const delivery = expired.has(order.deliveryId) ? "RETURN_TO_STORE" : order.deliveryStatus;
@@ -167,6 +176,7 @@ export function boardToState(board: Board, { now, receivedAt = now, alertReceipt
       ...(far.has(order.deliveryId) ? { farMeters: far.get(order.deliveryId) } : {}),
       ...(tokens.has(order.deliveryId) ? { trackingToken: tokens.get(order.deliveryId) } : {}),
       ...(origins.has(order.deliveryId) ? { origin: origins.get(order.deliveryId) } : {}),
+      ...(payments.has(order.deliveryId) ? { payment: payments.get(order.deliveryId) } : {}),
       ...(isLatitude(order.latitude) && isLongitude(order.longitude)
         ? { location: { latitude: order.latitude!, longitude: order.longitude!, confirmed: true as const, source: "mapbox" as const } } : {}),
     };

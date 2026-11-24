@@ -242,7 +242,7 @@ reset role;
 -- ---------------------------------------------------------
 select core_test.check('anon cannot execute any new command', not exists (
  select 1 from (values
-  ('public.create_order(uuid,uuid,text,text,text,text,text,text,text,double precision,double precision,text,text,timestamptz,integer)'),
+  ('public.create_order(uuid,uuid,text,text,text,text,text,text,text,double precision,double precision,text,text,timestamptz,integer,text,integer,integer)'),
   ('public.cancel_order(uuid,uuid)'),('public.request_shift(uuid)'),
   ('public.review_shift(uuid,uuid,boolean)'),('public.end_shift(uuid)')) f(sig)
  where has_function_privilege('anon',f.sig,'EXECUTE') or not has_function_privilege('authenticated',f.sig,'EXECUTE')));

@@ -136,6 +136,15 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.rpmdelivery.courier.work.stopLabel
+import com.rpmdelivery.courier.work.RouteKit
+import com.rpmdelivery.courier.work.StopPayment
+import com.rpmdelivery.courier.work.kitLines
+import com.rpmdelivery.courier.work.paymentDetail
+import com.rpmdelivery.courier.work.paymentTitle
+import com.rpmdelivery.courier.work.routeKit
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Checkbox
+import androidx.compose.runtime.saveable.rememberSaveable
 
 /** The signed-in courier's day: ask for a shift, wait in line, run the route, come back. */
 @Composable
@@ -814,12 +823,22 @@ private fun RouteContent(route: CourierRoute, shift: Shift?, busy: Boolean, acti
         when (route.status) {
             "PREPARING" -> {
                 Heading("Rota em preparação", "$storeName · ${entregas(total)}", if (route.pickupReleased) "Liberada" else null)
+                val kit = routeKit(route)
+                // With card or Pix on the route, the courier says they took the card machine before leaving.
+                var tookMachine by rememberSaveable(route.routeId) { mutableStateOf(false) }
                 if (route.pickupReleased) {
                     Banner("Retirada liberada. Pegue os pedidos e inicie a rota.", SoftGreen, Green)
-                    SwipeToConfirm("Deslize para iniciar a rota", busy, SoftCoral, Coral, Coral, busyLabel = "Iniciando a rota…") { actions.startRoute(route) }
+                    TakeAlong(kit, tookMachine) { tookMachine = it }
+                    if (kit.needsMachine && !tookMachine) {
+                        Text("Marque que pegou a maquininha para iniciar a rota.", style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        SwipeToConfirm("Deslize para iniciar a rota", busy, SoftCoral, Coral, Coral, busyLabel = "Iniciando a rota…") { actions.startRoute(route) }
+                    }
                     Refusal(refusal)
                 } else {
                     Text("A loja está separando os pedidos. Aguarde a liberação da retirada.", style = MaterialTheme.typography.bodyLarge)
+                    TakeAlong(kit, null)
                     Refusal(refusal)
                 }
             }
@@ -932,9 +951,53 @@ private fun NextStop(stop: Stop) {
             if (stop.attempts > 0) "${stop.attempts + 1}ª tentativa" else null)
         if (details.isNotEmpty()) Text(details.joinToString(" · "), style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
+        PaymentBox(stop.payment)
         stop.notes?.let {
             Surface(color = SoftCoral, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
                 Text("Observação: $it", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(12.dp))
+            }
+        }
+    }
+}
+
+/**
+ * At the door, before the swipe: already paid (nothing to collect), or how much and how. Big enough
+ * to read at arm's length; an order without a payment says to check with the store.
+ */
+@Composable
+private fun PaymentBox(payment: StopPayment?) {
+    val paid = payment?.collects == false
+    Surface(color = if (paid) SoftGreen else SoftCoral, shape = RoundedCornerShape(12.dp),
+        border = if (paid) null else BorderStroke(1.dp, Coral), modifier = Modifier.fillMaxWidth().testTag("stop-payment")) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(paymentTitle(payment), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
+                color = if (paid) Green else MaterialTheme.colorScheme.onSurface)
+            paymentDetail(payment)?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+        }
+    }
+}
+
+/**
+ * "Leve com você": the card machine and the change the route needs, before the courier leaves the
+ * store. [tookMachine] null only shows it (pickup not released yet); otherwise the courier ticks
+ * "Peguei a maquininha" before the start swipe appears.
+ */
+@Composable
+private fun TakeAlong(kit: RouteKit, tookMachine: Boolean?, onTook: (Boolean) -> Unit = {}) {
+    if (kit.isEmpty) return
+    Surface(color = SoftCoral, shape = RoundedCornerShape(12.dp), border = BorderStroke(1.dp, Coral),
+        modifier = Modifier.fillMaxWidth().testTag("take-along")) {
+        Column(Modifier.padding(start = 14.dp, top = 12.dp, end = 14.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("Leve com você", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
+                modifier = Modifier.semantics { heading() })
+            kitLines(kit).forEach { Text(it, style = MaterialTheme.typography.bodyLarge) }
+            if (kit.needsMachine && tookMachine != null) {
+                Row(Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                    .toggleable(value = tookMachine, role = Role.Checkbox, onValueChange = onTook),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Checkbox(checked = tookMachine, onCheckedChange = null)
+                    Text("Peguei a maquininha", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                }
             }
         }
     }
@@ -960,6 +1023,8 @@ private fun StopRows(route: CourierRoute) {
                     Text(stop.customerName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text(listOfNotNull(stop.address, stop.neighborhood).joinToString(" · "), style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(paymentTitle(stop.payment), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold,
+                        color = if (stop.payment?.collects == false) Green else Coral)
                 }
                 Text(stopLabel(stop), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold,
                     color = if (stop.status == "NEXT") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)

@@ -6,6 +6,7 @@
 // - Nothing is dropped quietly: the queue holds QUEUE_LIMIT orders and says when it is getting full.
 
 import { sameText, type PastedOrder } from "../../features/operations/paste-order.ts";
+import type { PaymentDraft } from "../../features/operations/payment.ts";
 import { parsePrintedOrders, printedExternalId, QUEUE_LIMIT, type PrintedOrder } from "./printer-inbox.ts";
 
 /** An order code given out, with who it was for: a later receipt with the same number is compared to it. */
@@ -47,7 +48,7 @@ export type Placed = {
 
 /** Adds a printed order to [state] (changed in place) and says which code it got. */
 export function placeReceipt(state: QueueState, receipt: { id: string; receivedAt: Date; fingerprint: string; app: string | null;
-  order: PastedOrder; found: (keyof PastedOrder)[] }): Placed {
+  order: PastedOrder; found: (keyof PastedOrder)[]; payment?: PaymentDraft | null }): Placed {
   const base = printedExternalId(receipt.order.reference, receipt.receivedAt, receipt.fingerprint);
   const known = state.seen.filter(item => item.base === base);
   const same = known.find(item => sameCustomer(item, receipt.order));
@@ -64,7 +65,7 @@ export function placeReceipt(state: QueueState, receipt: { id: string; receivedA
   const previous = state.inbox.findIndex(item => item.externalId === externalId);
   if (previous >= 0) state.inbox.splice(previous, 1);
   state.inbox.push({ id: receipt.id, receivedAt: receipt.receivedAt.toISOString(), externalId, app: receipt.app,
-    order: receipt.order, found: receipt.found });
+    order: receipt.order, found: receipt.found, ...(receipt.payment ? { payment: receipt.payment } : {}) });
   const dropped = state.inbox.length > QUEUE_LIMIT ? state.inbox.splice(0, state.inbox.length - QUEUE_LIMIT) : [];
   return { externalId, reprint: !!same, dropped };
 }

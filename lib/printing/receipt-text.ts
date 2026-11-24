@@ -6,6 +6,7 @@
 // Pure and dependency free, used by the print capture tool (tools/print-capture).
 
 import { parsePastedOrder, type PastedOrder } from "../../features/operations/paste-order.ts";
+import { readPayment, type PaymentDraft } from "../../features/operations/payment.ts";
 
 export type ReceiptFormat = "escpos" | "text" | "pdf" | "postscript" | "pcl" | "empty";
 export type ReceiptEncoding = "utf-8" | "cp850" | "cp860" | "cp437" | "cp1252";
@@ -195,6 +196,8 @@ export type ReceiptReading = DecodedReceipt & {
   verdict: ReceiptVerdict;
   order: PastedOrder;
   found: (keyof PastedOrder)[];
+  /** What the receipt says about the payment, or null. */
+  payment: PaymentDraft | null;
 };
 
 /** Decodes a print job and reads the order in it, as "Colar pedido" would. */
@@ -207,5 +210,5 @@ export function readReceipt(bytes: Uint8Array): ReceiptReading {
       : decoded.images > 0 && decoded.imageBytes >= 2000 && decoded.letters < 40 ? "image"
         : decoded.letters ? "text" : decoded.images ? "image" : "empty";
   const { order, found } = verdict === "text" ? parsePastedOrder(decoded.text) : { order: {}, found: [] };
-  return { ...decoded, verdict, order, found };
+  return { ...decoded, verdict, order, found, payment: verdict === "text" ? readPayment(decoded.text) : null };
 }

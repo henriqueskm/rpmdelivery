@@ -4,6 +4,7 @@
 // Pure: shared by the program (Node) and the panel (browser).
 
 import { ORDER_FIELDS, type PastedOrder } from "../../features/operations/paste-order.ts";
+import { readPaymentJson, type PaymentDraft } from "../../features/operations/payment.ts";
 
 export const PRINTER_INBOX_PORT = 9180;
 export const PRINTER_INBOX_URL = `http://127.0.0.1:${PRINTER_INBOX_PORT}`;
@@ -23,6 +24,8 @@ export type PrintedOrder = {
   app: string | null;
   order: PastedOrder;
   found: (keyof PastedOrder)[];
+  /** What the receipt says about the payment; absent when it says nothing (or from an older program). */
+  payment?: PaymentDraft;
 };
 
 const two = (value: number) => String(value).padStart(2, "0");
@@ -64,7 +67,9 @@ export function parsePrintedOrders(value: unknown): PrintedOrder[] {
     const found = FIELDS.filter(key => !!order[key]);
     if (!isOrderLike(found)) continue;
     const app = typeof candidate.app === "string" && candidate.app.trim() ? candidate.app.trim().slice(0, 40) : null;
-    orders.push({ id: candidate.id, receivedAt: candidate.receivedAt, externalId: candidate.externalId.trim(), app, order, found });
+    const payment = readPaymentJson(candidate.payment);
+    orders.push({ id: candidate.id, receivedAt: candidate.receivedAt, externalId: candidate.externalId.trim(), app, order, found,
+      ...(payment ? { payment } : {}) });
   }
   return orders;
 }

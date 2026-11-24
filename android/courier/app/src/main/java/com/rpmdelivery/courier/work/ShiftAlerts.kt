@@ -10,7 +10,19 @@ enum class ShiftAlert(val id: Int, val title: String) {
 fun alertText(alert: ShiftAlert, home: CourierHome): String = when (alert) {
     ShiftAlert.APPROVED -> "${home.shift?.restaurantName.orEmpty()} aprovou seu turno. Você está na fila.".trim()
     ShiftAlert.NEXT_IN_LINE -> "A próxima rota de ${home.shift?.restaurantName.orEmpty()} é sua. Fique por perto."
-    ShiftAlert.PICKUP_RELEASED -> "Pegue os pedidos no balcão e deslize para iniciar a rota."
+    ShiftAlert.PICKUP_RELEASED -> pickupText(home.route)
+}
+
+/** "Pegue os pedidos no balcão e a maquininha. Leve R$ 48,00 de troco. Deslize para iniciar a rota." */
+fun pickupText(route: CourierRoute?): String {
+    val kit = route?.let(::routeKit)
+    return buildString {
+        append("Pegue os pedidos no balcão")
+        if (kit?.needsMachine == true) append(" e a maquininha")
+        append(".")
+        if (kit != null && kit.changeStops > 0) append(" Leve ${reais(kit.changeCents)} de troco.")
+        append(" Deslize para iniciar a rota.")
+    }
 }
 
 /**

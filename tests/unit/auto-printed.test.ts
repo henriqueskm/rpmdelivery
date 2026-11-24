@@ -5,8 +5,9 @@ import { autoOrder, distanceKm, houseNumber, inCity, matchSuggestion, receiptBlo
 import { parsePrintedOrders } from "../../lib/printing/printer-inbox.ts";
 
 const receivedAt = new Date(2026, 10, 22, 20, 54).toISOString();
-const printed = (order: Record<string, string>) => parsePrintedOrders({ orders: [{ id: "a1", receivedAt,
-  externalId: "77 · 22/11/2026", app: null, order }] })[0];
+const card = { method: "CARD", amountDueCents: 4500 };
+const printed = (order: Record<string, string>, payment: unknown = card) => parsePrintedOrders({ orders: [{ id: "a1", receivedAt,
+  externalId: "77 · 22/11/2026", app: null, order, payment }] })[0];
 const maria = { customer: "Maria Souza", phone: "11912345678", address: "Rua das Flores, 100", reference: "77" };
 
 test("número da casa: depois da vírgula, ou no fim; o número do nome da rua não conta", () => {
@@ -45,6 +46,11 @@ test("o que o cupom precisa ter para tentar sozinho", () => {
   assert.equal(receiptBlock(printed({ ...maria, phone: "1133334444" })), "o cupom não tem um celular do cliente");
   assert.equal(receiptBlock(printed({ customer: "Maria", phone: "11912345678" })), "o cupom não tem endereço");
   assert.equal(receiptBlock(printed({ ...maria, address: "Rua das Flores" })), "o endereço do cupom não tem número");
+  // The courier must know whether to collect, and how much.
+  assert.equal(receiptBlock(printed(maria, null)), "o cupom não diz se está pago ou como o cliente paga");
+  assert.equal(receiptBlock(printed(maria, { amountDueCents: 4500 })), "o cupom não diz se está pago ou como o cliente paga");
+  assert.equal(receiptBlock(printed(maria, { method: "CASH" })), "o cupom não diz quanto cobrar");
+  assert.equal(receiptBlock(printed(maria, { method: "PAID" })), null);
 });
 
 test("pedido salvo sozinho: endereço do mapa, bairro, prazo padrão e origem impressora", () => {
@@ -55,7 +61,7 @@ test("pedido salvo sozinho: endereço do mapa, bairro, prazo padrão e origem im
   assert.ok("order" in result);
   assert.deepEqual(result.order, { reference: "77", customer: "Maria Souza", phone: "(11) 91234-5678",
     address: found.address, neighborhood: "Centro", complement: "Apto 3", notes: "sem cebola",
-    orderedAt: Date.parse(receivedAt), promisedMinutes: 45,
+    orderedAt: Date.parse(receivedAt), promisedMinutes: 45, payment: { method: "CARD", amountDueCents: 4500 },
     geocode: { latitude: -23.55, longitude: -46.63, providerId: "mb-1" },
     origin: { source: "PRINTER", app: null, externalId: "77 · 22/11/2026" } });
   // The receipt's bairro wins over the map's.
@@ -66,6 +72,7 @@ test("pedido salvo sozinho: endereço do mapa, bairro, prazo padrão e origem im
   const far = autoOrder(printed(maria), { ...found, latitude: -22.9, longitude: -47.06 }, 45, store);
   assert.ok("reason" in far && /^o endereço encontrado fica a \d+ km da loja$/.test(far.reason));
   assert.ok("order" in autoOrder(printed(maria), found, 45), "without the store on the map, no distance check");
+  assert.deepEqual(autoOrder(printed(maria, { method: "PIX" }), found, 45, store), { reason: "o cupom não diz quanto cobrar" });
 });
 
 test("distância em km", () => {

@@ -53,6 +53,14 @@ export function storeBackend() {
         decision: null as string | null, decidedAt: null as string | null, decidedBy: null as string | null },
     ],
     orderSources: [] as { deliveryId: string; source: string; app: string | null; externalId: string }[],
+    // How each order is paid (orders saved before the payment existed have none).
+    orderPayments: [{ deliveryId: "d-1049", method: "CARD", amountDueCents: 3990 as number | null, changeForCents: null as number | null }],
+  };
+  /** Keeps the payment a command sent, as the database does. */
+  const keepPayment = (deliveryId: string, body: Record<string, unknown>) => {
+    board.orderPayments = board.orderPayments.filter(item => item.deliveryId !== deliveryId);
+    if (body.p_payment_method) board.orderPayments.push({ deliveryId, method: String(body.p_payment_method),
+      amountDueCents: (body.p_amount_due_cents as number | null) ?? null, changeForCents: (body.p_change_for_cents as number | null) ?? null });
   };
   const calls: { fn: string; body: Record<string, unknown> }[] = [];
   const failures = new Map<string, RpcReply>();
@@ -76,6 +84,7 @@ export function storeBackend() {
         phone: String(body.p_customer_phone), address: String(body.p_delivery_address),
         orderedAt: String(body.p_ordered_at), createdAt: new Date().toISOString(), promisedMinutes: Number(body.p_promised_minutes) };
       board.orders.unshift(created);
+      keepPayment(created.deliveryId, body);
       return ok({ orderId: created.orderId, deliveryId: created.deliveryId, created: true });
     },
     // Same code from the same system answers the order already there (created: false), unchanged.
@@ -151,6 +160,7 @@ export function storeBackend() {
       Object.assign(target, { customer: body.p_customer_name, phone: body.p_customer_phone, address: body.p_delivery_address,
         neighborhood: body.p_neighborhood ?? null, complement: body.p_complement ?? null, notes: body.p_notes ?? null,
         reference: body.p_reference ?? target.reference, promisedMinutes: body.p_promised_minutes });
+      keepPayment(target.deliveryId, body);
       return ok({ orderId: target.orderId, updated: true });
     },
     requeue_delivery(body) {

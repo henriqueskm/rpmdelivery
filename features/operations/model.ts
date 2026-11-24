@@ -1,6 +1,7 @@
 import { validOrderTime, validPromise } from "./deadlines.ts";
 import type { ConfirmedCoordinate } from "../route-optimization/types.ts";
 import type { OrderOrigin } from "./order-origin.ts";
+import type { OrderPayment } from "./payment.ts";
 import { validAutomaticAssignment, type AssignmentProposal } from "./automatic-assignment.ts";
 import type { PlannedGroup, PlanningParameters } from "../route-planning/types.ts";
 import type { AlertReceipt, DeliveryStatus, DemoEvent, DemoIssue, IssueCommand } from "./issue-types.ts";
@@ -32,6 +33,8 @@ export type DemoOrder = {
   trackingToken?: string;
   /** Real data: the order came from another system (printer capture, delivery app). */
   origin?: OrderOrigin;
+  /** Whether it is paid, or what the courier collects at the door. None on orders saved before it existed. */
+  payment?: OrderPayment;
 };
 export type DemoCourier = {
   id: string;
@@ -89,6 +92,7 @@ export type NewOrder = Pick<
   | "notes"
   | "orderedAt"
   | "promisedMinutes"
+  | "payment"
 > & {
   /** Real data: the address picked from the search, so the customer's map shows the house. */
   geocode?: { latitude: number; longitude: number; providerId: string };

@@ -95,10 +95,12 @@ test("cada comando do painel vira a RPC certa, com a versão e a idempotência",
   const live = boardToState(parseBoard(board)!, { now });
   const restaurant = "rest-1";
   assert.deepEqual(rpcFor({ type: "add", now, order: { reference: " ", customer: " Eva ", phone: "(11) 91111-2222",
-    address: "Rua C, 5", neighborhood: "Vila", complement: "", notes: "", orderedAt: now, promisedMinutes: 30 } },
+    address: "Rua C, 5", neighborhood: "Vila", complement: "", notes: "", orderedAt: now, promisedMinutes: 30,
+    payment: { method: "CASH", amountDueCents: 5290, changeForCents: 10000 } } },
   restaurant, live, "req-1"), { fn: "create_order", args: { p_restaurant_id: restaurant, p_request_id: "req-1",
     p_customer_name: "Eva", p_customer_phone: "+5511911112222", p_delivery_address: "Rua C, 5", p_neighborhood: "Vila",
-    p_complement: null, p_reference: null, p_notes: null, p_ordered_at: "2026-11-13T22:00:00.000Z", p_promised_minutes: 30 } });
+    p_complement: null, p_reference: null, p_notes: null, p_ordered_at: "2026-11-13T22:00:00.000Z", p_promised_minutes: 30,
+    p_payment_method: "CASH", p_amount_due_cents: 5290, p_change_for_cents: 10000 } });
   // A printed order goes by its code in the store's system, not by a request id.
   assert.deepEqual(rpcFor({ type: "add", now, order: { reference: "5127", customer: "Eva", phone: "(11) 91111-2222",
     address: "Rua C, 5", neighborhood: "Vila", complement: "", notes: "", orderedAt: now, promisedMinutes: 30,
@@ -106,7 +108,7 @@ test("cada comando do painel vira a RPC certa, com a versão e a idempotência",
   { fn: "import_order", args: { p_restaurant_id: restaurant, p_source: "PRINTER", p_external_id: "5127 · 13/11/2026",
     p_source_app: null, p_customer_name: "Eva", p_customer_phone: "+5511911112222", p_delivery_address: "Rua C, 5",
     p_neighborhood: "Vila", p_complement: null, p_reference: "5127", p_notes: null, p_ordered_at: "2026-11-13T22:00:00.000Z",
-    p_promised_minutes: 30 } });
+    p_promised_minutes: 30, p_payment_method: null, p_amount_due_cents: null, p_change_for_cents: null } });
   assert.deepEqual(rpcFor({ type: "assign", ids: ["d3"], courierId: "s1" }, restaurant, live, "req-2"),
     { fn: "create_route", args: { p_restaurant_id: restaurant, p_request_id: "req-2", p_shift_id: "s1", p_delivery_ids: ["d3"] } });
   assert.deepEqual(rpcFor({ type: "assign", ids: ["d2", "d1"], courierId: "s1", editingId: "r1" }, restaurant, live, "x"),
@@ -131,4 +133,17 @@ test("erros do banco viram frases para o balcão", () => {
   assert.match(errorMessage({ message: "RPM_ISSUE_CLOSED" }), /já foi resolvida/);
   assert.match(errorMessage({ message: "something else" }), /Confira a conexão/);
   assert.match(errorMessage(null), /Confira a conexão/);
+});
+
+test("o pagamento de cada pedido chega do quadro; o ilegível fica como não informado", () => {
+  const withPayments = parseBoard({ ...board, orderPayments: [
+    { deliveryId: "d1", method: "CARD", amountDueCents: 4500, changeForCents: null },
+    { deliveryId: "d2", method: "CARD", amountDueCents: null, changeForCents: null },
+  ] });
+  assert.ok(withPayments);
+  const state = boardToState(withPayments, { now });
+  assert.deepEqual(state.state.orders.find(o => o.id === "d1")?.payment, { method: "CARD", amountDueCents: 4500 });
+  assert.equal(state.state.orders.find(o => o.id === "d2")?.payment, undefined, "a card without the amount is never guessed");
+  assert.equal(boardToState(parseBoard(board)!, { now }).state.orders[0].payment, undefined, "older server: none");
+  assert.match(errorMessage({ message: "RPM_ORDER_FIELDS" }), /pagamento/);
 });

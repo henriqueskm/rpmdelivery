@@ -73,6 +73,8 @@ O CEP encerra o endereço e não entra na busca: o CEP geral da cidade (13250-00
 - O que o texto não trouxe fica como estava digitado.
 - A tela diz o que foi preenchido.
 
+**Pagamento:** o leitor também procura se o pedido está pago ou quanto e como cobrar ("Pagamento: cartão na entrega", "Total: R$ 52,90", "troco pra 100"). Ele preenche o bloco **Pagamento**, que a loja confere. O bloco é obrigatório: o motoboy vê em cada entrega o que cobrar. Regras em `docs/payment-on-delivery.md`.
+
 ## Testes
 - `tests/unit/paste-order.test.ts` cobre:
   - cupom com rótulos;
