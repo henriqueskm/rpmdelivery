@@ -1277,6 +1277,13 @@
   }
 }
 
+/* "Fechar o dia" sits in the Motoboys column footer, beside the note. */
+.operations .ops-courier-footer .text-button {
+  flex: none; display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; border: 0;
+  background: transparent; color: #8e331c; font: inherit; font-size: 12px; font-weight: 650;
+  line-height: 1.2; text-decoration: underline; white-space: nowrap;
+}
+
 /* "Fechar o dia": open shifts, the report and the close. */
 .ops-day-shifts { margin-top: 18px; }
 .ops-day-shifts h3 { margin: 0 0 6px; font-size: 13px; font-weight: 650; }

@@ -6,7 +6,7 @@ Migration: `supabase/migrations/20261205120000_store_day_close.sql`.
 
 ## Onde fica
 
-- **Botão "Fechar o dia"** na coluna Motoboys, ao lado de "Convites e vínculos" e "Pagamentos".
+- **Botão "Fechar o dia"** no rodapé da coluna Motoboys (no topo, ao lado de "Pagamentos", ele ocupava uma linha só para ele).
 - **Também no menu da loja** (☰), abaixo de "Pagamentos dos motoboys".
 
 ## O que a tela mostra
@@ -40,7 +40,8 @@ Migration: `supabase/migrations/20261205120000_store_day_close.sql`.
   - Dois fechamentos ao mesmo tempo são feitos um depois do outro, porque a loja fica travada com `for no key update`. Pedidos e rotas continuam sendo salvos enquanto isso.
 - **`get_day_close_report(loja, fechamento)`:** um relatório salvo.
 - **Concorrência:** os turnos são travados primeiro e conferidos num comando seguinte, que já enxerga uma rota criada nesse meio-tempo. O motoboy que acabou de receber uma rota fica com o turno. A corrida 11 de `tests/sql/run-delivery-core.sh` cobre isso no PostgreSQL 17.
-- **Testes:** `tests/sql/delivery-core/day-close-contracts.sql`.
+- **Leituras sem trava:** `get_day_close` e `get_day_close_report` são `stable`, e a API as roda numa transação somente leitura. Por isso conferem o membro com `private.require_member_to_read`, sem `for share` (migration `20261207120000`). A primeira versão travava a linha do membro e falhava com 25006 no painel, com a mensagem "Não foi possível concluir agora".
+- **Testes:** `tests/sql/delivery-core/day-close-contracts.sql`, inclusive dentro de uma transação somente leitura, como a API faz.
 
 ## Aviso ao motoboy
 

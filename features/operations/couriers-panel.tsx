@@ -36,10 +36,9 @@ export function CouriersPanel({ state, managementHref, onReviewShift, pending, p
         </h2>
         <Badge>{plural(available.length, "disponível", "disponíveis")}</Badge>
       </div>
-      {(managementHref || pay || dayClose) && <div className="ops-courier-links">
+      {(managementHref || pay) && <div className="ops-courier-links">
         {managementHref && <Link href={managementHref} className="text-button">Convites e vínculos</Link>}
         {pay}
-        {dayClose}
       </div>}
       <div className="ops-courier-caption">Fila por ordem de chegada</div>
       <div
@@ -91,8 +90,10 @@ export function CouriersPanel({ state, managementHref, onReviewShift, pending, p
           })
         )}
       </div>
-      <div className="ops-panel-footer">
-        Reservados só voltam à fila após a rota e o retorno.
+      {/* "Fechar o dia" at the end of the column: once a day, it does not take the top of the queue. */}
+      <div className={`ops-panel-footer ${dayClose ? "ops-courier-footer" : ""}`}>
+        <span>Reservados só voltam à fila após a rota e o retorno.</span>
+        {dayClose}
       </div>
     </>
   );
