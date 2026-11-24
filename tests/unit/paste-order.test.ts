@@ -133,6 +133,38 @@ test("modelo de cupom do iFood: 'Entrega: Delivery' não é endereço, e o que �
   assert.equal(parsePastedOrder("Cliente: Ana\nOBS: tocar o interfone").order.notes, "tocar o interfone");
 });
 
+test("modelo de cupom da 99Food: o 4003 com o código de acesso é o contato do app", () => {
+  // Shape of a 99Food receipt model the user tested (fictional data).
+  const receipt = [
+    "==========", "99FOOD", "[Nome do Restaurante]", "==========", "Pedido #4812", "Localizador: 83920145",
+    "Data/Hora: 24/11/2026 - 19:42", "Previsão de Entrega: 20:15 - 20:25", "Tipo: Entrega Parceira 99Food", "----------",
+    "CLIENTE", "Nome: Mariana S.", "Telefone (Ramal): (11) 4003-9900", "Código de Acesso: 83920145",
+    "Endereço: Rua das Acácias, 450 - Apto 32", "Bairro: Centro - Itatiba/SP", "Ref.: Portão azul, interfone 32",
+    "----------", "ITENS DO PEDIDO", "1x Combo Burger Artesanal",
+  ];
+  const expected = {
+    reference: "4812", customer: "Mariana S.", contact: "(11) 4003-9900 · código 83920145",
+    address: "Rua das Acácias, 450, Itatiba", neighborhood: "Centro", city: "Itatiba",
+    complement: "Apto 32 · Portão azul, interfone 32",
+  };
+  assert.deepEqual(parsePastedOrder(receipt.join("\n")).order, expected);
+  // The same receipt on narrow paper: the number wraps after its area code.
+  const narrow = receipt.flatMap(line => line === "Telefone (Ramal): (11) 4003-9900" ? ["Telefone (Ramal): (11)", "4003-9900"] : [line]);
+  assert.deepEqual(parsePastedOrder(narrow.join("\n")).order, expected);
+});
+
+test("número fixo só vira contato do app com o código impresso", () => {
+  assert.equal(findAppContact("(11) 4003-9900", "Código de Acesso: 83920145", true), "(11) 4003-9900 · código 83920145");
+  assert.equal(findAppContact("4003 9900", "", true), "4003-9900");
+  // The store's own landline or SAC is not the customer.
+  assert.equal(findAppContact("(11) 4524-1234", "", true), null);
+  assert.equal(parsePastedOrder("Cliente: Ana\nRua A, 10\nSAC 4003-1234").order.contact, undefined);
+  assert.equal(parsePastedOrder("Cliente: Ana\nTelefone: (11) 4524-1234").order.contact, undefined);
+  assert.equal(parsePastedOrder("Cliente: Ana\nTelefone: (11) 4524-1234\nRamal: 5521").order.contact, "(11) 4524-1234 · ramal 5521");
+  // "Código de Entrega" is the customer's code for the courier, not the call's.
+  assert.equal(findAppContact("0800 718 2283", "Codigo de Entrega (Cliente): 4821"), "0800 718 2283");
+});
+
 test("contato 0800 do app e pedido de retirada na loja", () => {
   assert.equal(findAppContact("TELEFONE: 0800 718 2283 ID: 12345678"), "0800 718 2283 · ID 12345678");
   assert.equal(findAppContact("Tel: 0800-718-2283 código 9921"), "0800 718 2283 · código 9921");

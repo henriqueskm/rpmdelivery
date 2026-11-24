@@ -23,14 +23,15 @@ type Field = keyof PastedOrder | "landmark";
 // A label may come with its value on the same line or alone ("Telefone:"), the value on the next lines.
 const LABELS: { field: Field; pattern: RegExp }[] = [
   { field: "customer", pattern: /^(?:nome(?: do cliente)?|cliente|destinat[aá]rio|para)\s*[:\-–]\s*(.*)$/i },
-  { field: "phone", pattern: /^(?:telefone|tel|fone|celular|cel|whats(?:app)?|zap|contato)\s*[:\-–]\s*(.*)$/i },
+  // "Telefone (Ramal): (11) 4003-9900" on 99Food's receipt.
+  { field: "phone", pattern: /^(?:telefone|tel|fone|celular|cel|whats(?:app)?|zap|contato)(?:\s*\([^)]{1,20}\))?\s*[:\-–]\s*(.*)$/i },
   { field: "address", pattern: /^(?:endere[cç]o(?: de entrega)?|end|entregar em|local de entrega|entrega)\s*[.:\-–]+\s*(.*)$/i },
   { field: "neighborhood", pattern: /^bairro\s*[:\-–]\s*(.*)$/i },
   { field: "complement", pattern: /^(?:complemento|compl|apto|apartamento)\s*[.:\-–]+\s*(.*)$/i },
   { field: "landmark", pattern: /^(?:(?:ponto de )?refer[eê]ncia|ref)\s*[.:\-–]+\s*(.*)$/i },
   { field: "city", pattern: /^(?:cidade|munic[ií]pio)\s*[.:\-–]+\s*(.*)$/i },
   { field: "notes", pattern: /^(?:observa[cç](?:[oõ]es|[aã]o)|obs)\s*[.:\-–]+\s*(.*)$/i },
-  { field: "reference", pattern: /^(?:pedido|n[ºo°]\.? do pedido|n[uú]mero do pedido|c[oó]digo)\s*[:\-–#nº°]*\s*#?\s*([A-Za-z0-9-]{1,40})\b/i },
+  { field: "reference", pattern: /^(?:pedido|n[ºo°]\.? do pedido|n[uú]mero do pedido|c[oó]digo(?!\s+de\b))\s*[:\-–#nº°]*\s*#?\s*([A-Za-z0-9-]{1,40})\b/i },
 ];
 
 const STREET = /^(?:rua|r\.|av\.?|avenida|alameda|al\.|travessa|tv\.|estrada|est\.|rodovia|rod\.|pra[cç]a|p[cç]a\.?|largo|via|viela)\s+\S/i;
@@ -68,7 +69,8 @@ export function splitCity(text: string): { rest: string; city: string } | null {
 
 /** Whether [line], with no label of its own, carries on the [field] whose value so far is [value]. */
 function continues(field: Field, value: string, line: string): boolean {
-  if (field === "phone") return !value && findMobile(line) !== null;
+  // "Telefone (Ramal): (11)" / "4003-9900": the number wrapped after its area code.
+  if (field === "phone") return !/\d{4}/.test(value) && /^\(?\d/.test(line) && /\d{4}/.test(line) && !ENDS_FIELD.test(line);
   if (ENDS_FIELD.test(line) || findMobile(line)) return false;
   switch (field) {
     // A name wraps into more name: letters only, never a street.
@@ -96,17 +98,37 @@ export function findMobile(text: string): string | null {
   return null;
 }
 
+/** The code the customer's call is routed with, most specific first: "Código de Acesso: 83920145". */
+const APP_CODES: { label: string; pattern: RegExp }[] = [
+  // "Código 9921" or "Código de Acesso: 9921", never "Código de Entrega" nor "Código de Coleta".
+  { label: "código", pattern: /\bc[oó]d(?:igo)?\.?(?:\s+de\s+acesso)?\s*[:.]?\s*(\d[\d ]{1,18}\d)/i },
+  { label: "ramal", pattern: /\bramal\b\s*[:.]?\s*(\d[\d ]{1,18}\d)/i },
+  { label: "ID", pattern: /\bid\b\s*[:.]?\s*(\d[\d ]{1,18}\d)/i },
+  { label: "localizador", pattern: /\blocalizador\b\s*[:.]?\s*(\d[\d ]{1,18}\d)/i },
+];
+
 /**
- * A delivery app's 0800 with the order's ID, as it stands for the customer's hidden mobile:
- * "0800 718 2283 ID: 12345678" → "0800 718 2283 · ID 12345678". Null when there is none.
+ * A delivery app's number with the order's code, as it stands for the customer's hidden mobile:
+ * "0800 718 2283 ID: 12345678" → "0800 718 2283 · ID 12345678"; 99Food's "(11) 4003-9900" with
+ * "Código de Acesso: 83920145" → "(11) 4003-9900 · código 83920145". The number is a 0800/0300, a
+ * capital number (4003, 3003…: under the phone label or with a code), or a landline (only under the
+ * phone label, [landline], and with a code: a store's own number is not the customer). The code is
+ * looked for in [codes] (the whole receipt: it may be on a line of its own). Null when there is none.
  */
-export function findAppContact(text: string): string | null {
-  const match = text.match(/\b0800[\s.-]*(\d{3})[\s.-]*(\d{4})\b(?:\D{0,12}?\b(id|c[oó]d(?:igo)?|localizador|ramal)\b\s*[:.]?\s*(\d[\d ]{1,18}\d))?/i);
-  if (!match) return null;
-  const number = `0800 ${match[1]} ${match[2]}`;
-  if (!match[4]) return number;
-  const label = match[3].toLowerCase() === "id" ? "ID" : match[3].toLowerCase();
-  return `${number} · ${label} ${match[4].replace(/\s+/g, " ")}`;
+export function findAppContact(text: string, codes = text, landline = false): string | null {
+  const code = APP_CODES.map(({ label, pattern }) => {
+    const match = codes.match(pattern);
+    return match ? `${label} ${match[1].replace(/\s+/g, " ")}` : null;
+  }).find(Boolean);
+  const free = text.match(/\b(0[38]00)[\s.-]*(\d{3})[\s.-]*(\d{4})\b/);
+  const capital = !landline && !code ? null : text.match(/(?:\(\s*([1-9]{2})\s*\)\s*|\b([1-9]{2})[\s.-]+)?\b(300\d|400\d|40[2-9]\d)[\s.-]?(\d{4})\b/);
+  const fixed = landline && code ? text.match(/\(\s*([1-9]{2})\s*\)\s*([2-5]\d{3})[\s.-]?(\d{4})\b/) : null;
+  const ddd = (value?: string) => value ? `(${value}) ` : "";
+  const number = free ? `${free[1]} ${free[2]} ${free[3]}`
+    : capital ? `${ddd(capital[1] ?? capital[2])}${capital[3]}-${capital[4]}`
+    : fixed ? `(${fixed[1]}) ${fixed[2]}-${fixed[3]}` : null;
+  if (!number) return null;
+  return code ? `${number} · ${code}` : number;
 }
 
 /**
@@ -160,7 +182,8 @@ export function parsePastedOrder(text: string): { order: PastedOrder; found: (ke
     if (field === "landmark") { landmark = value; continue; }
     if (field === "phone") {
       const phone = findMobile(value);
-      const contact = phone ? null : findAppContact(value);
+      // A landline under the phone label counts only with the app's code, printed anywhere on the receipt.
+      const contact = phone ? null : findAppContact(value, text, true);
       if (phone) order.phone = phone; else if (contact && !order.contact) order.contact = contact;
       continue;
     }
@@ -179,7 +202,7 @@ export function parsePastedOrder(text: string): { order: PastedOrder; found: (ke
     const phone = findMobile(text);
     if (phone) order.phone = phone;
     else if (!order.contact) {
-      const contact = lines.map(findAppContact).find(Boolean);
+      const contact = lines.map(line => findAppContact(line, text)).find(Boolean);
       if (contact) order.contact = contact;
     }
   }
