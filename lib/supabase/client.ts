@@ -54,6 +54,9 @@ type Database = {
       cancel_delivery_on_route: { Args: Record<string, unknown>; Returns: unknown };
       review_shift: { Args: Record<string, unknown>; Returns: unknown };
       get_courier_pay: { Args: { p_restaurant_id: string; p_day?: string }; Returns: unknown };
+      get_day_close: { Args: { p_restaurant_id: string }; Returns: unknown };
+      get_day_close_report: { Args: { p_restaurant_id: string; p_close_id: string }; Returns: unknown };
+      close_store_day: { Args: { p_restaurant_id: string; p_request_id: string }; Returns: unknown };
       get_courier_card: { Args: { p_shift_id: string }; Returns: unknown };
       get_route_settings: { Args: { p_restaurant_id: string }; Returns: unknown };
       find_customer: { Args: { p_restaurant_id: string; p_phone: string }; Returns: unknown };

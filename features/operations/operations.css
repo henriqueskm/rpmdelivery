@@ -1277,6 +1277,39 @@
   }
 }
 
+/* "Fechar o dia": open shifts, the report and the close. */
+.ops-day-shifts { margin-top: 18px; }
+.ops-day-shifts h3 { margin: 0 0 6px; font-size: 13px; font-weight: 650; }
+.ops-day-shifts ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.ops-day-shifts li { display: flex; flex-wrap: wrap; gap: 2px 8px; font-size: 13px; overflow-wrap: anywhere; }
+.ops-day-shifts li span { color: var(--muted); }
+.ops-day-shifts li.is-out span { color: #8a3a16; font-weight: 600; }
+.ops-day-period { margin: 18px 0 0; font-size: 12px; color: var(--muted); }
+.ops-day-summary { margin: 6px 0 0; font-size: 14px; font-weight: 600; }
+/* Every column on every screen (cash is what the courier hands over): on a phone the table scrolls inside its box. */
+.ops-day-table-wrap { overflow-x: auto; max-width: 100%; margin-top: 14px; }
+.ops-day-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.ops-day-table th, .ops-day-table td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
+.ops-day-table th:first-child { text-align: left; white-space: normal; min-width: 9ch; overflow-wrap: anywhere; }
+.ops-day-table thead th { font-size: 11px; font-weight: 650; color: var(--muted); }
+.ops-day-table tfoot th, .ops-day-table tfoot td { border-bottom: 0; font-weight: 650; }
+.ops-day-dialog .ops-pay-day { max-width: none; }
+.ops-day-help { margin: 10px 0 0; font-size: 12px; color: var(--muted); }
+.ops-day-actions { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ops-day-confirm { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; width: 100%;
+  padding: 12px; border: 1px solid #f0c9b4; border-radius: 8px; background: #fdf1ea; }
+.ops-day-confirm p { margin: 0; flex: 1 1 100%; font-size: 13px; color: #6b2e12; }
+.operations .ops-day-actions .ops-primary, .operations .ops-day-actions .ops-link-button { min-height: 44px; }
+.ops-day-dialog select { margin-top: 6px; width: 100%; min-height: 40px; font: inherit; }
+/* Printing the report: only the report, without the panel behind it. */
+@media print {
+  body * { visibility: hidden; }
+  .ops-day-dialog .ops-day-report, .ops-day-dialog .ops-day-report *,
+  .ops-day-dialog .ops-pay-notice, .ops-day-dialog .ops-dialog-heading h2 { visibility: visible; }
+  .ops-day-dialog { position: absolute; inset: 0; max-height: none; overflow: visible; box-shadow: none; border: 0; }
+  .ops-day-table-wrap { overflow: visible; }
+}
+
 /* Customer address search in "Novo pedido" (real data). */
 .ops-order-address {
   min-width: 0;

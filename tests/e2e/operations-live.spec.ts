@@ -683,6 +683,60 @@ test("pagamento dos motoboys: operador vê o acerto sem alterar valores", async 
   await expect(dialog.getByRole("button", { name: "Salvar valores" })).toHaveCount(0);
 });
 
+test("fechar o dia: encerra o turno de quem não está em rota e guarda o relatório", async ({ page }) => {
+  const errors = watchErrors(page);
+  const backend = storeBackend();
+  await mockSupabase(page, { existing: true, rpc: backend.handlers });
+  await openPanel(page);
+  await showArea(page, /^Motoboys/);
+  await page.getByRole("button", { name: "Fechar o dia", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Fechar o dia" });
+
+  // Who still has a shift, and who is out on a route (Ana on the street, Dani with a route being prepared).
+  const shifts = dialog.getByRole("region", { name: "Turnos abertos" });
+  await expect(shifts.getByRole("listitem").filter({ hasText: "Ana Souza" })).toContainText("Em rota: o turno continua até voltar");
+  await expect(shifts.getByRole("listitem").filter({ hasText: "Dani Lima" })).toContainText("Em rota");
+  await expect(shifts.getByRole("listitem").filter({ hasText: "Bruno Alves" })).toContainText("Na fila");
+  await expect(shifts.getByRole("listitem").filter({ hasText: "Carla Dias" })).toContainText("Aguardando aprovação");
+  await expect(dialog.getByText("Últimas 24 horas (primeiro fechamento da loja).")).toBeVisible();
+  // The report of the period: orders, then what each courier collected and is paid.
+  await expect(dialog.getByText("7 pedidos recebidos · 5 entregues · 1 cancelado · 1 aguardando despacho")).toBeVisible();
+  await expect(dialog.getByRole("row", { name: /Ana Souza/ })).toContainText("R$ 52,90");
+  await expect(dialog.getByRole("row", { name: /Ana Souza/ })).toContainText("R$ 51,00");
+  await expect(dialog.getByRole("row", { name: /^Total/ })).toContainText("R$ 95,00");
+  await expect(dialog.getByText("Dinheiro: o motoboy entrega esse valor no caixa.", { exact: false })).toBeVisible();
+  // Nothing scrolls sideways on the page, the table at most inside its own box.
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+
+  // It asks first, saying what will happen; "Voltar" does nothing.
+  await dialog.getByRole("button", { name: "Encerrar turnos e fechar o dia" }).click();
+  const confirm = dialog.getByRole("group", { name: "Confirmar o fechamento do dia" });
+  await expect(confirm).toContainText("Encerra 2 turnos e salva o relatório. 2 motoboys em rota continuam até voltar.");
+  await confirm.getByRole("button", { name: "Voltar" }).click();
+  expect(backend.commandCalls().filter(call => call.fn === "close_store_day")).toHaveLength(0);
+  await dialog.getByRole("button", { name: "Encerrar turnos e fechar o dia" }).click();
+  await confirm.getByRole("button", { name: "Sim, fechar o dia" }).click();
+  await expect(dialog.getByRole("status")).toContainText(
+    "Turnos encerrados: Bruno Alves, Carla Dias. Ainda em rota: Ana Souza, Dani Lima (o turno continua até voltar).");
+  const closes = backend.commandCalls().filter(call => call.fn === "close_store_day");
+  expect(closes).toHaveLength(1);
+  expect(closes[0].body).toMatchObject({ p_restaurant_id: testRestaurant.id });
+  expect(closes[0].body.p_request_id).toMatch(UUID);
+  await expect(dialog.getByRole("button", { name: "Imprimir relatório" })).toBeVisible();
+  await dialog.getByRole("button", { name: "Fechar o fechamento do dia" }).click();
+
+  // The board follows: the ended shifts leave the Motoboys column.
+  await expect(page.getByRole("button", { name: "Aprovar turno de Carla Dias" })).toHaveCount(0);
+  // The saved report stays readable from the list.
+  await page.getByRole("button", { name: "Fechar o dia", exact: true }).click();
+  const pick = dialog.getByRole("combobox", { name: /^Relatório/ });
+  await expect(pick.getByRole("option", { name: /^Fechado em \d{2}\/\d{2} \d{2}:\d{2} por Operador Teste$/ })).toHaveCount(1);
+  await pick.selectOption({ index: 1 });
+  await expect(dialog.getByRole("status")).toContainText("Turnos encerrados: Bruno Alves, Carla Dias.");
+  expect(backend.commandCalls().filter(call => call.fn === "get_day_close_report")).toHaveLength(1);
+  expect(errors).toEqual([]);
+});
+
 test("acompanhar rotas: tela com cada rota na rua, entregas em ordem e ocorrência para decidir", async ({ page }) => {
   const backend = storeBackend();
   await mockSupabase(page, { existing: true, rpc: backend.handlers });

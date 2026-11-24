@@ -16,13 +16,15 @@ const PRINTER_STATUS: Record<PrinterStatus, string> = {
   unreachable: "O programa da impressora não está aberto neste computador. Abra com npm run print:capture.",
 };
 
-export function StoreMenu({ restaurantName, email, storeHref, courierManagementHref, onPay, signOut, printer }: {
+export function StoreMenu({ restaurantName, email, storeHref, courierManagementHref, onPay, onDayClose, signOut, printer }: {
   restaurantName: string;
   email?: string;
   storeHref?: string;
   courierManagementHref?: string;
   /** Opens "Pagamentos dos motoboys" (only once the board is loaded). */
   onPay?: () => void;
+  /** Opens "Fechar o dia" (only once the board is loaded). */
+  onDayClose?: () => void;
   /** The control that really signs out, shown in the confirmation. */
   signOut: ReactNode;
   /** Real data: orders read from the printer on this computer (a per-computer choice). */
@@ -57,6 +59,7 @@ export function StoreMenu({ restaurantName, email, storeHref, courierManagementH
             <li><Link href="/dashboard" aria-current="page" onClick={close}>Central de despacho</Link></li>
             {courierManagementHref && <li><Link href={courierManagementHref}>Motoboys e convites</Link></li>}
             {onPay && <li><button type="button" onClick={() => { close(); onPay(); }}>Pagamentos dos motoboys</button></li>}
+            {onDayClose && <li><button type="button" onClick={() => { close(); onDayClose(); }}>Fechar o dia</button></li>}
             {storeHref && <li><Link href={storeHref}>Dados da loja</Link></li>}
           </ul>
         </nav>

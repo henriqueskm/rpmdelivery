@@ -13,7 +13,7 @@ const statusKey: Record<string, string> = {
   "Disponível": "available", "Reservado": "reserved", "Em rota": "on-route", "Retornando": "returning", "Turno pendente": "pending",
 };
 
-export function CouriersPanel({ state, managementHref, onReviewShift, pending, pay, onOpenCourier }: {
+export function CouriersPanel({ state, managementHref, onReviewShift, pending, pay, dayClose, onOpenCourier }: {
   state: DemoState; managementHref?: string;
   /** Real data: the name opens the courier card. */
   onOpenCourier?: (id: string, name: string) => void;
@@ -21,6 +21,8 @@ export function CouriersPanel({ state, managementHref, onReviewShift, pending, p
   onReviewShift?: (shiftId: string, approve: boolean) => void; pending?: boolean;
   /** Real data: rates and the day's settlement. */
   pay?: ReactNode;
+  /** Real data: "Fechar o dia", ends every shift and saves the day's report. */
+  dayClose?: ReactNode;
 }) {
   const available = availableCouriers(state);
   const rest = state.couriers.filter(
@@ -34,9 +36,10 @@ export function CouriersPanel({ state, managementHref, onReviewShift, pending, p
         </h2>
         <Badge>{plural(available.length, "disponível", "disponíveis")}</Badge>
       </div>
-      {(managementHref || pay) && <div className="ops-courier-links">
+      {(managementHref || pay || dayClose) && <div className="ops-courier-links">
         {managementHref && <Link href={managementHref} className="text-button">Convites e vínculos</Link>}
         {pay}
+        {dayClose}
       </div>}
       <div className="ops-courier-caption">Fila por ordem de chegada</div>
       <div

@@ -19,6 +19,7 @@ import { DeadlineDialog } from "./deadline-dialog";
 import { tabs, useOperationsController, type LiveSource } from "./use-operations-controller";
 import { useOperationsBoard } from "./live/use-operations-board";
 import { CourierPay, type CourierPayHandle } from "./live/courier-pay";
+import { DayClose, type DayCloseHandle } from "./live/day-close-dialog";
 import { CourierCardDialog } from "./live/courier-card-dialog";
 import { RouteSuggestions } from "./live/route-suggestions";
 import { freeCourierNotice } from "./live/free-courier";
@@ -262,6 +263,7 @@ function OperationsWorkspace({
   }
   function openIssues(){issueDialog.current?.showModal();}
   const payMenu = useRef<CourierPayHandle>(null);
+  const dayCloseMenu = useRef<DayCloseHandle>(null);
   const automaticTriggerCompact = useRef<HTMLButtonElement>(null);
   return (
     <main className="operations">
@@ -281,9 +283,11 @@ function OperationsWorkspace({
             <StoreMenu restaurantName={restaurantName} email={email} storeHref={storeHref}
               courierManagementHref={courierManagementHref} signOut={accountAction}
               onPay={live ? () => payMenu.current?.open() : undefined}
+              onDayClose={live ? () => dayCloseMenu.current?.open() : undefined}
               printer={live ? { enabled: printer.enabled, status: printer.status, onToggle: printer.setEnabled,
                 auto: printer.auto, onAuto: printer.setAuto } : undefined} />
             {live && <CourierPay restaurantId={live.restaurantId} ref={payMenu} trigger={false} />}
+            {live && <DayClose restaurantId={live.restaurantId} ref={dayCloseMenu} trigger={false} onClosed={() => void live.refresh()} />}
           </> : <>
             <div>
               <strong>{restaurantName}</strong>
@@ -464,6 +468,7 @@ function OperationsWorkspace({
             <CouriersPanel state={state} managementHref={courierManagementHref}
               onReviewShift={live ? reviewShift : undefined} pending={saving}
               pay={live ? <CourierPay restaurantId={live.restaurantId} /> : undefined}
+              dayClose={live ? <DayClose restaurantId={live.restaurantId} onClosed={() => void live.refresh()} /> : undefined}
               onOpenCourier={live ? (id, name) => setOpenCourier({ id, name }) : undefined} />
           </section>
         </div>
