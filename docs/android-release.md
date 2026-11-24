@@ -55,6 +55,15 @@ Desde 30/09/2026, no Brasil, o Android em celulares certificados exige que os ap
 | **Conta completa** (Android Developer Console) | US$ 25, uma vez, com documento | APK por link em qualquer aparelho |
 | **Sem registro** | Grátis | APK por link com o "fluxo avançado": modo desenvolvedor e espera de 24 h, ou instalação por cabo (ADB) |
 
+**Escolha do piloto: distribuição limitada.**
+- **Cadastro dos celulares:** cada celular de motoboy entra na lista uma vez, por convite (QR Code ou link), com o aceite no próprio celular. Depois disso, o APK baixado pelo link instala normalmente.
+- **Atualizações:** fora da Play Store, o app não se atualiza sozinho. Cada versão nova precisa de:
+  - mais um no `versionCode`;
+  - a assinatura com a mesma chave;
+  - publicação no mesmo link.
+
+  O motoboy baixa e instala por cima, sem perder a conta nem os dados.
+
 Em todos os caminhos com registro, o pacote `com.rpmdelivery.courier` é registrado com a impressão digital da chave, e é preciso provar que se tem a chave assinando um APK.
 
 ## Política de privacidade
