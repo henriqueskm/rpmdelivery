@@ -743,7 +743,10 @@ private fun ReadyChecks(withBubble: Boolean = false) {
             val bubbleOn = remember(checks) { RouteBubble.allowed(context) }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             CheckRow("Sobrepor outros apps", "Opcional. Na rota, um botão redondo fica sobre o Maps e volta para o app com um toque. " +
-                "E se você estiver em outro app quando a retirada for liberada, o RpmDelivery abre sozinho.", bubbleOn) {
+                "E se você estiver em outro app quando a retirada for liberada, o RpmDelivery abre sozinho." +
+                // Android blocks this switch for apps installed from a link ("configuração restrita").
+                if (bubbleOn) "" else "\nSe a chave estiver bloqueada: Configurações → Apps → RpmDelivery Motoboy → ⋮ → " +
+                    "\"Permitir configurações restritas\". Depois, volte e ligue.", bubbleOn) {
                 open(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, "package:${context.packageName}".toUri()))
             }
         }

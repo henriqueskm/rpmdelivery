@@ -21,6 +21,18 @@ O SDK mantém sessão no navegador e renova tokens. O guard client é UX; **a au
 
 Falhas de consulta não viram onboarding vazio. Falhas de criação bloqueiam reenvio nesta sessão e oferecem consulta do vínculo antes de qualquer nova tentativa: o RPC atual não é idempotente. Recarregar remove esse bloqueio de UX; idempotência e garantia contra concorrência exigem uma futura revisão do contrato de banco, fora deste PR. Não há retry automático da criação.
 
+## Esqueci a senha
+
+A troca de senha acontece toda no site, em `/redefinir-senha`, para motoboys e lojas:
+
+1. **Pedir o link:** o app ("Esqueci a senha", na tela de entrar) e o login do painel abrem a página. A pessoa digita o e-mail e o site chama `resetPasswordForEmail`, com volta para `/redefinir-senha`. A resposta é sempre a mesma, exista a conta ou não.
+2. **Abrir o link:** o link do e-mail traz a sessão de recuperação no endereço (fluxo implícito do site). Por isso ele funciona em qualquer aparelho, ao contrário do PKCE do app, que exigiria o celular que pediu.
+3. **Criar a senha nova:** `updateUser({ password })`, com pelo menos 8 caracteres. Depois, o site sai da sessão neste navegador e manda entrar de novo no app ou no painel. Link expirado ou já usado mostra "Esse link não vale mais" e permite pedir outro.
+
+**Configuração no Supabase (feita pelo dono do projeto, no painel do Supabase):**
+- **Authentication → URL Configuration → Redirect URLs:** incluir `https://rpmdelivery.vercel.app/redefinir-senha`. Sem isso, o link volta para o Site URL e a troca não abre.
+- **E-mail:** o envio que vem pronto no Supabase tem limite baixo por hora e pode só entregar para os e-mails da equipe do projeto. Teste com um e-mail de fora da equipe. Se não chegar, configure um SMTP próprio (por exemplo, o Gmail da RPM com senha de app) em Authentication → Emails → SMTP Settings. Isso vale também para a confirmação do cadastro.
+
 ## Configuração local real
 
 No ambiente de desenvolvimento autorizado, configure em `.env.local` (ignorado pelo Git):

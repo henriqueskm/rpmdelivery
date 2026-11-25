@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -24,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import com.rpmdelivery.courier.demo.DemoFormValidation
 import com.rpmdelivery.courier.ui.components.DemoTextField
 import com.rpmdelivery.courier.ui.components.ScreenHeading
+
+const val PASSWORD_RESET_URL = "https://rpmdelivery.vercel.app/redefinir-senha"
 
 @Composable
 fun AuthAction(label: String, busy: Boolean, onClick: () -> Unit) {
@@ -63,8 +66,15 @@ fun AccountScreen(create: Boolean, busy: Boolean, onSubmit: (String, String, Str
                 onSubmit(name, email, credential)
             }
         }
-        if (!create) TextButton(onClick = onRegister, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-            Text("Criar cadastro de motoboy")
+        if (!create) {
+            // The reset runs on the site: the e-mail link works on any device and needs no PKCE verifier.
+            val uris = LocalUriHandler.current
+            TextButton(onClick = { uris.openUri(PASSWORD_RESET_URL) }, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                Text("Esqueci a senha")
+            }
+            TextButton(onClick = onRegister, enabled = !busy, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                Text("Criar cadastro de motoboy")
+            }
         }
     }
 }

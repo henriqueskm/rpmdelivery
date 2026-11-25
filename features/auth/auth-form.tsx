@@ -142,7 +142,11 @@ export function AuthForm({ mode, courier = false }: { mode: "login" | "signup"; 
                 placeholder="Repita sua senha"
                 required
               />
-            ) : null}
+            ) : (
+              <p className="form-switch form-forgot">
+                <Link prefetch={false} href="/redefinir-senha">Esqueci a senha</Link>
+              </p>
+            )}
             {error ? (
               <p className="notice error" role="alert">
                 {error}

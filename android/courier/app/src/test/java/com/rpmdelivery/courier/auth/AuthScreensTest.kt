@@ -60,6 +60,12 @@ class AuthScreensTest {
         compose.onNodeWithText("RpmDelivery").assertIsDisplayed()
         assertFalse(controller.state.value.authenticated)
     }
+    @Test fun loginOffersPasswordResetOnTheSite() {
+        show()
+        compose.runOnIdle { controller.navigate(AuthScreen.Login) }
+        field("Esqueci a senha").assertHeightIsAtLeast(48.dp).assertHasClickAction()
+        assertEquals("https://rpmdelivery.vercel.app/redefinir-senha", com.rpmdelivery.courier.ui.screens.PASSWORD_RESET_URL)
+    }
     @Test fun legacyModelOutsideCatalogIsPreservedWhileOnlyMissingColorIsRequested() {
         show(completeProfile.copy(model = "Moto antiga válida fora do catálogo", color = ""))
         field("Moto antiga válida fora do catálogo").assertIsDisplayed()

@@ -51,7 +51,7 @@ Desde 30/09/2026, no Brasil, o Android em celulares certificados exige que os ap
 | Caminho | Custo | Para o motoboy |
 |---|---|---|
 | **Teste interno da Google Play** | US$ 25, uma vez (conta da Play Console, com documento) | Instala e atualiza pela Play Store, por convite (até 100 pessoas) |
-| **Distribuição limitada** (Android Developer Console) | Grátis, sem documento | APK por link, em até 20 aparelhos convidados |
+| **Distribuição limitada** (Android Developer Console) | Grátis, sem documento | APK por link, em até 50 aparelhos autorizados |
 | **Conta completa** (Android Developer Console) | US$ 25, uma vez, com documento | APK por link em qualquer aparelho |
 | **Sem registro** | Grátis | APK por link com o "fluxo avançado": modo desenvolvedor e espera de 24 h, ou instalação por cabo (ADB) |
 

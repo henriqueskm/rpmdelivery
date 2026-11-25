@@ -29,8 +29,8 @@ android {
         applicationId = "com.rpmdelivery.courier"
         minSdk = 26
         targetSdk = 36
-        versionCode = 4
-        versionName = "1.0.0"
+        versionCode = 5
+        versionName = "1.0.1"
         // Public client configuration only. Never read the web .env or privileged keys.
         val localAuth = Properties().apply {
             val file = rootProject.file("auth.local.properties")

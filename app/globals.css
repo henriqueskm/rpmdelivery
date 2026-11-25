@@ -70,6 +70,7 @@ fieldset:disabled { opacity: .72; }
 .form-switch { margin-top: 23px; font-size: 12px; color: var(--muted); text-align: center; }
 .form-switch a { color: var(--accent); font-weight: 700; padding: 10px 4px; text-decoration: none; }
 .form-switch a:hover { text-decoration: underline; }
+.form-switch.form-forgot { margin: -8px 0 16px; text-align: right; }
 .secure-note { margin-top: 28px; padding-top: 23px; border-top: 1px solid var(--line); color: #657363; text-align: center; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .secure-note span { font-size: 20px; }
 .auth-footer { position: absolute; bottom: 24px; font-size: 10px; color: #6c7569; }
