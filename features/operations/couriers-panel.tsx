@@ -10,15 +10,17 @@ import { useRef, type MouseEvent } from "react";
 
 /** One color per moment of the shift; the word stays, so color is never the only signal. */
 const statusKey: Record<string, string> = {
-  "Disponível": "available", "Reservado": "reserved", "Em rota": "on-route", "Retornando": "returning", "Turno pendente": "pending",
+  "Disponível": "available", "Reservado": "reserved", "Em rota": "on-route", "Retornando": "returning", "Turno pendente": "pending", "A caminho": "arriving",
 };
 
-export function CouriersPanel({ state, managementHref, onReviewShift, pending, onPay, onDayClose, onOpenCourier }: {
+export function CouriersPanel({ state, managementHref, onReviewShift, onMarkArrived, pending, onPay, onDayClose, onOpenCourier }: {
   state: DemoState; managementHref?: string;
   /** Real data: the name opens the courier card. */
   onOpenCourier?: (id: string, name: string) => void;
   /** Real data: the counter approves the shift of a courier who arrived. */
   onReviewShift?: (shiftId: string, approve: boolean) => void; pending?: boolean;
+  /** Real data: an approved courier on the way is at the counter; enters the line now. */
+  onMarkArrived?: (shiftId: string) => void;
   /** Real data: rates and the day's settlement. */
   onPay?: () => void;
   /** Real data: "Fechar o dia", ends every shift and saves the day's report. */
@@ -94,6 +96,13 @@ export function CouriersPanel({ state, managementHref, onReviewShift, pending, o
                     <span className="ops-courier-pill">{label}{position >= 0 && ` · ${c.availableMinutes} min`}</span>
                   </span>
                 </div>
+                {label === "A caminho" && onMarkArrived && (
+                  // The courier's GPS usually does it; the counter covers a phone without location.
+                  <span className="ops-shift-review">
+                    <button disabled={pending} onClick={() => onMarkArrived(c.id)}
+                      aria-label={`${c.name} chegou na loja`}>Chegou</button>
+                  </span>
+                )}
                 {label === "Turno pendente" && onReviewShift && (
                   <span className="ops-shift-review">
                     <button className="ops-primary" disabled={pending} onClick={() => onReviewShift(c.id, true)}

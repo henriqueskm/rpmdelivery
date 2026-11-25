@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { boardToState, initials, parseBoard } from "../../features/operations/live/board.ts";
 import { errorMessage, rpcFor } from "../../features/operations/live/commands.ts";
+import { availableCouriers, courierLabel } from "../../features/operations/model.ts";
 
 const now = Date.parse("2026-11-13T22:00:00Z");
 const board = {
@@ -166,4 +167,26 @@ test("pedido do iFood: sem celular no quadro, com o contato do app; só a import
   assert.equal(imported?.args.p_customer_contact, "0800 718 2283 · ID 12345678");
   assert.equal(rpcFor({ type: "add", now, order: base }, "rest-1", live, "req-9")?.args.p_customer_contact, undefined,
     "an order typed in the panel never goes without the mobile");
+});
+
+test("motoboy aprovado que ainda não chegou fica \"A caminho\", fora da fila, com \"Chegou\" no painel", () => {
+  const withArrivals = {
+    ...board,
+    couriers: [...board.couriers, { shiftId: "s3", name: "Caio", status: "AVAILABLE", linkActive: true,
+      requestedAt: "2026-11-13T21:50:00Z", availableSince: "2026-11-13T21:55:00Z" }],
+    shiftArrivals: [{ shiftId: "s1", arrivedAt: "2026-11-13T21:40:30Z" }, { shiftId: "s2", arrivedAt: null },
+      { shiftId: "s3", arrivedAt: null }],
+  };
+  assert.ok(parseBoard(withArrivals));
+  assert.equal(parseBoard({ ...withArrivals, shiftArrivals: [{ shiftId: "s3", arrivedAt: "ontem" }] }), null);
+  const live = boardToState(parseBoard(withArrivals)!, { now });
+  const caio = live.state.couriers.find(c => c.id === "s3")!;
+  assert.equal(caio.arriving, true);
+  assert.equal(courierLabel(live.state, caio), "A caminho");
+  assert.ok(!availableCouriers(live.state).some(c => c.id === "s3"));
+  assert.equal(live.state.couriers.find(c => c.id === "s2")!.arriving, undefined, "a pending shift is never on the way");
+  assert.equal(boardToState(parseBoard(board)!, { now }).state.couriers.find(c => c.id === "s1")!.arriving, undefined,
+    "an older database without the list: everybody approved is in line, as before");
+  assert.deepEqual(rpcFor({ type: "mark-arrived", shiftId: "s3" }, "rest-1", live, "req"),
+    { fn: "mark_shift_arrived", args: { p_restaurant_id: "rest-1", p_shift_id: "s3" } });
 });

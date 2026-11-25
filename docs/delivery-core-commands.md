@@ -447,3 +447,28 @@ Antes, o motoboy só voltava para a fila quando deslizava "Cheguei na loja", e e
 - Deslizar depois da chegada automática não dá erro e não muda nada.
 
 **Concorrência:** o fechamento pelo GPS pega as mesmas travas da rota que o deslize (`private.lock_route_execution`) e confere de novo se a rota ainda está voltando. Assim, GPS e deslize ao mesmo tempo fecham a rota uma vez só. As travas só são pegas quando há um ponto na loja; os outros lotes de GPS não esperam por nada.
+
+## Fila por chegada na loja (migration 20261208120000)
+
+Antes, a loja aprovava o turno e o motoboy já entrava na fila, mesmo em casa. Agora pedir turno e a aprovação podem acontecer de qualquer lugar ("vou trabalhar hoje"), mas **a fila começa na loja**.
+
+**Como funciona:**
+- **Aprovado:** o turno fica `AVAILABLE` com `courier_shifts.arrived_at` vazio. O app mostra "Turno aprovado · A caminho" e o painel mostra "A caminho", sem posição na fila e fora da escolha de motoboy para a rota.
+- **Chegada pelo GPS:** no caminho, o serviço do turno lê a localização **só no celular**, sem mandar os pontos para ninguém. Quando o celular fica a até **100 m** do pino da loja, com precisão de **50 m ou melhor** (a mesma regra da volta da rota), o app chama `arrive_for_shift(..., p_auto => true)`. O banco confere a mesma regra (`RPM_NOT_AT_STORE` se discordar) e põe o motoboy no fim da fila.
+- **Deslize "Cheguei na loja":** para o celular sem localização. Com posição a mais de 300 m, `RPM_FAR_FROM_STORE <metros>`; sem posição, aceito.
+- **"Chegou" no painel:** `mark_shift_arrived(restaurant, shift)`, para qualquer membro da loja. Cobre o celular sem GPS e o app antigo.
+- **A fila conta da chegada:** `available_since` = `arrived_at`. `arrival_source` guarda como foi: `GPS`, `BUTTON`, `STORE`, `NO_PIN`, `ROUTE` ou `BEFORE`.
+- **Avisos no celular:** a aprovação diz "Venha para a loja: você entra na fila ao chegar". A chegada toca "Chegada registrada · Você entrou na fila: 3º" (ou "Você é o próximo da fila", se for o primeiro).
+
+**Casos especiais:**
+- **Loja sem pino:** não tem como saber a chegada, então a aprovação põe na fila na hora, como antes (`NO_PIN`).
+- **Rota montada antes da chegada:** a loja pode montar a rota de quem está a caminho; quando a rota começa, a chegada é registrada (`ROUTE`).
+- **Turnos abertos antes da migration:** continuam na fila (`BEFORE`).
+- **Sair de perto da loja não tira da fila:** isso exigiria o GPS ligado o tempo todo. Fica para depois.
+- **Encosta:** continua registrada na aprovação, como antes. Quem é aprovado e encerra o turno sem chegar ainda conta a encosta (a revisar).
+
+**Android:** a localização do caminho só começa com o app aberto (o Android não deixa ligar a localização em segundo plano). O motoboy que recebe "Turno aprovado" com o celular no bolso começa a ser acompanhado quando abrir o app.
+
+**Quadro:** `get_operations_board` ganhou `shiftArrivals` (`shiftId`, `arrivedAt`). `get_courier_home().shift` ganhou `arrivedAt`; a posição na fila só existe depois da chegada.
+
+**Implantação:** aplicar a migration **junto** com a publicação do app novo. Com a migration e o app 1.0.0, o motoboy aprovado fica "a caminho" até a loja tocar em "Chegou".

@@ -91,6 +91,11 @@ internal class FakeWork : CourierWorkRepository {
         farFromStore?.let { if (position != null) throw WorkProblem.fromServer("RPM_FAR_FROM_STORE $it") }
         home = home.copy(route = null, shift = home.shift!!.copy(status = "AVAILABLE", queuePosition = 2))
     }
+    override suspend fun arriveForShift(position: GpsPoint?, auto: Boolean) {
+        record(if (auto) "arrive_for_shift:auto" else "arrive_for_shift")
+        farFromStore?.let { if (position != null && !auto) throw WorkProblem.fromServer("RPM_FAR_FROM_STORE $it") }
+        home = home.copy(shift = home.shift!!.copy(onTheWay = false, queuePosition = 3))
+    }
     val sentPoints = mutableListOf<GpsPoint>()
     override suspend fun recordLocations(routeId: String, points: List<GpsPoint>) {
         record("record_courier_locations")

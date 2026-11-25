@@ -37,8 +37,13 @@ data class Shift(
     val restaurantName: String,
     val status: String,
     val queuePosition: Int?,
-    /** When the courier entered the line (approval or last return to the store). */
+    /** When the courier entered the line (arrival at the store or last return to it). */
     val availableSince: String? = null,
+    /**
+     * Approved, but not at the store yet: not in line until the GPS sees the phone there, the courier
+     * swipes "Cheguei na loja" or the store marks the arrival. Older servers never say it (always false).
+     */
+    val onTheWay: Boolean = false,
 )
 
 /** The store on the route: where to return. No customer phone ever reaches the app. */
@@ -242,7 +247,8 @@ fun parseHome(element: JsonElement): CourierHome {
         },
         shift = root.child("shift")?.let {
             Shift(it.required("shiftId"), it.required("restaurantId"), it.text("restaurantName").orEmpty(),
-                it.required("status"), it.text("queuePosition")?.toIntOrNull(), it.text("availableSince"))
+                it.required("status"), it.text("queuePosition")?.toIntOrNull(), it.text("availableSince"),
+                onTheWay = it.required("status") == "AVAILABLE" && it.containsKey("arrivedAt") && it.text("arrivedAt") == null)
         },
         route = root.child("route")?.let(::parseRoute),
         today = root.child("today")?.let {

@@ -187,7 +187,7 @@ function OperationsWorkspace({
     notice, courierRouteId, setCourierRouteId, deadlineTarget, setDeadlineTarget,
     newDialog, courierDialog, deadlineDialog, issueDialog, tabRefs, pending: saving,
     assign, acceptAutomatic, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, issueCommand,
-    reviewShift, cancelRoute, cancelOrder, editOrder, requeue, viewedAlerts, dismissAlerts, tabKey,
+    reviewShift, markArrived, cancelRoute, cancelOrder, editOrder, requeue, viewedAlerts, dismissAlerts, tabKey,
   } = useOperationsController(scenario, now, live);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   /** Real data: the waiting order being edited. */
@@ -467,7 +467,7 @@ function OperationsWorkspace({
             aria-labelledby="ops-tab-couriers"
           >
             <CouriersPanel state={state} managementHref={courierManagementHref}
-              onReviewShift={live ? reviewShift : undefined} pending={saving}
+              onReviewShift={live ? reviewShift : undefined} onMarkArrived={live ? markArrived : undefined} pending={saving}
               onPay={live ? () => payMenu.current?.open() : undefined}
               onDayClose={live ? () => dayCloseMenu.current?.open() : undefined}
               onOpenCourier={live ? (id, name) => setOpenCourier({ id, name }) : undefined} />

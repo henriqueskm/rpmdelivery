@@ -22,7 +22,10 @@ import com.rpmdelivery.courier.work.CourierWorkRepository
 import com.rpmdelivery.courier.work.LocationBuffer
 import com.rpmdelivery.courier.work.ShiftAlert
 import com.rpmdelivery.courier.work.WorkProblem
+import com.rpmdelivery.courier.work.ArrivalTarget
 import com.rpmdelivery.courier.work.alertsBetween
+import com.rpmdelivery.courier.work.arrivalTarget
+import com.rpmdelivery.courier.work.atStore
 import com.rpmdelivery.courier.work.awaitingPickup
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -38,7 +41,9 @@ import kotlinx.coroutines.launch
  * Runs while the courier has an open shift, so the phone can stay in the pocket.
  * - Waiting: reads the shift every 30 s and rings when approved, first in line, or the pickup is released.
  * - On the route (ON_ROUTE and RETURNING only): also shares GPS every 15 s with the store and the next customer.
- * It stops when the shift ends, the session expires or the courier signs out. No location is read while waiting.
+ * - Approved but not at the store yet ("a caminho"): reads GPS on the phone only, and tells the server once the
+ *   phone is within 100 m of the store, which puts the courier in line. Nothing is shared on the way.
+ * It stops when the shift ends, the session expires or the courier signs out. No location is read in line.
  */
 class ShiftService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -47,6 +52,11 @@ class ShiftService : Service() {
     private var loop: Job? = null
     private var last: CourierHome? = null
     private var trackingRoute: String? = null
+    /** On the way to the store of an approved shift: where to arrive. */
+    private var approaching: ArrivalTarget? = null
+    private var arrival: Job? = null
+    private var lastArrivalTry = 0L
+    private val locating get() = trackingRoute != null || approaching != null
     private var dispatch: Job? = null
     private var lastDispatch = 0L
     /** First in line or route being assembled: ask every 10 s and keep the processor awake. */
@@ -84,6 +94,21 @@ class ShiftService : Service() {
         override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) = Unit
     }
 
+    /** On the way: readings stay on the phone; only the arrival goes to the server. */
+    private val approachListener = object : LocationListener {
+        override fun onLocationChanged(location: Location) {
+            if (location.isFake()) return
+            val target = approaching ?: return
+            val point = location.toPoint()
+            if (atStore(point, target)) arrive(point)
+        }
+        override fun onProviderEnabled(provider: String) = Unit
+        override fun onProviderDisabled(provider: String) = Unit
+        @Deprecated("Required before Android 11")
+        @Suppress("OVERRIDE_DEPRECATION")
+        override fun onStatusChanged(provider: String?, status: Int, extras: android.os.Bundle?) = Unit
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -94,7 +119,9 @@ class ShiftService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // Android requires the foreground notification right away.
-        promote(tracking = trackingRoute != null)
+        promote(tracking = locating)
+        // The app is visible now: the only moment Android lets the location start on the way to the store.
+        last?.let(::arrivalTarget)?.let { if (approaching == null) startApproach(it) }
         if (loop?.isActive != true) loop = scope.launch {
             while (isActive) {
                 tick()
@@ -133,6 +160,10 @@ class ShiftService : Service() {
         urgent = awaitingPickup(home)
         stayAwake(urgent)
         if (home.shift == null) { send(); finish(); return }
+
+        val target = arrivalTarget(home)
+        if (target != null && approaching?.shiftId != target.shiftId) startApproach(target)
+        if (target == null && approaching != null) stopApproach()
 
         val route = home.route?.takeIf { it.status == "ON_ROUTE" || it.status == "RETURNING" }
         // The app may be in the background (maps app open): the service keeps the bubble in step.
@@ -198,7 +229,46 @@ class ShiftService : Service() {
         (getSystemService(Context.LOCATION_SERVICE) as LocationManager).removeUpdates(listener)
         trackingRoute = null
         buffer.clear()
-        promote(tracking = false)
+        promote(tracking = locating)
+    }
+
+    private fun startApproach(target: ArrivalTarget) {
+        stopApproach()
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) return
+        approaching = target
+        // Refused with the app in the background (Android 14+): the next time the app shows, it starts.
+        if (!promote(tracking = true)) { approaching = null; return }
+        val manager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        try {
+            for (provider in listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)) {
+                if (manager.isProviderEnabled(provider))
+                    manager.requestLocationUpdates(provider, POINT_MS, POINT_METERS, approachListener, Looper.getMainLooper())
+            }
+        } catch (_: SecurityException) { approaching = null; promote(tracking = locating) }
+    }
+
+    private fun stopApproach() {
+        if (approaching == null) return
+        (getSystemService(Context.LOCATION_SERVICE) as LocationManager).removeUpdates(approachListener)
+        approaching = null
+        arrival?.cancel(); arrival = null
+        promote(tracking = locating)
+    }
+
+    /** At the store: the server checks the same rule and puts the courier in line. At most every 20 s. */
+    private fun arrive(point: com.rpmdelivery.courier.work.GpsPoint) {
+        val now = System.currentTimeMillis()
+        if (arrival?.isActive == true || now - lastArrivalTry < ARRIVAL_RETRY_MS) return
+        lastArrivalTry = now
+        arrival = scope.launch {
+            try {
+                repository.arriveForShift(point, auto = true)
+                stopApproach()
+                tick() // In line now: the notification and the "chegada registrada" sound right away.
+            } catch (error: CancellationException) { throw error }
+            catch (_: Exception) { /* Not there yet for the server, or no connection: the next reading tries again. */ }
+        }
     }
 
     /** Foreground with the type the moment needs: location only while sharing it. */
@@ -228,6 +298,7 @@ class ShiftService : Service() {
     private fun finish() {
         loop?.cancel(); loop = null
         stayAwake(false)
+        stopApproach()
         if (trackingRoute != null) {
             (getSystemService(Context.LOCATION_SERVICE) as LocationManager).removeUpdates(listener)
             trackingRoute = null
@@ -241,6 +312,7 @@ class ShiftService : Service() {
         stayAwake(false)
         RouteBubble.setRoute(this, false)
         if (trackingRoute != null) (getSystemService(Context.LOCATION_SERVICE) as LocationManager).removeUpdates(listener)
+        if (approaching != null) (getSystemService(Context.LOCATION_SERVICE) as LocationManager).removeUpdates(approachListener)
         scope.cancel()
         super.onDestroy()
     }
@@ -252,6 +324,7 @@ class ShiftService : Service() {
         private const val POINT_METERS = 10f
         private const val DISPATCH_MS = 30_000L
         private const val URGENT_MS = 10_000L
+        private const val ARRIVAL_RETRY_MS = 20_000L
         /** Renewed on every read; if reads stop (no network, crash), the processor sleeps again after this. */
         private const val WAKE_LOCK_MS = 2 * 60_000L
 

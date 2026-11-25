@@ -40,6 +40,12 @@ interface CourierWorkRepository {
     suspend fun reportFailure(requestId: String, routeId: String, deliveryId: String, reason: FailureReason, notes: String)
     /** More than 300 m from the store: refused with RPM_FAR_FROM_STORE. */
     suspend fun arriveAtStore(routeId: String, position: GpsPoint? = null)
+    /**
+     * Approved shift, on the way: enters the line at the store.
+     * [auto]: the GPS saw the phone within 100 m (RPM_NOT_AT_STORE when the server disagrees).
+     * Otherwise the swipe: more than 300 m away with a [position], refused with RPM_FAR_FROM_STORE.
+     */
+    suspend fun arriveForShift(position: GpsPoint? = null, auto: Boolean = false)
     /** Sends 1 to 100 readings of the route in progress. */
     suspend fun recordLocations(routeId: String, points: List<GpsPoint>)
     /** Best effort: asks the server to send the customers' "saiu para entrega" messages. */
@@ -109,6 +115,7 @@ object WorkCopy {
         "RPM_SHIFT_BUSY" -> "Não dá para encerrar o turno com uma rota em andamento."
         "RPM_SHIFT_NOT_AVAILABLE" -> "Seu turno não está disponível para iniciar a rota. Fale com a loja."
         "RPM_SHIFT_NOT_FOUND", "RPM_SHIFT_STATE" -> "Seu turno mudou. Confira a tela atualizada."
+        "RPM_NOT_AT_STORE" -> "A localização ainda não mostra você na loja. Ao chegar, deslize \"Cheguei na loja\"."
         "RPM_ACCOUNT_SHIFT_OPEN" -> "Encerre o turno antes de excluir a conta."
         "RPM_ACCOUNT_STORE_MEMBER" -> "Este login também é de uma loja. Para excluir, use o painel da loja ou fale com o suporte."
         "DELETE_UNAVAILABLE" -> "Não foi possível excluir a conta agora. Tente de novo mais tarde."
@@ -173,6 +180,9 @@ class SupabaseCourierWork(
     }
     override suspend fun arriveAtStore(routeId: String, position: GpsPoint?) {
         rpc("arrive_at_store", buildJsonObject { put("p_route_id", routeId); position(position) })
+    }
+    override suspend fun arriveForShift(position: GpsPoint?, auto: Boolean) {
+        rpc("arrive_for_shift", buildJsonObject { position(position); put("p_auto", auto) })
     }
     override suspend fun recordLocations(routeId: String, points: List<GpsPoint>) {
         require(points.size in 1..100)
@@ -389,6 +399,7 @@ class UnconfiguredWork : CourierWorkRepository {
         position: GpsPoint?, confirmFar: Boolean) = refuse()
     override suspend fun reportFailure(requestId: String, routeId: String, deliveryId: String, reason: FailureReason, notes: String) = refuse()
     override suspend fun arriveAtStore(routeId: String, position: GpsPoint?) = refuse()
+    override suspend fun arriveForShift(position: GpsPoint?, auto: Boolean) = refuse()
     override suspend fun recordLocations(routeId: String, points: List<GpsPoint>) = refuse()
     override suspend fun notifyCustomers(routeId: String) = Unit
     override suspend fun settleRoute(routeId: String) = Unit

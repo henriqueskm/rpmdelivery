@@ -51,6 +51,8 @@ export type Board = {
   customerContacts?: { deliveryId: string; contact: string }[];
   orderPayments?: { deliveryId: string; method: string; amountDueCents: number | null; changeForCents: number | null }[];
   storeLocation?: { latitude: number; longitude: number } | null;
+  /** When each open shift arrived at the store (null: approved, still on the way); absent before the arrival migration. */
+  shiftArrivals?: { shiftId: string; arrivedAt: string | null }[];
 };
 
 /** What the commands need beyond the rendered state. */
@@ -116,6 +118,7 @@ export function parseBoard(value: unknown): Board | null {
       && oneOf(["PRINTER", "OPEN_DELIVERY"])(s.source) && isOptionalText(s.app) && isText(s.externalId)))
     && (value.customerContacts === undefined || list(value.customerContacts, c => isText(c.deliveryId) && isText(c.contact)))
     && (value.orderPayments === undefined || list(value.orderPayments, p => isText(p.deliveryId)))
+    && (value.shiftArrivals === undefined || list(value.shiftArrivals, a => isText(a.shiftId) && isOptionalTime(a.arrivedAt)))
     && (value.storeLocation === undefined || value.storeLocation === null
       || (isRecord(value.storeLocation) && isLatitude(value.storeLocation.latitude) && isLongitude(value.storeLocation.longitude)));
   return valid ? value as Board : null;
@@ -189,6 +192,8 @@ export function boardToState(board: Board, { now, receivedAt = now, alertReceipt
     };
   });
 
+  // Without the list (older database) everybody approved is in line, as before.
+  const onTheWay = new Set((board.shiftArrivals ?? []).filter(a => a.arrivedAt === null).map(a => a.shiftId));
   const couriers: DemoCourier[] = board.couriers.map((courier, index) => ({
     id: courier.shiftId,
     name: courier.name,
@@ -198,6 +203,7 @@ export function boardToState(board: Board, { now, receivedAt = now, alertReceipt
     queueOrder: index,
     availableMinutes: courier.availableSince
       ? Math.max(0, Math.floor((serverNow - ms(courier.availableSince)) / 60_000)) : 0,
+    ...(courier.status === "AVAILABLE" && onTheWay.has(courier.shiftId) ? { arriving: true } : {}),
   }));
 
   const routes: DemoRoute[] = board.routes.map(route => ({

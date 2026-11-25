@@ -46,6 +46,8 @@ export type DemoCourier = {
   activeLink: boolean;
   queueOrder: number;
   availableMinutes: number;
+  /** Real data: approved but not at the store yet ("A caminho"); not in line until arriving. */
+  arriving?: boolean;
 };
 export type DemoRoute = {
   id: string;
@@ -122,13 +124,14 @@ export function availableCouriers(state: DemoState) {
   return state.couriers
     .filter(
       (c) =>
-        c.activeLink && c.shift === "AVAILABLE" && !activeRoute(state, c.id),
+        c.activeLink && c.shift === "AVAILABLE" && !c.arriving && !activeRoute(state, c.id),
     )
     .sort((a, b) => a.queueOrder - b.queueOrder);
 }
 export function courierLabel(state: DemoState, courier: DemoCourier) {
   if (activeRoute(state, courier.id)?.status === "PREPARING")
     return "Reservado";
+  if (courier.shift === "AVAILABLE" && courier.arriving) return "A caminho";
   return {
     AVAILABLE: "Disponível",
     ON_ROUTE: "Em rota",
