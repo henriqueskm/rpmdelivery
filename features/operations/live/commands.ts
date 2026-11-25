@@ -9,6 +9,8 @@ import { paymentArgs } from "../payment.ts";
 /** Panel commands that only exist with real data. */
 export type StoreCommand =
   | { type: "review-shift"; shiftId: string; approve: boolean }
+  /** The courier is at the counter: enters the line now ("Chegou"). */
+  | { type: "mark-arrived"; shiftId: string }
   | { type: "cancel-route"; routeId: string }
   | { type: "cancel-order"; orderId: string }
   /** [orderId]: the delivery id, as everywhere in the panel. [keepLocation]: same address, keep its pin. */
@@ -64,6 +66,8 @@ export function rpcFor(command: Command | StoreCommand, restaurantId: string, bo
       return { fn: "cancel_delivery_on_route", args: { ...restaurant, p_delivery_id: command.orderId } };
     case "review-shift":
       return { fn: "review_shift", args: { ...restaurant, p_shift_id: command.shiftId, p_approve: command.approve } };
+    case "mark-arrived":
+      return { fn: "mark_shift_arrived", args: { ...restaurant, p_shift_id: command.shiftId } };
     case "cancel-order": {
       // The panel knows deliveries; cancel_order takes the order behind it.
       const orderId = board.orderIds[command.orderId];
@@ -93,7 +97,7 @@ export function rpcFor(command: Command | StoreCommand, restaurantId: string, bo
 /** Commands of the prototype that real data does not support yet. */
 export function supportedLive(command: Command | StoreCommand) {
   return ["add", "assign", "release", "revoke-release", "cancel-route", "issue-decide", "delivery-cancel",
-    "review-shift", "cancel-order", "edit-order", "requeue", "default-promise", "alert-view", "alert-dismiss"].includes(command.type);
+    "review-shift", "mark-arrived", "cancel-order", "edit-order", "requeue", "default-promise", "alert-view", "alert-dismiss"].includes(command.type);
 }
 
 const MESSAGES: Record<string, string> = {
@@ -114,6 +118,7 @@ const MESSAGES: Record<string, string> = {
   RPM_ISSUE_NOT_FOUND: "Essa ocorrência não foi encontrada. O painel foi atualizado.",
   RPM_SHIFT_NOT_AVAILABLE: "Esse motoboy não está mais disponível. O painel foi atualizado.",
   RPM_SHIFT_NOT_FOUND: "Esse turno não existe mais. O painel foi atualizado.",
+  RPM_SHIFT_STATE: "Esse turno mudou. O painel foi atualizado.",
   RPM_COURIER_BUSY: "Esse motoboy já tem outra rota. O painel foi atualizado.",
   RPM_COURIER_LINK_REQUIRED: "O vínculo desse motoboy com a loja não está ativo.",
   RPM_ROUTE_FIELDS: "Uma rota leva de 1 a 30 pedidos, sem repetir.",

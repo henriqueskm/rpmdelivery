@@ -240,8 +240,14 @@ export function useOperationsController(scenario: Scenario, seedTime: number, li
     const courier = state.couriers.find(c => c.id === shiftId && c.shift === "PENDING");
     if (!courier) return;
     if (!(await run({ type: "review-shift", shiftId, approve }))) return;
-    setNotice(approve ? `Turno de ${courier.name} aprovado. Entrou no fim da fila de disponíveis.`
+    setNotice(approve ? `Turno de ${courier.name} aprovado. Entra na fila quando chegar na loja.`
       : `Turno de ${courier.name} recusado.`);
+  }
+  /** Real data: the courier is at the counter (no GPS arrival): enters the line now. */
+  async function markArrived(shiftId: string) {
+    const courier = state.couriers.find(c => c.id === shiftId && c.arriving);
+    if (!courier || !(await run({ type: "mark-arrived", shiftId }))) return;
+    setNotice(`${courier.name} entrou no fim da fila.`);
   }
   // Real data only: undo a route before pickup, drop a waiting order, send a returned one back to the queue.
   async function cancelRoute(routeId: string) {
@@ -285,5 +291,5 @@ export function useOperationsController(scenario: Scenario, seedTime: number, li
     notice, courierRouteId, setCourierRouteId, deadlineTarget, setDeadlineTarget,
     newDialog, courierDialog, deadlineDialog, issueDialog, tabRefs, pending,
     assign, acceptAutomatic, edit, add, openNewOrder, cancel, release, revokeRelease, saveDeadline, courierCommand, issueCommand,
-    reviewShift, cancelRoute, cancelOrder, editOrder, requeue, viewedAlerts, dismissAlerts, tabKey };
+    reviewShift, markArrived, cancelRoute, cancelOrder, editOrder, requeue, viewedAlerts, dismissAlerts, tabKey };
 }

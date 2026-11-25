@@ -170,6 +170,20 @@ class WorkScreensTest {
         node("Pronto para começar?").assertIsDisplayed()
     }
 
+    @Test fun approvedFromHomeComesToTheStoreAndSwipesIntoTheLine() {
+        fake.home = fake.home.copy(shift = Shift("s-1", fake.store.restaurantId, fake.store.name, "AVAILABLE", null, onTheWay = true))
+        show()
+        node("Turno aprovado").assertIsDisplayed()
+        node("Venha para a loja. Você entra na fila quando chegar.").assertIsDisplayed()
+        node("Com a localização ligada, a chegada é registrada sozinha.").assertIsDisplayed()
+        compose.onNodeWithText("Você está na fila").assertDoesNotExist()
+        captureEvidence(compose, "work-16-on-the-way-390")
+        swipe("Deslize quando chegar na loja")
+        assertTrue(fake.calls.contains("arrive_for_shift"))
+        node("3º").assertIsDisplayed()
+        node("Você está na fila").assertIsDisplayed()
+    }
+
     @Test fun storeClosingTheDayTellsTheCourierWhyTheShiftIsGone() {
         show()
         node("Cheguei · pedir turno").performClick()

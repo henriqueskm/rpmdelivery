@@ -10,6 +10,35 @@ class ShiftAlertsTest {
     private fun route(released: Boolean, status: String = "PREPARING", id: String = "route-1") = CourierRoute(
         id, status, 1, null, released, StoreContact("Cozinha da Vila", null, null, null, null), emptyList())
 
+    @Test fun approvedFromHomeGoesToTheStoreAndRingsOnArrival() {
+        val pinned = Store("r-1", "Cozinha da Vila", "ACTIVE", latitude = -23.0058, longitude = -46.8389)
+        val onTheWay = CourierHome(listOf(pinned), Shift("s-1", "r-1", "Cozinha da Vila", "AVAILABLE", null, onTheWay = true), null)
+        val target = arrivalTarget(onTheWay)!!
+        assertEquals("s-1", target.shiftId)
+        assertNull("a store without a pin has nothing to arrive at", arrivalTarget(onTheWay.copy(stores = listOf(store))))
+        assertNull("in line already", arrivalTarget(home("AVAILABLE", 2)))
+        // Same rule as the server: 100 m, accuracy 50 m or better.
+        assertTrue(atStore(GpsPoint(-23.0062, -46.8389, 10.0, "t"), target))
+        assertFalse("500 m away", atStore(GpsPoint(-23.0103, -46.8389, 8.0, "t"), target))
+        assertFalse("poor signal at the door", atStore(GpsPoint(-23.0060, -46.8389, 80.0, "t"), target))
+        assertEquals(1001, meters(-23.0058, -46.8389, -23.0148, -46.8389))
+
+        val pending = home("PENDING")
+        assertEquals("approval says to come", listOf(ShiftAlert.APPROVED), alertsBetween(pending, onTheWay))
+        assertTrue(alertText(ShiftAlert.APPROVED, onTheWay).contains("Venha para a loja"))
+        val inLine = home("AVAILABLE", 3)
+        assertEquals("arrival rings once", listOf(ShiftAlert.ARRIVED), alertsBetween(onTheWay, inLine))
+        assertEquals("Você entrou na fila de Cozinha da Vila: 3º.", alertText(ShiftAlert.ARRIVED, inLine))
+        assertEquals("first in line says it instead", listOf(ShiftAlert.NEXT_IN_LINE), alertsBetween(onTheWay, home("AVAILABLE", 1)))
+        assertEquals(emptyList<ShiftAlert>(), alertsBetween(inLine, inLine))
+
+        fun shift(extra: String) = parseHome(kotlinx.serialization.json.Json.parseToJsonElement(
+            """{"stores":[],"shift":{"shiftId":"s-1","restaurantId":"r-1","status":"AVAILABLE","queuePosition":null$extra},"route":null}""")).shift!!
+        assertTrue("approved, not arrived", shift(""","arrivedAt":null""").onTheWay)
+        assertFalse("arrived", shift(""","arrivedAt":"2026-11-25T12:00:00Z"""").onTheWay)
+        assertFalse("an older server never says it: in line, as before", shift("").onTheWay)
+    }
+
     @Test fun staysAwakeOnlyWhileAPickupIsAboutToBeReleased() {
         assertTrue("first in line", awaitingPickup(home("AVAILABLE", 1)))
         assertTrue("route being assembled", awaitingPickup(home("AVAILABLE", route = route(false))))

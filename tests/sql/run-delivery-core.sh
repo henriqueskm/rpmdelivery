@@ -217,6 +217,7 @@ grep -qx ON_ROUTE /tmp/core-decide-a.txt || { echo 'FAIL: finishing the last sto
 "${psql[@]}" -f tests/sql/delivery-core/payment-contracts.sql
 "${psql[@]}" -f tests/sql/delivery-core/day-close-contracts.sql
 "${psql[@]}" -f tests/sql/delivery-core/shift-ended-contracts.sql
+"${psql[@]}" -f tests/sql/delivery-core/queue-arrival-contracts.sql
 
 # Race 11: the store closes the day while another counter puts a route together for a courier in
 # line (store F from day-close-contracts.sql: owner 46, courier 47 = couriers.id 251). create_route

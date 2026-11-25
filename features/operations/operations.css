@@ -1568,6 +1568,7 @@
 .status-on-route .ops-courier-pill { background: #e4edf9; color: #234f8c; }
 .status-returning .ops-courier-pill { background: #efe8f8; color: #573d88; }
 .status-pending .ops-courier-pill { background: #fde9e1; color: #94351a; }
+.status-arriving .ops-courier-pill { background: #eceee9; color: #3f4a42; }
 .ops-courier-wait { font-size: 12px; color: #536258; }
 .ops-header-actions { display: flex; align-items: center; gap: 8px; }
 .operations .ops-header-actions button { min-height: 40px; padding: 4px 14px; font-size: 12px; }

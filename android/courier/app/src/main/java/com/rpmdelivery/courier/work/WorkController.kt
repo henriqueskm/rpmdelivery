@@ -340,6 +340,11 @@ class WorkController(
         repository.arriveAtStore(route.routeId, position)
     }
 
+    /** Approved shift, on the way: the swipe "Cheguei na loja" puts the courier at the end of the line. */
+    fun arriveForShift(position: GpsPoint? = null) = act("Chegada registrada. Você entrou na fila.") {
+        repository.arriveForShift(position)
+    }
+
     private suspend fun once(key: String, command: suspend (String) -> Unit) {
         val id = requestIds.getOrPut(key) { UUID.randomUUID().toString() }
         command(id)

@@ -55,6 +55,7 @@ object ShiftNotifications {
             route != null && route.pickupReleased -> "Rota pronta para retirada"
             route != null -> "A loja está montando sua rota"
             shift?.status == "PENDING" -> "Aguardando a loja aprovar seu turno"
+            shift?.onTheWay == true -> "Turno aprovado · venha para a loja"
             shift?.queuePosition != null -> "${shift.queuePosition}º da fila"
             else -> "Turno aberto"
         }

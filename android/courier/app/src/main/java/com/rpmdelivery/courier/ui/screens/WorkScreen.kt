@@ -201,6 +201,7 @@ fun WorkScreen(work: WorkController, registration: CourierRegistration = Courier
         complete = { route, stop -> work.completeDelivery(route, stop, CurrentPosition.read(context)) },
         fail = work::reportFailure,
         arrive = { route -> work.arriveAtStore(route, CurrentPosition.read(context)) },
+        arriveForShift = { work.arriveForShift(CurrentPosition.read(context)) },
         retry = work::refresh,
         openHistory = work::openHistory,
         navigate = { query -> open(Intent(Intent.ACTION_VIEW, query.toUri()), "Nenhum aplicativo de mapas encontrado neste aparelho.") },
@@ -412,6 +413,8 @@ class WorkActions(
     val complete: (CourierRoute, Stop) -> Unit,
     val fail: (CourierRoute, Stop, FailureReason, String) -> Unit,
     val arrive: (CourierRoute) -> Unit,
+    /** Approved shift, on the way: "Cheguei na loja" puts the courier in line. */
+    val arriveForShift: () -> Unit = {},
     val retry: () -> Unit,
     val openHistory: () -> Unit = {},
     /** Opens a geo: URI in the installed maps app. */
@@ -463,7 +466,7 @@ fun WorkContent(state: WorkState, actions: WorkActions) {
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp), shape = RoundedCornerShape(14.dp)) { Text("Tentar novamente") }
             home.route != null -> RouteContent(home.route, home.shift, state.busy, actions, refusal = state.message)
             home.shift != null -> {
-                ShiftContent(home.shift, state.busy, actions)
+                ShiftContent(home.shift, state.busy, actions, home.stores.find { it.restaurantId == home.shift.restaurantId })
                 // Waiting in line: make sure the alerts will reach the pocket, and show the day so far.
                 ReadyChecks()
                 home.today?.let { YourDay(it, home.shift, actions.openHistory) }
@@ -674,12 +677,42 @@ private fun InviteContent(card: InviteCard, busy: Boolean, actions: InviteAction
 }
 
 @Composable
-private fun ShiftContent(shift: Shift, busy: Boolean, actions: WorkActions) {
+private fun ShiftContent(shift: Shift, busy: Boolean, actions: WorkActions, store: Store? = null) {
     Card {
+        when {
+            // Approved from home: the line starts at the store. The GPS registers the arrival by itself
+            // (shift service); the swipe covers a phone without location, as on the way back.
+            shift.status == "AVAILABLE" && shift.onTheWay -> {
+                Heading("Turno aprovado", shift.restaurantName, "A caminho")
+                Text("Venha para a loja. Você entra na fila quando chegar.", style = MaterialTheme.typography.bodyLarge)
+                if (actions.locationOn) Text("Com a localização ligada, a chegada é registrada sozinha.",
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                else {
+                    Text("Ligue a localização para entrar na fila sozinho ao chegar.", style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Secondary("Permitir localização", busy, actions.askLocation)
+                }
+                if (store != null && (!store.address.isNullOrBlank() || store.latitude != null))
+                    Secondary("Ver o caminho até a loja", busy) {
+                        actions.navigate(mapQuery(store.latitude, store.longitude, store.address.orEmpty()))
+                    }
+                SwipeToConfirm("Deslize quando chegar na loja", busy, SoftCoral, Coral, Coral, busyLabel = "Registrando chegada…") {
+                    actions.arriveForShift()
+                }
+                EndShift(shift, busy, actions)
+            }
+            else -> ShiftWaiting(shift, busy, actions)
+        }
+    }
+}
+
+@Composable
+private fun ShiftWaiting(shift: Shift, busy: Boolean, actions: WorkActions) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         when (shift.status) {
             "PENDING" -> {
                 Heading("Aguardando a loja", shift.restaurantName)
-                Text("Seu turno foi pedido. Assim que a loja aprovar, você entra na fila.", style = MaterialTheme.typography.bodyLarge)
+                Text("Seu turno foi pedido. Quando a loja aprovar, venha para a loja: você entra na fila ao chegar.", style = MaterialTheme.typography.bodyLarge)
                 Secondary("Cancelar pedido de turno", busy) { actions.endShift(shift) }
             }
             "AVAILABLE" -> {
@@ -727,7 +760,7 @@ private fun ReadyChecks(withBubble: Boolean = false) {
                 askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
             else open(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
         }
-        CheckRow("Localização", "Só durante a rota, para o cliente ver você chegando.", locationOn) {
+        CheckRow("Localização", "Na ida para a loja, para entrar na fila ao chegar, e durante a rota, para o cliente ver você chegando.", locationOn) {
             askLocation.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
         }
         CheckRow("Uso de bateria", "Sem restrição, o aviso chega com a tela apagada.", batteryFree,
