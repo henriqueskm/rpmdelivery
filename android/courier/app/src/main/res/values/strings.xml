@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">RpmDelivery · Prévia</string>
+    <!-- The debug build overrides it with "RpmDelivery · Prévia" (src/debug/res). -->
+    <string name="app_name">RpmDelivery Motoboy</string>
     <string name="brand">RpmDelivery</string>
     <string name="courier_label">PARA QUEM FAZ A ENTREGA</string>
     <string name="demo_label">DEMONSTRAÇÃO</string>

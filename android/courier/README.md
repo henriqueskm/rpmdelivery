@@ -30,8 +30,9 @@ Linux/macOS: `bash ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lint
 APK em `app/build/outputs/apk/debug/app-debug.apk`. Instalar em aparelho de teste
 com `adb install -r <apk>`, se a assinatura instalada for a mesma. O CI utiliza
 chave debug efêmera; não desinstalar uma versão com dados importantes sem avaliar
-as consequências. Não há assinatura de release, deploy ou Play Store nesta etapa.
-App ID preservado: `com.rpmdelivery.courier.demo`, rótulo “RpmDelivery · Prévia”.
+as consequências. A versão de teste mantém o App ID `com.rpmdelivery.courier.demo`, rótulo
+“RpmDelivery · Prévia”. A versão final é `com.rpmdelivery.courier` (“RpmDelivery Motoboy”), assinada com a
+chave definitiva fora do projeto: ver [versão final](../../docs/android-release.md).
 
 ## Ferramentas
 

@@ -9,12 +9,28 @@ plugins {
 android {
     namespace = "com.rpmdelivery.courier"
     compileSdk = 36
+    // The release key never enters the project: scripts/android-release-key.ps1 creates it, with its
+    // passwords, in %USERPROFILE%\.rpmdelivery\courier-release (or the RPM_RELEASE_SIGNING file given).
+    // Without it, assembleRelease still builds an unsigned APK. See docs/android-release.md.
+    val signingFile = providers.gradleProperty("RPM_RELEASE_SIGNING")
+        .orElse(File(System.getProperty("user.home"), ".rpmdelivery/courier-release/signing.properties").path)
+        .map(::File).get()
+    if (signingFile.exists()) {
+        val signing = Properties().apply { signingFile.inputStream().use { load(it) } }
+        signingConfigs.create("release") {
+            storeFile = signingFile.resolveSibling(signing.getProperty("storeFile"))
+            storePassword = signing.getProperty("storePassword")
+            keyAlias = signing.getProperty("keyAlias")
+            keyPassword = signing.getProperty("keyPassword")
+        }
+    }
     defaultConfig {
-        applicationId = "com.rpmdelivery.courier.demo"
+        // The real app. Debug builds keep the old ".demo" id (and "Prévia" label), so both can sit on one phone.
+        applicationId = "com.rpmdelivery.courier"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.2.0-preview"
+        versionCode = 4
+        versionName = "1.0.0"
         // Public client configuration only. Never read the web .env or privileged keys.
         val localAuth = Properties().apply {
             val file = rootProject.file("auth.local.properties")
@@ -30,6 +46,18 @@ android {
         }
         buildConfigField("String", "SUPABASE_URL", "\"$clientUrl\"")
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"$clientKey\"")
+    }
+    buildTypes {
+        debug {
+            applicationIdSuffix = ".demo"
+            versionNameSuffix = "-preview"
+        }
+        release {
+            // No code shrinking yet: R8 needs keep rules for supabase-kt/Ktor serialization, to be
+            // validated on a phone before turning it on.
+            isMinifyEnabled = false
+            signingConfigs.findByName("release")?.let { signingConfig = it }
+        }
     }
     buildFeatures { compose = true; buildConfig = true }
     compileOptions {
