@@ -8,5 +8,15 @@
         "10:BF:34:04:43:C3:00:38:20:FD:CC:AC:EA:C3:64:3B:32:B3:8B:3F:54:C6:A1:84:F7:4A:4E:BB:BA:43:3B:FF"
       ]
     }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.rpmdelivery.courier",
+      "sha256_cert_fingerprints": [
+        "BD:6A:68:07:75:CF:6F:A0:3B:4F:6C:99:79:37:31:75:1E:6F:DA:9C:F1:49:62:BF:20:84:40:9C:64:48:E3:8C"
+      ]
+    }
   }
 ]
